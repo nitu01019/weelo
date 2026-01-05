@@ -1,0 +1,65 @@
+<!-- Tipper - Perfect Match -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="64dp"
+    android:height="64dp"
+    android:viewportWidth="100"
+    android:viewportHeight="60">
+    
+    <!-- Tipper bed (angled upward) -->
+    <path
+        android:pathData="M10,30 L10,26 L40,16 L40,30"
+        android:strokeWidth="2.5"
+        android:strokeColor="#546E7A"
+        android:fillColor="@android:color/transparent"
+        android:strokeLineJoin="round"
+        android:strokeLineCap="round"/>
+    
+    <!-- Support lines -->
+    <path
+        android:pathData="M15,28 L15,30 M20,24 L20,30 M25,20 L25,30 M30,18 L30,30 M35,17 L35,30"
+        android:strokeWidth="2"
+        android:strokeColor="#546E7A"
+        android:strokeLineCap="round"/>
+    
+    <!-- Cabin -->
+    <path
+        android:pathData="M40,26 L40,20 L50,20 L50,30"
+        android:strokeWidth="2.5"
+        android:strokeColor="#546E7A"
+        android:fillColor="@android:color/transparent"
+        android:strokeLineJoin="round"
+        android:strokeLineCap="round"/>
+    
+    <!-- Windshield -->
+    <path
+        android:pathData="M42,20 L42,26 L48,26 L48,20"
+        android:strokeWidth="2"
+        android:strokeColor="#546E7A"
+        android:fillColor="@android:color/transparent"/>
+    
+    <!-- Chassis -->
+    <path
+        android:pathData="M10,30 L65,30"
+        android:strokeWidth="3"
+        android:strokeColor="#546E7A"
+        android:strokeLineCap="round"/>
+    
+    <!-- Three wheels -->
+    <path
+        android:pathData="M 18 30 m -4, 0 a 4,4 0 1,0 8,0 a 4,4 0 1,0 -8,0"
+        android:strokeWidth="2.5"
+        android:strokeColor="#546E7A"
+        android:fillColor="@android:color/transparent"/>
+    
+    <path
+        android:pathData="M 32 30 m -4, 0 a 4,4 0 1,0 8,0 a 4,4 0 1,0 -8,0"
+        android:strokeWidth="2.5"
+        android:strokeColor="#546E7A"
+        android:fillColor="@android:color/transparent"/>
+    
+    <path
+        android:pathData="M 55 30 m -4, 0 a 4,4 0 1,0 8,0 a 4,4 0 1,0 -8,0"
+        android:strokeWidth="2.5"
+        android:strokeColor="#546E7A"
+        android:fillColor="@android:color/transparent"/>
+</vector>

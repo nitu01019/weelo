@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Weelo Brand Gradient: BOLD Yellow to Orange -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <gradient
+        android:angle="90"
+        android:startColor="#FFC107"
+        android:centerColor="#FF9800"
+        android:endColor="#FF6B35"
+        android:type="linear" />
+    <corners android:radius="12dp" />
+</shape>

@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!--
+    Google Maps API Key for Weelo Logistics App
+    
+    APIs Enabled:
+    - Maps SDK for Android
+    - Geocoding API
+    - Directions API
+    - Places API
+    
+    To restrict this key:
+    1. Go to Google Cloud Console
+    2. Credentials > Edit API Key
+    3. Add Application restrictions:
+       - Android apps
+       - Package name: com.weelo.logistics
+       - SHA-1: [Your app's SHA-1 fingerprint]
+    -->
+    <string name="google_maps_key" translatable="false">AIzaSyBfeysh6WtoFQAdagvLSt8iXA7GdNbb4dw</string>
+</resources>

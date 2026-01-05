@@ -1,0 +1,511 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#F5F5F5">
+
+    <!-- Header -->
+    <androidx.cardview.widget.CardView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:elevation="4dp"
+        app:cardCornerRadius="0dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:padding="16dp"
+            android:gravity="center_vertical">
+
+            <!-- Back Button -->
+            <ImageView
+                android:id="@+id/backButton"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:src="@android:drawable/ic_menu_revert"
+                android:contentDescription="Back"
+                android:padding="8dp" />
+
+            <!-- Title with Location Route -->
+            <TextView
+                android:id="@+id/routeText"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Jammu - Delhi"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:textColor="#000"
+                android:maxLines="1"
+                android:ellipsize="end"
+                android:layout_marginStart="12dp" />
+
+            <!-- Alert Button -->
+            <androidx.cardview.widget.CardView
+                android:id="@+id/alertButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                app:cardCornerRadius="20dp"
+                app:cardBackgroundColor="#4CAF50"
+                app:cardElevation="2dp">
+
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:padding="8dp"
+                    android:paddingStart="12dp"
+                    android:paddingEnd="12dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="🔔"
+                        android:textSize="14sp"
+                        android:layout_marginEnd="4dp" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Set Alert"
+                        android:textSize="14sp"
+                        android:textColor="#FFFFFF"
+                        android:textStyle="bold" />
+                </LinearLayout>
+            </androidx.cardview.widget.CardView>
+        </LinearLayout>
+    </androidx.cardview.widget.CardView>
+
+    <!-- Main Content -->
+    <androidx.core.widget.NestedScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_marginTop="72dp"
+        android:fillViewport="true">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <!-- Machinery Types Grid -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:paddingStart="8dp"
+                android:paddingEnd="8dp"
+                android:paddingTop="8dp"
+                android:paddingBottom="8dp">
+
+                <!-- Row 1: Tractor, Trolley, Thresher, Harvester, Toggle Button -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal">
+
+                    <androidx.cardview.widget.CardView
+                        android:id="@+id/tractorCard"
+                        android:layout_width="0dp"
+                        android:layout_height="90dp"
+                        android:layout_weight="1"
+                        android:layout_margin="3dp"
+                        app:cardCornerRadius="8dp"
+                        app:cardElevation="2dp">
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:orientation="vertical"
+                            android:gravity="center"
+                            android:padding="6dp">
+                            <ImageView
+                                android:layout_width="40dp"
+                                android:layout_height="40dp"
+                                android:src="@drawable/ic_tractor"
+                                android:scaleType="fitCenter"
+                                android:contentDescription="Tractor"
+                                android:layout_marginBottom="4dp"/>
+                            <TextView
+                                android:text="Tractor"
+                                android:textSize="10sp"
+                                android:textStyle="bold"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"/>
+                        </LinearLayout>
+                    </androidx.cardview.widget.CardView>
+
+                    <androidx.cardview.widget.CardView
+                        android:id="@+id/trolleyCard"
+                        android:layout_width="0dp"
+                        android:layout_height="90dp"
+                        android:layout_weight="1"
+                        android:layout_margin="3dp"
+                        app:cardCornerRadius="8dp"
+                        app:cardElevation="2dp">
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:orientation="vertical"
+                            android:gravity="center"
+                            android:padding="6dp">
+                            <TextView
+                                android:text="🚛"
+                                android:textSize="24sp"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"/>
+                            <TextView
+                                android:text="Trolley"
+                                android:textSize="10sp"
+                                android:textStyle="bold"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"/>
+                        </LinearLayout>
+                    </androidx.cardview.widget.CardView>
+
+                    <androidx.cardview.widget.CardView
+                        android:id="@+id/thresherCard"
+                        android:layout_width="0dp"
+                        android:layout_height="90dp"
+                        android:layout_weight="1"
+                        android:layout_margin="3dp"
+                        app:cardCornerRadius="8dp"
+                        app:cardElevation="2dp">
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:orientation="vertical"
+                            android:gravity="center"
+                            android:padding="8dp">
+                            <TextView
+                                android:text="🌾"
+                                android:textSize="24sp"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"/>
+                            <TextView
+                                android:text="Thresher"
+                                android:textSize="10sp"
+                                android:textStyle="bold"
+                                android:maxLines="1"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"/>
+                        </LinearLayout>
+                    </androidx.cardview.widget.CardView>
+
+                    <androidx.cardview.widget.CardView
+                        android:id="@+id/harvesterCard"
+                        android:layout_width="0dp"
+                        android:layout_height="90dp"
+                        android:layout_weight="1"
+                        android:layout_margin="3dp"
+                        app:cardCornerRadius="8dp"
+                        app:cardElevation="2dp">
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:orientation="vertical"
+                            android:gravity="center"
+                            android:padding="8dp">
+                            <TextView
+                                android:text="🌾"
+                                android:textSize="24sp"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"/>
+                            <TextView
+                                android:text="Harvester"
+                                android:textSize="10sp"
+                                android:textStyle="bold"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"/>
+                        </LinearLayout>
+                    </androidx.cardview.widget.CardView>
+
+                    <!-- Toggle Button for Second Row Machinery -->
+                    <androidx.cardview.widget.CardView
+                        android:id="@+id/machineryTypesToggleCard"
+                        android:layout_width="0dp"
+                        android:layout_height="90dp"
+                        android:layout_weight="1"
+                        android:layout_margin="3dp"
+                        app:cardCornerRadius="8dp"
+                        app:cardElevation="2dp"
+                        app:cardBackgroundColor="#E8F5E9">
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:orientation="vertical"
+                            android:gravity="center"
+                            android:padding="4dp">
+                            <TextView
+                                android:id="@+id/toggleButtonText"
+                                android:text="Hide\nMachinery"
+                                android:textSize="10sp"
+                                android:textStyle="bold"
+                                android:textColor="#4CAF50"
+                                android:gravity="center"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"/>
+                            <TextView
+                                android:id="@+id/toggleArrow"
+                                android:text="▲"
+                                android:textSize="20sp"
+                                android:textColor="#4CAF50"
+                                android:layout_marginTop="2dp"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"/>
+                        </LinearLayout>
+                    </androidx.cardview.widget.CardView>
+
+                </LinearLayout>
+
+                <!-- Row 2: Cultivator, Seeder, Sprayer, Rotavator, Plough -->
+                <LinearLayout
+                    android:id="@+id/secondRowMachinery"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:visibility="visible">
+
+                    <!-- First part of second row -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal">
+
+                        <androidx.cardview.widget.CardView
+                            android:id="@+id/cultivatorCard"
+                            android:layout_width="0dp"
+                            android:layout_height="90dp"
+                            android:layout_weight="1"
+                            android:layout_margin="3dp"
+                            app:cardCornerRadius="8dp"
+                            app:cardElevation="2dp">
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="match_parent"
+                                android:orientation="vertical"
+                                android:gravity="center"
+                                android:padding="8dp">
+                                <TextView
+                                    android:text="⚙️"
+                                    android:textSize="24sp"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"/>
+                                <TextView
+                                    android:text="Cultivator"
+                                    android:textSize="10sp"
+                                    android:textStyle="bold"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"/>
+                            </LinearLayout>
+                        </androidx.cardview.widget.CardView>
+
+                        <androidx.cardview.widget.CardView
+                            android:id="@+id/seederCard"
+                            android:layout_width="0dp"
+                            android:layout_height="90dp"
+                            android:layout_weight="1"
+                            android:layout_margin="3dp"
+                            app:cardCornerRadius="8dp"
+                            app:cardElevation="2dp">
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="match_parent"
+                                android:orientation="vertical"
+                                android:gravity="center"
+                                android:padding="8dp">
+                                <TextView
+                                    android:text="🌱"
+                                    android:textSize="24sp"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"/>
+                                <TextView
+                                    android:text="Seeder"
+                                    android:textSize="10sp"
+                                    android:textStyle="bold"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"/>
+                            </LinearLayout>
+                        </androidx.cardview.widget.CardView>
+
+                        <androidx.cardview.widget.CardView
+                            android:id="@+id/sprayerCard"
+                            android:layout_width="0dp"
+                            android:layout_height="90dp"
+                            android:layout_weight="1"
+                            android:layout_margin="3dp"
+                            app:cardCornerRadius="8dp"
+                            app:cardElevation="2dp">
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="match_parent"
+                                android:orientation="vertical"
+                                android:gravity="center"
+                                android:padding="8dp">
+                                <TextView
+                                    android:text="💧"
+                                    android:textSize="24sp"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"/>
+                                <TextView
+                                    android:text="Sprayer"
+                                    android:textSize="10sp"
+                                    android:textStyle="bold"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"/>
+                            </LinearLayout>
+                        </androidx.cardview.widget.CardView>
+
+                        <androidx.cardview.widget.CardView
+                            android:id="@+id/rotavatorCard"
+                            android:layout_width="0dp"
+                            android:layout_height="90dp"
+                            android:layout_weight="1"
+                            android:layout_margin="3dp"
+                            app:cardCornerRadius="8dp"
+                            app:cardElevation="2dp">
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="match_parent"
+                                android:orientation="vertical"
+                                android:gravity="center"
+                                android:padding="8dp">
+                                <TextView
+                                    android:text="🔄"
+                                    android:textSize="24sp"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"/>
+                                <TextView
+                                    android:text="Rotavator"
+                                    android:textSize="10sp"
+                                    android:textStyle="bold"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"/>
+                            </LinearLayout>
+                        </androidx.cardview.widget.CardView>
+
+                        <androidx.cardview.widget.CardView
+                            android:id="@+id/ploughCard"
+                            android:layout_width="0dp"
+                            android:layout_height="90dp"
+                            android:layout_weight="1"
+                            android:layout_margin="3dp"
+                            app:cardCornerRadius="8dp"
+                            app:cardElevation="2dp">
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="match_parent"
+                                android:orientation="vertical"
+                                android:gravity="center"
+                                android:padding="8dp">
+                                <TextView
+                                    android:text="🪓"
+                                    android:textSize="24sp"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"/>
+                                <TextView
+                                    android:text="Plough"
+                                    android:textSize="10sp"
+                                    android:textStyle="bold"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"/>
+                            </LinearLayout>
+                        </androidx.cardview.widget.CardView>
+
+                    </LinearLayout>
+
+                    <!-- Baler card on third row -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal">
+
+                        <androidx.cardview.widget.CardView
+                            android:id="@+id/balerCard"
+                            android:layout_width="0dp"
+                            android:layout_height="90dp"
+                            android:layout_weight="1"
+                            android:layout_margin="3dp"
+                            app:cardCornerRadius="8dp"
+                            app:cardElevation="2dp">
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="match_parent"
+                                android:orientation="vertical"
+                                android:gravity="center"
+                                android:padding="8dp">
+                                <TextView
+                                    android:text="📦"
+                                    android:textSize="24sp"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"/>
+                                <TextView
+                                    android:text="Baler"
+                                    android:textSize="10sp"
+                                    android:textStyle="bold"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"/>
+                            </LinearLayout>
+                        </androidx.cardview.widget.CardView>
+
+                        <!-- Empty spaces to keep grid alignment -->
+                        <View
+                            android:layout_width="0dp"
+                            android:layout_height="90dp"
+                            android:layout_weight="1"
+                            android:layout_margin="3dp"
+                            android:visibility="invisible"/>
+                        <View
+                            android:layout_width="0dp"
+                            android:layout_height="90dp"
+                            android:layout_weight="1"
+                            android:layout_margin="3dp"
+                            android:visibility="invisible"/>
+                        <View
+                            android:layout_width="0dp"
+                            android:layout_height="90dp"
+                            android:layout_weight="1"
+                            android:layout_margin="3dp"
+                            android:visibility="invisible"/>
+                        <View
+                            android:layout_width="0dp"
+                            android:layout_height="90dp"
+                            android:layout_weight="1"
+                            android:layout_margin="3dp"
+                            android:visibility="invisible"/>
+
+                    </LinearLayout>
+
+                </LinearLayout>
+
+            </LinearLayout>
+
+        </LinearLayout>
+
+    </androidx.core.widget.NestedScrollView>
+
+    <!-- Continue Button -->
+    <androidx.cardview.widget.CardView
+        android:id="@+id/continueButton"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom"
+        android:layout_margin="16dp"
+        app:cardCornerRadius="30dp"
+        app:cardElevation="8dp"
+        app:cardBackgroundColor="#4CAF50"
+        android:visibility="gone">
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="CONTINUE"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:textColor="#FFFFFF"
+            android:gravity="center"
+            android:padding="16dp" />
+    </androidx.cardview.widget.CardView>
+
+</androidx.coordinatorlayout.widget.CoordinatorLayout>

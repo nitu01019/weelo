@@ -1,0 +1,541 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#F5F5F5">
+
+    <!-- Header -->
+    <androidx.cardview.widget.CardView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:elevation="4dp"
+        app:cardCornerRadius="0dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:padding="16dp"
+            android:gravity="center_vertical">
+
+            <!-- Back Button -->
+            <ImageView
+                android:id="@+id/backButton"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:src="@android:drawable/ic_menu_revert"
+                android:contentDescription="Back"
+                android:padding="14dp" />
+
+            <!-- Title with Location Route -->
+            <TextView
+                android:id="@+id/routeText"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Jammu - Delhi"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:textColor="#000"
+                android:maxLines="1"
+                android:ellipsize="end"
+                android:layout_marginStart="12dp" />
+
+            <!-- Alert Button -->
+            <androidx.cardview.widget.CardView
+                android:id="@+id/alertButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                app:cardCornerRadius="20dp"
+                app:cardBackgroundColor="#2196F3"
+                app:cardElevation="3dp">
+
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:padding="14dp"
+                    android:paddingStart="12dp"
+                    android:paddingEnd="12dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="🔔"
+                        android:textSize="14sp"
+                        android:layout_marginEnd="4dp" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Set Alert"
+                        android:textSize="14sp"
+                        android:textColor="#FFFFFF"
+                        android:textStyle="bold" />
+                </LinearLayout>
+            </androidx.cardview.widget.CardView>
+        </LinearLayout>
+    </androidx.cardview.widget.CardView>
+
+    <!-- Main Content -->
+    <androidx.core.widget.NestedScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_marginTop="72dp"
+        android:fillViewport="true">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <!-- Horizontal Categories -->
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/categoriesRecyclerView"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:paddingTop="4dp"
+                android:paddingBottom="8dp"
+                android:clipToPadding="false"
+                android:paddingStart="16dp"
+                android:paddingEnd="16dp" />
+
+            <!-- Expanded Section (Initially Hidden) -->
+            <androidx.cardview.widget.CardView
+                android:id="@+id/expandedSection"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="16dp"
+                android:layout_marginEnd="16dp"
+                android:layout_marginTop="8dp"
+                app:cardCornerRadius="12dp"
+                app:cardElevation="3dp"
+                android:visibility="gone">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+
+                    <!-- Expanded Title -->
+                    <TextView
+                        android:id="@+id/expandedTitle"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Open Types"
+                        android:textSize="16sp"
+                        android:textStyle="bold"
+                        android:textColor="#000"
+                        android:layout_marginBottom="12dp" />
+
+                    <!-- Types RecyclerView (Grid) -->
+                    <androidx.recyclerview.widget.RecyclerView
+                        android:id="@+id/typesRecyclerView"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content" />
+                </LinearLayout>
+            </androidx.cardview.widget.CardView>
+
+            <!-- Vehicle Types Grid -->
+            <FrameLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:paddingStart="8dp"
+                android:paddingEnd="8dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical">
+
+                    <!-- Row 1: Open, Container, LCV, Mini, Toggle Button -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal">
+
+                    <androidx.cardview.widget.CardView
+                        android:id="@+id/openCard"
+                        android:layout_width="0dp"
+                        android:layout_height="68dp"
+                        android:layout_weight="1"
+                        android:layout_margin="4dp"
+                        android:foreground="@drawable/ripple_light_blue"
+                        android:clickable="true"
+                        android:focusable="true"
+                        app:cardCornerRadius="12dp"
+                        app:cardElevation="3dp"
+                        app:cardBackgroundColor="#E6FFFFFF">
+                        <ImageView
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:src="@drawable/ic_open_main"
+                            android:scaleType="centerCrop"
+                            android:scaleX="1.10"
+                            android:scaleY="1.22"
+                            android:contentDescription="Open Truck"/>
+                    </androidx.cardview.widget.CardView>
+
+                    <androidx.cardview.widget.CardView
+                        android:id="@+id/containerCard"
+                        android:layout_width="0dp"
+                        android:layout_height="68dp"
+                        android:layout_weight="1"
+                        android:layout_margin="4dp"
+                        android:foreground="@drawable/ripple_light_blue"
+                        android:clickable="true"
+                        android:focusable="true"
+                        app:cardCornerRadius="12dp"
+                        app:cardElevation="3dp"
+                        app:cardBackgroundColor="#E6FFFFFF">
+                        <ImageView
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:src="@drawable/ic_container_main"
+                            android:scaleType="centerCrop"
+                            android:scaleX="1.28"
+                            android:scaleY="1.35"
+                            android:contentDescription="Container Truck"/>
+                    </androidx.cardview.widget.CardView>
+
+                    <androidx.cardview.widget.CardView
+                        android:id="@+id/lcvCard"
+                        android:layout_width="0dp"
+                        android:layout_height="68dp"
+                        android:layout_weight="1"
+                        android:layout_margin="4dp"
+                        android:foreground="@drawable/ripple_light_blue"
+                        android:clickable="true"
+                        android:focusable="true"
+                        app:cardCornerRadius="12dp"
+                        app:cardElevation="3dp"
+                        app:cardBackgroundColor="#E6FFFFFF">
+                        <ImageView
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:src="@drawable/ic_lcv_main"
+                            android:scaleType="centerCrop"
+                            android:scaleX="1.28"
+                            android:scaleY="1.28"
+                            android:contentDescription="LCV Truck"/>
+                    </androidx.cardview.widget.CardView>
+
+                    <androidx.cardview.widget.CardView
+                        android:id="@+id/miniCard"
+                        android:layout_width="0dp"
+                        android:layout_height="68dp"
+                        android:layout_weight="1"
+                        android:layout_margin="4dp"
+                        android:foreground="@drawable/ripple_light_blue"
+                        android:clickable="true"
+                        android:focusable="true"
+                        app:cardCornerRadius="12dp"
+                        app:cardElevation="3dp"
+                        app:cardBackgroundColor="#E6FFFFFF">
+                        <ImageView
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:src="@drawable/ic_mini_main"
+                            android:scaleType="centerCrop"
+                            android:scaleX="1.15"
+                            android:scaleY="1.18"
+                            android:contentDescription="Mini Truck"/>
+                    </androidx.cardview.widget.CardView>
+
+                    <!-- Toggle Button in First Row -->
+                    <androidx.cardview.widget.CardView
+                        android:id="@+id/toggleTrucksButton"
+                        android:layout_width="0dp"
+                        android:layout_height="68dp"
+                        android:layout_weight="1"
+                        android:layout_margin="4dp"
+                        app:cardCornerRadius="12dp"
+                        app:cardElevation="3dp"
+                        app:cardBackgroundColor="#E0E0E0"
+                        android:clickable="true"
+                        android:focusable="true">
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:orientation="vertical"
+                            android:gravity="center">
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Truck"
+                                android:textSize="12sp"
+                                android:textColor="#424242"
+                                android:textStyle="bold"/>
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Types"
+                                android:textColor="#424242"
+                                android:textSize="12sp"
+                                android:textStyle="bold" />
+                            <TextView
+                                android:id="@+id/toggleIcon"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="▲"
+                                android:textSize="18sp"
+                                android:textColor="#2196F3"
+                                android:layout_marginTop="4dp"/>
+                        </LinearLayout>
+                    </androidx.cardview.widget.CardView>
+
+                    </LinearLayout>
+
+                </LinearLayout>
+
+                <!-- Row 2 Container (slides behind row 1) -->
+                <LinearLayout
+                    android:id="@+id/trucksContainer"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:layout_marginTop="76dp"
+                    android:visibility="visible">
+
+                    <!-- Row 2: Trailer, Tipper, Tanker, Dumper, Bulker -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal">
+
+                    <androidx.cardview.widget.CardView
+                        android:id="@+id/trailerCard"
+                        android:layout_width="0dp"
+                        android:layout_height="68dp"
+                        android:layout_weight="1"
+                        android:layout_margin="4dp"
+                        android:foreground="@drawable/ripple_light_blue"
+                        android:clickable="true"
+                        android:focusable="true"
+                        app:cardCornerRadius="12dp"
+                        app:cardElevation="3dp"
+                        app:cardBackgroundColor="#E6FFFFFF">
+                        <ImageView
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:src="@drawable/ic_trailer_main"
+                            android:scaleType="centerCrop"
+                            android:scaleX="1.14"
+                            android:scaleY="1.18"
+                            android:contentDescription="Trailer Truck"/>
+                    </androidx.cardview.widget.CardView>
+
+                    <androidx.cardview.widget.CardView
+                        android:id="@+id/tipperCard"
+                        android:layout_width="0dp"
+                        android:layout_height="68dp"
+                        android:layout_weight="1"
+                        android:layout_margin="4dp"
+                        android:foreground="@drawable/ripple_light_blue"
+                        android:clickable="true"
+                        android:focusable="true"
+                        app:cardCornerRadius="12dp"
+                        app:cardElevation="3dp"
+                        app:cardBackgroundColor="#E6FFFFFF">
+                        <ImageView
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:src="@drawable/ic_tipper_main"
+                            android:scaleType="centerCrop"
+                            android:scaleX="1.30"
+                            android:scaleY="1.30"
+                            android:contentDescription="Tipper Truck"/>
+                    </androidx.cardview.widget.CardView>
+
+                    <androidx.cardview.widget.CardView
+                        android:id="@+id/tankerCard"
+                        android:layout_width="0dp"
+                        android:layout_height="68dp"
+                        android:layout_weight="1"
+                        android:layout_margin="4dp"
+                        android:foreground="@drawable/ripple_light_blue"
+                        android:clickable="true"
+                        android:focusable="true"
+                        app:cardCornerRadius="12dp"
+                        app:cardElevation="3dp"
+                        app:cardBackgroundColor="#E6FFFFFF">
+                        <ImageView
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:src="@drawable/ic_tanker_main"
+                            android:scaleType="centerCrop"
+                            android:scaleX="1.15"
+                            android:scaleY="1.18"
+                            android:contentDescription="Tanker Truck"/>
+                    </androidx.cardview.widget.CardView>
+
+                    <androidx.cardview.widget.CardView
+                        android:id="@+id/dumperCard"
+                        android:layout_width="0dp"
+                        android:layout_height="68dp"
+                        android:layout_weight="1"
+                        android:layout_margin="4dp"
+                        android:foreground="@drawable/ripple_light_blue"
+                        android:clickable="true"
+                        android:focusable="true"
+                        app:cardCornerRadius="12dp"
+                        app:cardElevation="3dp"
+                        app:cardBackgroundColor="#E6FFFFFF">
+                        <ImageView
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:src="@drawable/ic_dumper_main"
+                            android:scaleType="centerCrop"
+                            android:scaleX="1.30"
+                            android:scaleY="1.30"
+                            android:contentDescription="Dumper Truck"/>
+                    </androidx.cardview.widget.CardView>
+
+                    <androidx.cardview.widget.CardView
+                        android:id="@+id/bulkerCard"
+                        android:layout_width="0dp"
+                        android:layout_height="68dp"
+                        android:layout_weight="1"
+                        android:layout_margin="4dp"
+                        android:foreground="@drawable/ripple_light_blue"
+                        android:clickable="true"
+                        android:focusable="true"
+                        app:cardCornerRadius="12dp"
+                        app:cardElevation="3dp"
+                        app:cardBackgroundColor="#E6FFFFFF">
+                        <ImageView
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:src="@drawable/ic_bulker_main"
+                            android:scaleType="centerCrop"
+                            android:scaleX="1.30"
+                            android:scaleY="1.30"
+                            android:contentDescription="Bulker Truck"/>
+                    </androidx.cardview.widget.CardView>
+
+                    </LinearLayout>
+
+                </LinearLayout>
+
+            </FrameLayout>
+
+            <!-- Selected Trucks Section - THIN, ALWAYS VISIBLE, BELOW TRUCK CARDS -->
+            <androidx.cardview.widget.CardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="12dp"
+                android:layout_marginEnd="12dp"
+                android:layout_marginTop="12dp"
+                android:layout_marginBottom="8dp"
+                app:cardCornerRadius="12dp"
+                app:cardElevation="3dp"
+                app:cardBackgroundColor="#CCFFFFFF">
+
+                <LinearLayout
+                    android:id="@+id/selectedTrucksSection"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:paddingStart="12dp"
+                    android:paddingEnd="12dp"
+                    android:paddingTop="10dp"
+                    android:paddingBottom="10dp">
+
+                    <!-- Section Header with Centered Count -->
+                    <RelativeLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="6dp">
+                        
+                        <!-- Title on left -->
+                        <TextView
+                            android:id="@+id/selectedTrucksTitle"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_alignParentStart="true"
+                            android:layout_centerVertical="true"
+                            android:text="Selected Trucks"
+                            android:textSize="14sp"
+                            android:textStyle="bold"
+                            android:textColor="#000000" />
+                        
+                        <!-- Count badge - centered, subtle -->
+                        <TextView
+                            android:id="@+id/truckCountText"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_centerInParent="true"
+                            android:text="0"
+                            android:textSize="11sp"
+                            android:textStyle="bold"
+                            android:textColor="#FFFFFF"
+                            android:paddingStart="10dp"
+                            android:paddingEnd="10dp"
+                            android:paddingTop="3dp"
+                            android:paddingBottom="3dp"
+                            android:background="#80000000"
+                            android:alpha="0.7" />
+                    </RelativeLayout>
+
+                    <!-- Empty State Message -->
+                    <TextView
+                        android:id="@+id/emptyStateText"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="No trucks selected"
+                        android:textSize="12sp"
+                        android:textColor="#9E9E9E"
+                        android:textStyle="italic"
+                        android:paddingTop="4dp"
+                        android:paddingBottom="4dp"
+                        android:visibility="visible" />
+
+                    <!-- Vertical RecyclerView for Selected Trucks -->
+                    <androidx.recyclerview.widget.RecyclerView
+                        android:id="@+id/selectedTrucksRecyclerView"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:nestedScrollingEnabled="false"
+                        android:visibility="gone" />
+
+                </LinearLayout>
+            </androidx.cardview.widget.CardView>
+
+        </LinearLayout>
+    </androidx.core.widget.NestedScrollView>
+
+    <!-- Continue Button -->
+    <androidx.cardview.widget.CardView
+        android:id="@+id/continueButton"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom"
+        app:cardCornerRadius="0dp"
+        app:cardElevation="8dp"
+        android:visibility="gone">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="16dp">
+
+            <androidx.appcompat.widget.AppCompatButton
+                android:layout_width="match_parent"
+                android:layout_height="56dp"
+                android:text="Continue"
+                android:textSize="18sp"
+                android:textStyle="bold"
+                android:textColor="#FFFFFF"
+                android:textAllCaps="false"
+                android:background="@drawable/button_gradient_orange_yellow_selector"
+                android:clickable="true"
+                android:focusable="true"
+                style="@style/Widget.AppCompat.Button" />
+        </LinearLayout>
+    </androidx.cardview.widget.CardView>
+
+</androidx.coordinatorlayout.widget.CoordinatorLayout>

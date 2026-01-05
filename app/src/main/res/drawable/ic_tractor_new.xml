@@ -1,0 +1,33 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="48dp"
+    android:height="48dp"
+    android:viewportWidth="48"
+    android:viewportHeight="48">
+    <!-- Tractor body -->
+    <path
+        android:fillColor="#52B788"
+        android:pathData="M12,16 L30,16 L30,28 L12,28 Z"/>
+    <!-- Tractor cabin -->
+    <path
+        android:fillColor="#2D6A4F"
+        android:pathData="M18,12 L26,12 L26,16 L18,16 Z"/>
+    <!-- Window -->
+    <path
+        android:fillColor="#A8DADC"
+        android:pathData="M20,13 L24,13 L24,15 L20,15 Z"/>
+    <!-- Large rear wheel -->
+    <path
+        android:fillColor="#1D3557"
+        android:pathData="M24,22 a6,6 0 1,0 0,12 a6,6 0 1,0 0,-12"/>
+    <!-- Small front wheel -->
+    <path
+        android:fillColor="#1D3557"
+        android:pathData="M14,25 a3,3 0 1,0 0,6 a3,3 0 1,0 0,-6"/>
+    <!-- Wheel rims -->
+    <path
+        android:fillColor="#F1FAEE"
+        android:pathData="M24,25 a3,3 0 1,0 0,6 a3,3 0 1,0 0,-6"/>
+    <path
+        android:fillColor="#F1FAEE"
+        android:pathData="M14,26.5 a1.5,1.5 0 1,0 0,3 a1.5,1.5 0 1,0 0,-3"/>
+</vector>

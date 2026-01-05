@@ -1,0 +1,270 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="#F8F9FA">
+
+    <!-- Header -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:paddingHorizontal="16dp"
+        android:paddingVertical="12dp"
+        android:gravity="center_vertical"
+        android:background="@color/white">
+
+        <ImageView
+            android:id="@+id/backButton"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:src="@android:drawable/ic_menu_revert"
+            android:padding="8dp"
+            android:background="?android:attr/selectableItemBackgroundBorderless"
+            android:contentDescription="Back" />
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Enter Locations"
+            android:textSize="20sp"
+            android:textStyle="bold"
+            android:textColor="#1A1A1A"
+            android:layout_marginStart="8dp" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="For me ▼"
+            android:textSize="14sp"
+            android:textColor="#666666"
+            android:paddingHorizontal="16dp"
+            android:paddingVertical="8dp"
+            android:background="@drawable/button_outlined"
+            android:clickable="true"
+            android:focusable="true" />
+
+    </LinearLayout>
+
+    <!-- Scrollable Content -->
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:fillViewport="true">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="12dp">
+
+            <!-- Location Input Card -->
+            <androidx.cardview.widget.CardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="16dp"
+                app:cardCornerRadius="16dp"
+                app:cardElevation="3dp"
+                app:cardBackgroundColor="@color/white">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="12dp">
+
+                    <!-- From Location -->
+                    <LinearLayout
+                        android:id="@+id/fromLocationContainer"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:paddingVertical="12dp"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:background="?android:attr/selectableItemBackground">
+
+                        <!-- Green Dot -->
+                        <View
+                            android:layout_width="12dp"
+                            android:layout_height="12dp"
+                            android:background="@drawable/green_dot"
+                            android:layout_marginEnd="16dp" />
+
+                        <!-- From Input -->
+                        <AutoCompleteTextView
+                            android:id="@+id/fromLocationInput"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:hint="Your Current Location"
+                            android:textSize="16sp"
+                            android:textColor="#1A1A1A"
+                            android:background="@null"
+                            android:maxLines="1"
+                            android:ellipsize="end"
+                            android:inputType="text"
+                            android:completionThreshold="1" />
+
+                    </LinearLayout>
+
+                    <!-- Dotted Line -->
+                    <View
+                        android:layout_width="2dp"
+                        android:layout_height="24dp"
+                        android:background="@drawable/dotted_line"
+                        android:layout_marginStart="5dp"
+                        android:layout_marginVertical="0dp" />
+
+                    <!-- Intermediate Stops Container (dynamically added) -->
+                    <LinearLayout
+                        android:id="@+id/intermediateStopsContainer"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical">
+                        <!-- Intermediate stops will be added here dynamically -->
+                    </LinearLayout>
+
+                    <!-- Dotted Line (before drop) -->
+                    <View
+                        android:id="@+id/bottomDottedLine"
+                        android:layout_width="2dp"
+                        android:layout_height="24dp"
+                        android:background="@drawable/dotted_line"
+                        android:layout_marginStart="5dp"
+                        android:layout_marginVertical="0dp"
+                        android:visibility="gone" />
+
+                    <!-- To Location -->
+                    <LinearLayout
+                        android:id="@+id/toLocationContainer"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:paddingVertical="12dp"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:background="?android:attr/selectableItemBackground">
+
+                        <!-- Orange Dot -->
+                        <View
+                            android:layout_width="12dp"
+                            android:layout_height="12dp"
+                            android:background="@drawable/orange_dot"
+                            android:layout_marginEnd="16dp" />
+
+                        <!-- To Input -->
+                        <AutoCompleteTextView
+                            android:id="@+id/toLocationInput"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:hint="Drop location"
+                            android:textSize="16sp"
+                            android:textColor="#1A1A1A"
+                            android:textColorHint="#9E9E9E"
+                            android:background="@null"
+                            android:maxLines="1"
+                            android:ellipsize="end"
+                            android:inputType="text"
+                            android:completionThreshold="1" />
+
+                    </LinearLayout>
+
+                </LinearLayout>
+
+            </androidx.cardview.widget.CardView>
+
+            <!-- Action Buttons -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginTop="8dp"
+                android:layout_marginBottom="12dp"
+                android:gravity="center">
+
+                <androidx.appcompat.widget.AppCompatButton
+                    android:id="@+id/selectOnMapButton"
+                    android:layout_width="0dp"
+                    android:layout_height="44dp"
+                    android:layout_weight="1"
+                    android:text="Select on map"
+                    android:drawableStart="@drawable/ic_location"
+                    android:drawableTint="#000000"
+                    android:drawablePadding="6dp"
+                    android:textSize="14sp"
+                    android:textColor="#000000"
+                    android:textAllCaps="false"
+                    android:background="@drawable/button_white_rounded"
+                    android:layout_marginEnd="6dp"
+                    android:gravity="center"
+                    android:paddingStart="12dp"
+                    android:paddingEnd="12dp" />
+
+                <androidx.appcompat.widget.AppCompatButton
+                    android:id="@+id/addStopsButton"
+                    android:layout_width="0dp"
+                    android:layout_height="44dp"
+                    android:layout_weight="1"
+                    android:text="Add stops"
+                    android:drawableStart="@drawable/ic_add"
+                    android:drawableTint="#000000"
+                    android:drawablePadding="6dp"
+                    android:textSize="14sp"
+                    android:textColor="#000000"
+                    android:textAllCaps="false"
+                    android:background="@drawable/button_white_rounded"
+                    android:layout_marginStart="6dp"
+                    android:gravity="center"
+                    android:paddingStart="12dp"
+                    android:paddingEnd="12dp" />
+
+            </LinearLayout>
+
+            <!-- Recent Locations Container (dynamically populated) -->
+            <LinearLayout
+                android:id="@+id/recentJammu"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
+                
+                <!-- Recent locations will be added here dynamically -->
+                
+            </LinearLayout>
+
+        </LinearLayout>
+
+    </ScrollView>
+
+    <!-- Continue Button -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="12dp"
+        android:background="@color/white"
+        android:elevation="4dp">
+
+        <androidx.appcompat.widget.AppCompatButton
+            android:id="@+id/continueButton"
+            android:layout_width="match_parent"
+            android:layout_height="50dp"
+            android:text="Continue"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:textColor="@color/white"
+            android:textAllCaps="false"
+            android:background="@drawable/button_gradient_orange_yellow_selector"
+            android:clickable="true"
+            android:focusable="true"
+            style="@style/Widget.AppCompat.Button" />
+
+    </LinearLayout>
+
+</LinearLayout>

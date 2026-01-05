@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="280dp"
+    android:height="120dp"
+    android:viewportWidth="280"
+    android:viewportHeight="120">
+
+    <!-- CABIN (SLANTED FRONT) -->
+    <path
+        android:pathData="
+            M30,88
+            V52
+            L52,36
+            H92
+            V88
+            L56,88
+            Z"
+        android:fillColor="#eef4ff"
+        android:strokeColor="#000000"
+        android:strokeWidth="2"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"/>
+
+    <!-- WINDOW (CUT-OUT STYLE, SHARES CABIN SLANT) -->
+    <path
+        android:pathData="
+            M52,36
+            L52,60
+            L74,60
+            Z"
+        android:fillColor="#ffffff"/>
+
+    <!-- SIDE MIRROR -->
+    <path
+        android:pathData="M24,52 L30,52 L30,64 L24,64 Z"
+        android:fillColor="#eef4ff"
+        android:strokeColor="#000000"
+        android:strokeWidth="2"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"/>
+
+    <!-- DOOR HANDLE -->
+    <path
+        android:pathData="M72,66 L80,66 L80,69 L72,69 Z"
+        android:fillColor="#eef4ff"
+        android:strokeColor="#000000"
+        android:strokeWidth="2"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"/>
+
+    <!-- HEADLIGHT -->
+    <path
+        android:pathData="M34,71 A5,5 0 1,1 34,81 A5,5 0 1,1 34,71 Z"
+        android:fillColor="#ffffff"
+        android:strokeColor="#000000"
+        android:strokeWidth="2"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"/>
+
+    <!-- GRILLE -->
+    <path
+        android:pathData="M40,68 L43,68 L43,80 L40,80 Z"
+        android:fillColor="#eef4ff"
+        android:strokeColor="#000000"
+        android:strokeWidth="2"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"/>
+    <path
+        android:pathData="M45,68 L48,68 L48,80 L45,80 Z"
+        android:fillColor="#eef4ff"
+        android:strokeColor="#000000"
+        android:strokeWidth="2"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"/>
+
+    <!-- FRONT TYRE -->
+    <path
+        android:pathData="M62,77 A11,11 0 1,1 62,99 A11,11 0 1,1 62,77 Z"
+        android:fillColor="#000000"/>
+    <path
+        android:pathData="M62,84 A4,4 0 1,1 62,92 A4,4 0 1,1 62,84 Z"
+        android:fillColor="#000000"/>
+
+    <!-- PICKUP BED (SHORT) -->
+    <path
+        android:pathData="M92,60 L182,60 L182,88 L92,88 Z"
+        android:fillColor="#eef4ff"
+        android:strokeColor="#000000"
+        android:strokeWidth="2"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"/>
+
+    <!-- BED TOP EDGE -->
+    <path
+        android:pathData="M92,60 L182,60"
+        android:strokeColor="#000000"
+        android:strokeWidth="2"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"/>
+
+    <!-- BED RIB -->
+    <path
+        android:pathData="M124,62 L126,62 L126,86 L124,86 Z"
+        android:fillColor="#eef4ff"
+        android:strokeColor="#000000"
+        android:strokeWidth="1"/>
+
+    <!-- BASE LINE -->
+    <path
+        android:pathData="M56,88 L182,88"
+        android:strokeColor="#000000"
+        android:strokeWidth="2"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"/>
+
+    <!-- REAR TYRE -->
+    <path
+        android:pathData="M150,77 A11,11 0 1,1 150,99 A11,11 0 1,1 150,77 Z"
+        android:fillColor="#000000"/>
+    <path
+        android:pathData="M150,84 A4,4 0 1,1 150,92 A4,4 0 1,1 150,84 Z"
+        android:fillColor="#000000"/>
+
+</vector>

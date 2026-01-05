@@ -1,0 +1,59 @@
+<!-- Open Truck - Perfect Match -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="64dp"
+    android:height="64dp"
+    android:viewportWidth="100"
+    android:viewportHeight="60">
+    
+    <!-- Cabin -->
+    <path
+        android:pathData="M15,25 L15,20 L25,20 L25,30"
+        android:strokeWidth="2.5"
+        android:strokeColor="#546E7A"
+        android:fillColor="@android:color/transparent"
+        android:strokeLineJoin="round"
+        android:strokeLineCap="round"/>
+    
+    <!-- Windshield -->
+    <path
+        android:pathData="M17,20 L17,26 L23,26 L23,20"
+        android:strokeWidth="2"
+        android:strokeColor="#546E7A"
+        android:fillColor="@android:color/transparent"/>
+    
+    <!-- Open cargo bed -->
+    <path
+        android:pathData="M25,26 L25,30 L60,30 L60,26"
+        android:strokeWidth="2.5"
+        android:strokeColor="#546E7A"
+        android:fillColor="@android:color/transparent"
+        android:strokeLineJoin="round"
+        android:strokeLineCap="round"/>
+    
+    <!-- Cargo sides -->
+    <path
+        android:pathData="M25,26 L25,30 M60,26 L60,30"
+        android:strokeWidth="2.5"
+        android:strokeColor="#546E7A"
+        android:strokeLineCap="round"/>
+    
+    <!-- Chassis -->
+    <path
+        android:pathData="M15,30 L70,30"
+        android:strokeWidth="3"
+        android:strokeColor="#546E7A"
+        android:strokeLineCap="round"/>
+    
+    <!-- Wheels -->
+    <path
+        android:pathData="M 20 30 m -4, 0 a 4,4 0 1,0 8,0 a 4,4 0 1,0 -8,0"
+        android:strokeWidth="2.5"
+        android:strokeColor="#546E7A"
+        android:fillColor="@android:color/transparent"/>
+    
+    <path
+        android:pathData="M 55 30 m -4, 0 a 4,4 0 1,0 8,0 a 4,4 0 1,0 -8,0"
+        android:strokeWidth="2.5"
+        android:strokeColor="#546E7A"
+        android:fillColor="@android:color/transparent"/>
+</vector>

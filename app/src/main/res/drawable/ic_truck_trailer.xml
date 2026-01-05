@@ -1,0 +1,63 @@
+<!-- Trailer - Perfect Match -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="64dp"
+    android:height="64dp"
+    android:viewportWidth="100"
+    android:viewportHeight="60">
+    
+    <!-- Long trailer container -->
+    <path
+        android:pathData="M5,22 L5,30 L50,30 L50,22 L5,22 Z"
+        android:strokeWidth="2.5"
+        android:strokeColor="#546E7A"
+        android:fillColor="@android:color/transparent"
+        android:strokeLineJoin="round"/>
+    
+    <!-- Cabin -->
+    <path
+        android:pathData="M50,26 L50,20 L60,20 L60,30"
+        android:strokeWidth="2.5"
+        android:strokeColor="#546E7A"
+        android:fillColor="@android:color/transparent"
+        android:strokeLineJoin="round"
+        android:strokeLineCap="round"/>
+    
+    <!-- Windshield -->
+    <path
+        android:pathData="M52,20 L52,26 L58,26 L58,20"
+        android:strokeWidth="2"
+        android:strokeColor="#546E7A"
+        android:fillColor="@android:color/transparent"/>
+    
+    <!-- Chassis -->
+    <path
+        android:pathData="M5,30 L75,30"
+        android:strokeWidth="3"
+        android:strokeColor="#546E7A"
+        android:strokeLineCap="round"/>
+    
+    <!-- Four wheels -->
+    <path
+        android:pathData="M 15 30 m -3.5, 0 a 3.5,3.5 0 1,0 7,0 a 3.5,3.5 0 1,0 -7,0"
+        android:strokeWidth="2.5"
+        android:strokeColor="#546E7A"
+        android:fillColor="@android:color/transparent"/>
+    
+    <path
+        android:pathData="M 28 30 m -3.5, 0 a 3.5,3.5 0 1,0 7,0 a 3.5,3.5 0 1,0 -7,0"
+        android:strokeWidth="2.5"
+        android:strokeColor="#546E7A"
+        android:fillColor="@android:color/transparent"/>
+    
+    <path
+        android:pathData="M 40 30 m -3.5, 0 a 3.5,3.5 0 1,0 7,0 a 3.5,3.5 0 1,0 -7,0"
+        android:strokeWidth="2.5"
+        android:strokeColor="#546E7A"
+        android:fillColor="@android:color/transparent"/>
+    
+    <path
+        android:pathData="M 65 30 m -4, 0 a 4,4 0 1,0 8,0 a 4,4 0 1,0 -8,0"
+        android:strokeWidth="2.5"
+        android:strokeColor="#546E7A"
+        android:fillColor="@android:color/transparent"/>
+</vector>

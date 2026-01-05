@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Weelo</string>
+    
+    <!-- Home Screen -->
+    <string name="search_placeholder">Enter from location</string>
+    <string name="nearby_vehicles">Services Available</string>
+    <string name="truck">Truck</string>
+    <string name="tractor">Tractor</string>
+    <string name="tempo">Tempo</string>
+    <string name="nearby_count">%d nearby</string>
+    <string name="weelo_brand">#Weelo</string>
+    <string name="made_in_india">🇮🇳 Made for India</string>
+    <string name="developed_in_india">❤️ Developed in India</string>
+    
+    <!-- Bottom Nav -->
+    <string name="nav_logistics">Logistics</string>
+    <string name="nav_all_services">All Services</string>
+    <string name="nav_track">Track</string>
+    <string name="nav_profile">Profile</string>
+    
+    <!-- Location Input Screen -->
+    <string name="book_vehicle">Book Vehicle</string>
+    <string name="from_location">From Location</string>
+    <string name="to_location">Choose your location</string>
+    <string name="select_on_map">Select on map</string>
+    <string name="add_stops">Add stops</string>
+    <string name="continue_btn">Continue</string>
+    
+    <!-- Map Booking Screen -->
+    <string name="expand">▲ Expand</string>
+    <string name="collapse">▼ Collapse</string>
+    <string name="add_stop">Add stop</string>
+    <string name="cash">Cash</string>
+    <string name="offers">Offers</string>
+    
+    <!-- Truck Types -->
+    <string name="select_truck_type">Select Truck Type</string>
+    <string name="open_truck">Open</string>
+    <string name="container">Container</string>
+    <string name="lcv">LCV</string>
+    <string name="mini_pickup">Mini/Pickup</string>
+    <string name="trailer">Trailer</string>
+    <string name="tipper">Tipper</string>
+    <string name="tanker">Tanker</string>
+    <string name="dumper">Dumper</string>
+    <string name="bulker">Bulker</string>
+    
+    <!-- Pricing Screen -->
+    <string name="confirm_booking">Confirm Booking</string>
+    <string name="trip_details">Trip Details</string>
+    <string name="from">From</string>
+    <string name="to">To</string>
+    <string name="distance">Distance</string>
+    <string name="included_features">Included Features</string>
+    <string name="price_breakdown">Price Breakdown</string>
+    <string name="base_fare">Base Fare</string>
+    <string name="gst">GST (18%%)</string>
+    <string name="total_amount">Total Amount</string>
+    <string name="payment_method">Payment Method</string>
+    <string name="total">Total</string>
+    <string name="confirm_booking_btn">Confirm Booking</string>
+    
+    <!-- Alerts -->
+    <string name="required">Required</string>
+    <string name="enter_from_location">Please enter from location</string>
+    <string name="enter_to_location">Please enter to location</string>
+    <string name="locations_must_differ">From and To locations must be different</string>
+    <string name="select_truck">Please select a truck type to continue</string>
+    <string name="booking_confirmed">Booking Confirmed! 🎉</string>
+    <string name="booking_message">Your %s has been booked!\\n\\nTotal: ₹%d\\n\\nDriver will contact you shortly.</string>
+</resources>

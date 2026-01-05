@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="IndexingSettings">
+    <option name="indexingAware" value="true" />
+  </component>
+  <component name="ProjectIndexingConfiguration">
+    <excludedFolders>
+      <list>
+        <option value="$PROJECT_DIR$/node_modules" />
+        <option value="$PROJECT_DIR$/app/build" />
+        <option value="$PROJECT_DIR$/build" />
+        <option value="$PROJECT_DIR$/.gradle" />
+        <option value="$PROJECT_DIR$/.expo" />
+        <option value="$PROJECT_DIR$/.idea/caches" />
+        <option value="$PROJECT_DIR$/.idea/libraries" />
+        <option value="$PROJECT_DIR$/android_kotlin" />
+      </list>
+    </excludedFolders>
+  </component>
+</project>

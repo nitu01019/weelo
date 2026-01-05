@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Thin horizontal card for selected trucks -->
+<androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/selectedTruckCard"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginTop="4dp"
+    android:layout_marginBottom="4dp"
+    app:cardCornerRadius="8dp"
+    app:cardElevation="0dp"
+    app:cardBackgroundColor="#E6FFFFFF">
+
+    <!-- Horizontal layout: Icon | Details | +/- | X -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingStart="8dp"
+        android:paddingEnd="8dp"
+        android:paddingTop="6dp"
+        android:paddingBottom="6dp"
+        android:minHeight="56dp">
+
+        <!-- Truck Icon -->
+        <ImageView
+            android:id="@+id/truckIcon"
+            android:layout_width="40dp"
+            android:layout_height="32dp"
+            android:scaleType="fitCenter"
+            android:contentDescription="Truck icon" />
+
+        <!-- Truck Details (Type + Spec) -->
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:layout_marginStart="8dp">
+
+            <!-- Truck Type Name -->
+            <TextView
+                android:id="@+id/truckTypeName"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Trailer"
+                android:textSize="13sp"
+                android:textStyle="bold"
+                android:textColor="#1A237E"
+                android:maxLines="1" />
+
+            <!-- Specification -->
+            <TextView
+                android:id="@+id/truckSpecification"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="32 Feet"
+                android:textSize="11sp"
+                android:textColor="#616161"
+                android:layout_marginTop="1dp"
+                android:maxLines="1" />
+        </LinearLayout>
+
+        <!-- Quantity Controls (- Qty +) -->
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginEnd="4dp">
+
+            <!-- Minus Button -->
+            <TextView
+                android:id="@+id/minusButton"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:text="−"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:textColor="#FFFFFF"
+                android:gravity="center"
+                android:background="@drawable/button_primary"
+                android:clickable="true"
+                android:focusable="true" />
+
+            <!-- Quantity Display -->
+            <TextView
+                android:id="@+id/quantityText"
+                android:layout_width="28dp"
+                android:layout_height="wrap_content"
+                android:text="1"
+                android:textSize="14sp"
+                android:textStyle="bold"
+                android:textColor="#1A237E"
+                android:gravity="center"
+                android:layout_marginStart="6dp"
+                android:layout_marginEnd="6dp" />
+
+            <!-- Plus Button -->
+            <TextView
+                android:id="@+id/plusButton"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:text="+"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:textColor="#FFFFFF"
+                android:gravity="center"
+                android:background="@drawable/button_primary"
+                android:clickable="true"
+                android:focusable="true" />
+        </LinearLayout>
+
+        <!-- Remove Button (X) -->
+        <ImageView
+            android:id="@+id/removeButton"
+            android:layout_width="20dp"
+            android:layout_height="20dp"
+            android:src="@android:drawable/ic_menu_close_clear_cancel"
+            android:tint="#F44336"
+            android:padding="2dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:clickable="true"
+            android:focusable="true"
+            android:contentDescription="Remove truck" />
+    </LinearLayout>
+</androidx.cardview.widget.CardView>

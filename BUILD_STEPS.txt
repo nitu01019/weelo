@@ -1,0 +1,64 @@
+📱 EXACT STEPS TO BUILD IN ANDROID STUDIO
+
+═══════════════════════════════════════════════════════
+
+STEP 1: Open Android Studio
+- Click on Android Studio icon in your Applications folder
+- Wait for it to launch
+
+STEP 2: Open Project
+- Click "Open" or "File → Open"
+- Navigate to: /Users/nitishbhardwaj/Desktop/Weelo
+- Click "Open"
+- Wait for Gradle sync (bottom status bar will show progress)
+
+STEP 3: Clean & Rebuild
+- Click "Build" in top menu
+- Click "Clean Project"
+- Wait for it to finish
+- Click "Build" again
+- Click "Rebuild Project"
+- Wait for build to complete (watch bottom status bar)
+
+STEP 4: Run on Device
+- Connect your phone via USB
+- OR have emulator running
+- Click the green ▶️ button at top
+- Select your device
+- Click "OK"
+
+STEP 5: Wait for Installation
+- App will build
+- App will install on device
+- App will launch automatically
+
+═══════════════════════════════════════════════════════
+
+✅ WHAT YOU'LL SEE:
+
+1. Home screen with compact UI
+2. Location input with autocomplete
+3. Map screen with:
+   - Back button (bottom left)
+   - Location boxes (top)
+   - Add stop button (top right)
+   - Route line on map
+   - Vehicle cards (Truck, Tractor, Tempo)
+   - Continue button (bottom)
+
+═══════════════════════════════════════════════════════
+
+⚠️ IF BUILD FAILS:
+
+1. Make sure you have Java 17 installed
+2. Go to: File → Project Structure → SDK Location
+3. Make sure Android SDK is configured
+4. Try: File → Invalidate Caches → Invalidate and Restart
+
+═══════════════════════════════════════════════════════
+
+🎉 EVERYTHING IS READY IN THE CODE!
+
+All changes are saved. Just build and test!
+
+═══════════════════════════════════════════════════════

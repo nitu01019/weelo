@@ -1,0 +1,164 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:background="@drawable/bottom_sheet_rounded_bg">
+
+    <!-- Header with title and close button (Fixed at top) - Like reference -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingHorizontal="16dp"
+        android:paddingVertical="14dp">
+
+        <TextView
+            android:id="@+id/bottomSheetTitle"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Container"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:textColor="#000" />
+
+        <ImageView
+            android:id="@+id/closeButton"
+            android:layout_width="28dp"
+            android:layout_height="28dp"
+            android:src="@android:drawable/ic_menu_close_clear_cancel"
+            android:padding="2dp"
+            android:clickable="true"
+            android:focusable="true" />
+    </LinearLayout>
+
+    <!-- Hidden header truck icon - keeping for code compatibility but hidden -->
+    <ImageView
+        android:id="@+id/bottomSheetTruckIcon"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:visibility="gone"
+        android:contentDescription="Truck Icon" />
+
+    <!-- Scrollable Content -->
+    <androidx.core.widget.NestedScrollView
+        android:id="@+id/scrollView"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:fillViewport="true">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingHorizontal="12dp"
+            android:paddingBottom="8dp">
+
+            <!-- Grid of truck subtypes -->
+            <LinearLayout
+                android:id="@+id/subtypesContainer"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical" />
+
+            <!-- LCV Open Subtypes Section -->
+            <TextView
+                android:id="@+id/lcvOpenSectionTitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="LCV Open - Select Length"
+                android:textSize="14sp"
+                android:textStyle="bold"
+                android:textColor="#1A237E"
+                android:layout_marginTop="12dp"
+                android:layout_marginBottom="8dp"
+                android:visibility="gone" />
+
+            <LinearLayout
+                android:id="@+id/lcvOpenSubtypesContainer"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:visibility="gone" />
+
+            <!-- LCV Container Subtypes Section -->
+            <TextView
+                android:id="@+id/lcvContainerSectionTitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="LCV Container - Select Length"
+                android:textSize="14sp"
+                android:textStyle="bold"
+                android:textColor="#1A237E"
+                android:layout_marginTop="12dp"
+                android:layout_marginBottom="8dp"
+                android:visibility="gone" />
+
+            <LinearLayout
+                android:id="@+id/lcvContainerSubtypesContainer"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:visibility="gone" />
+
+            <!-- Truck Length Section Header (for non-LCV trucks) -->
+            <TextView
+                android:id="@+id/lengthSectionTitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Truck Length"
+                android:textSize="14sp"
+                android:textStyle="bold"
+                android:textColor="#000"
+                android:layout_marginTop="12dp"
+                android:layout_marginBottom="8dp"
+                android:visibility="gone" />
+
+            <!-- Grid of truck lengths -->
+            <LinearLayout
+                android:id="@+id/lengthSubtypesContainer"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:visibility="gone" />
+
+        </LinearLayout>
+    </androidx.core.widget.NestedScrollView>
+
+    <!-- Action buttons (Fixed at bottom) - Like reference -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:paddingHorizontal="16dp"
+        android:paddingVertical="12dp"
+        android:background="@android:color/white">
+
+        <Button
+            android:id="@+id/clearAllButton"
+            android:layout_width="0dp"
+            android:layout_height="48dp"
+            android:layout_weight="1"
+            android:text="CLEAR ALL"
+            android:textSize="14sp"
+            android:textColor="#888"
+            android:background="@android:color/transparent"
+            android:layout_marginEnd="8dp" />
+
+        <Button
+            android:id="@+id/confirmSelectionButton"
+            android:layout_width="0dp"
+            android:layout_height="48dp"
+            android:layout_weight="1"
+            android:text="SHOW LOADS"
+            android:textSize="14sp"
+            android:textColor="#fff"
+            android:backgroundTint="#AAAAAA"
+            android:layout_marginStart="8dp" />
+    </LinearLayout>
+
+</LinearLayout>

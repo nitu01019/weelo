@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <!-- Permissions -->
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+
+    <application
+        android:name=".WeeloApplication"
+        android:allowBackup="true"
+        android:icon="@mipmap/ic_launcher"
+        android:label="Weelo"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.Weelo"
+        android:extractNativeLibs="true"
+        android:usesCleartextTraffic="true"
+        android:hardwareAccelerated="true"
+        android:largeHeap="true"
+        tools:targetApi="31">
+
+        <!-- Google Maps API Key -->
+        <meta-data
+            android:name="com.google.android.geo.API_KEY"
+            android:value="AIzaSyBfeysh6WtoFQAdagvLSt8iXA7GdNbb4dw" />
+        
+        <!-- Enable Places API -->
+        <meta-data
+            android:name="com.google.android.gms.version"
+            android:value="@integer/google_play_services_version" />
+
+        <!-- Main Activity - Home Screen -->
+        <activity
+            android:name=".MainActivity"
+            android:exported="true"
+            android:screenOrientation="portrait">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <!-- Location Input Activity -->
+        <activity
+            android:name=".LocationInputActivity"
+            android:exported="false"
+            android:screenOrientation="portrait" />
+
+        <!-- Map Booking Activity -->
+        <activity
+            android:name=".MapBookingActivity"
+            android:exported="false"
+            android:screenOrientation="portrait" />
+
+        <!-- Truck Types Activity -->
+        <activity
+            android:name=".TruckTypesActivity"
+            android:exported="false"
+            android:screenOrientation="portrait" />
+
+        <!-- Tractor Machinery Types Activity -->
+        <activity
+            android:name=".TractorMachineryTypesActivity"
+            android:exported="false"
+            android:screenOrientation="portrait" />
+
+        <!-- Map Selection Activity -->
+        <activity
+            android:name=".MapSelectionActivity"
+            android:exported="false"
+            android:screenOrientation="portrait" />
+
+        <!-- Driver Dashboard Activity -->
+        <activity
+            android:name=".presentation.driver.DriverDashboardActivity"
+            android:exported="false"
+            android:screenOrientation="portrait"
+            android:theme="@style/Theme.Weelo" />
+
+    </application>
+
+</manifest>

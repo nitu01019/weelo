@@ -1,0 +1,140 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="340dp"
+    android:height="130dp"
+    android:viewportWidth="340"
+    android:viewportHeight="130">
+
+    <!-- CABIN -->
+    <path
+        android:pathData="
+            M32,92
+            V46
+            C32,34 44,28 56,28
+            H96
+            V92
+            Z"
+        android:fillColor="#eef4ff"
+        android:strokeColor="#000000"
+        android:strokeWidth="2"/>
+
+    <!-- CABIN WINDOW -->
+    <path
+        android:pathData="
+            M52,40
+            H78
+            C84,40 86,44 86,50
+            V60
+            C86,64 82,66 78,66
+            H58
+            C54,66 52,64 52,60
+            Z"
+        android:fillColor="#ffffff"
+        android:strokeColor="#000000"
+        android:strokeWidth="1.5"/>
+
+    <!-- SIDE MIRROR -->
+    <path
+        android:pathData="M28,48 L34,48 L34,60 L28,60 Z"
+        android:fillColor="#eef4ff"
+        android:strokeColor="#000000"
+        android:strokeWidth="1"/>
+
+    <!-- DOOR HANDLE -->
+    <path
+        android:pathData="M84,66 L92,66 L92,69 L84,69 Z"
+        android:fillColor="#eef4ff"
+        android:strokeColor="#000000"
+        android:strokeWidth="1"/>
+
+    <!-- HEADLIGHT -->
+    <path
+        android:pathData="M32,73 A5,5 0 1,1 32,83 A5,5 0 1,1 32,73 Z"
+        android:fillColor="#ffffff"
+        android:strokeColor="#000000"
+        android:strokeWidth="1"/>
+
+    <!-- GRILLE -->
+    <path
+        android:pathData="M38,70 L41,70 L41,82 L38,82 Z"
+        android:fillColor="#eef4ff"
+        android:strokeColor="#000000"
+        android:strokeWidth="1"/>
+    <path
+        android:pathData="M44,70 L47,70 L47,82 L44,82 Z"
+        android:fillColor="#eef4ff"
+        android:strokeColor="#000000"
+        android:strokeWidth="1"/>
+
+    <!-- FRONT TYRE -->
+    <path
+        android:pathData="M64,80 A12,12 0 1,1 64,104 A12,12 0 1,1 64,80 Z"
+        android:fillColor="#000000"/>
+    <path
+        android:pathData="M64,87 A5,5 0 1,1 64,97 A5,5 0 1,1 64,87 Z"
+        android:fillColor="#333333"/>
+
+    <!-- HITCH BAR -->
+    <path
+        android:pathData="M96,88 L110,88 L110,92 L96,92 Z"
+        android:fillColor="#eef4ff"
+        android:strokeColor="#000000"
+        android:strokeWidth="2"/>
+
+    <!-- CONTAINER -->
+    <path
+        android:pathData="M112,30 L282,30 L282,92 L112,92 Z"
+        android:fillColor="#eef4ff"
+        android:strokeColor="#000000"
+        android:strokeWidth="2"/>
+
+    <!-- CONTAINER PANEL RIBS -->
+    <path
+        android:pathData="M132,34 L134,34 L134,88 L132,88 Z"
+        android:fillColor="#cccccc"/>
+    <path
+        android:pathData="M162,34 L164,34 L164,88 L162,88 Z"
+        android:fillColor="#cccccc"/>
+    <path
+        android:pathData="M192,34 L194,34 L194,88 L192,88 Z"
+        android:fillColor="#cccccc"/>
+    <path
+        android:pathData="M222,34 L224,34 L224,88 L222,88 Z"
+        android:fillColor="#cccccc"/>
+
+    <!-- CONTAINER MARKER LIGHTS -->
+    <path
+        android:pathData="M126,31.5 A2.5,2.5 0 1,1 126,36.5 A2.5,2.5 0 1,1 126,31.5 Z"
+        android:fillColor="#ffffff"
+        android:strokeColor="#000000"
+        android:strokeWidth="1"/>
+    <path
+        android:pathData="M270,31.5 A2.5,2.5 0 1,1 270,36.5 A2.5,2.5 0 1,1 270,31.5 Z"
+        android:fillColor="#ffffff"
+        android:strokeColor="#000000"
+        android:strokeWidth="1"/>
+
+    <!-- CONTAINER TYRES -->
+    <path
+        android:pathData="M150,80 A12,12 0 1,1 150,104 A12,12 0 1,1 150,80 Z"
+        android:fillColor="#000000"/>
+    <path
+        android:pathData="M150,87 A5,5 0 1,1 150,97 A5,5 0 1,1 150,87 Z"
+        android:fillColor="#333333"/>
+    
+    <path
+        android:pathData="M225,80 A12,12 0 1,1 225,104 A12,12 0 1,1 225,80 Z"
+        android:fillColor="#000000"/>
+    <path
+        android:pathData="M225,87 A5,5 0 1,1 225,97 A5,5 0 1,1 225,87 Z"
+        android:fillColor="#333333"/>
+    
+    <path
+        android:pathData="M255,80 A12,12 0 1,1 255,104 A12,12 0 1,1 255,80 Z"
+        android:fillColor="#000000"/>
+    <path
+        android:pathData="M255,87 A5,5 0 1,1 255,97 A5,5 0 1,1 255,87 Z"
+        android:fillColor="#333333"/>
+
+</vector>

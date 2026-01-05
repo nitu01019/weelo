@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="300dp"
+    android:height="130dp"
+    android:viewportWidth="300"
+    android:viewportHeight="130">
+
+    <!-- CABIN -->
+    <path
+        android:pathData="
+            M32,92
+            V46
+            C32,34 44,28 56,28
+            H96
+            V92
+            Z"
+        android:fillColor="#eef4ff"
+        android:strokeColor="#000000"
+        android:strokeWidth="2"/>
+
+    <!-- CABIN WINDOW -->
+    <path
+        android:pathData="
+            M52,40
+            H78
+            C84,40 86,44 86,50
+            V60
+            C86,64 82,66 78,66
+            H58
+            C54,66 52,64 52,60
+            Z"
+        android:fillColor="#ffffff"
+        android:strokeColor="#000000"
+        android:strokeWidth="1.5"/>
+
+    <!-- SIDE MIRROR -->
+    <path
+        android:pathData="M28,48 L34,48 L34,60 L28,60 Z"
+        android:fillColor="#eef4ff"
+        android:strokeColor="#000000"
+        android:strokeWidth="1"/>
+
+    <!-- DOOR HANDLE -->
+    <path
+        android:pathData="M84,66 L92,66 L92,69 L84,69 Z"
+        android:fillColor="#eef4ff"
+        android:strokeColor="#000000"
+        android:strokeWidth="1"/>
+
+    <!-- HEADLIGHT -->
+    <path
+        android:pathData="M32,73 A5,5 0 1,1 32,83 A5,5 0 1,1 32,73 Z"
+        android:fillColor="#ffffff"
+        android:strokeColor="#000000"
+        android:strokeWidth="1"/>
+
+    <!-- GRILLE -->
+    <path
+        android:pathData="M38,70 L41,70 L41,82 L38,82 Z"
+        android:fillColor="#eef4ff"
+        android:strokeColor="#000000"
+        android:strokeWidth="1"/>
+    <path
+        android:pathData="M44,70 L47,70 L47,82 L44,82 Z"
+        android:fillColor="#eef4ff"
+        android:strokeColor="#000000"
+        android:strokeWidth="1"/>
+
+    <!-- FRONT TYRE -->
+    <path
+        android:pathData="M64,80 A12,12 0 1,1 64,104 A12,12 0 1,1 64,80 Z"
+        android:fillColor="#000000"/>
+    <path
+        android:pathData="M64,87 A5,5 0 1,1 64,97 A5,5 0 1,1 64,87 Z"
+        android:fillColor="#333333"/>
+
+    <!-- HITCH BAR -->
+    <path
+        android:pathData="M96,88 L106,88 L106,92 L96,92 Z"
+        android:fillColor="#eef4ff"
+        android:strokeColor="#000000"
+        android:strokeWidth="1"/>
+
+    <!-- CONTAINER -->
+    <path
+        android:pathData="M106,26 L216,26 L216,94 L106,94 Z"
+        android:fillColor="#eef4ff"
+        android:strokeColor="#000000"
+        android:strokeWidth="2"/>
+
+    <!-- CONTAINER PANEL RIBS -->
+    <path
+        android:pathData="M126,30 L128,30 L128,90 L126,90 Z"
+        android:fillColor="#cccccc"/>
+    <path
+        android:pathData="M156,30 L158,30 L158,90 L156,90 Z"
+        android:fillColor="#cccccc"/>
+    <path
+        android:pathData="M186,30 L188,30 L188,90 L186,90 Z"
+        android:fillColor="#cccccc"/>
+
+    <!-- CONTAINER MARKER LIGHT -->
+    <path
+        android:pathData="M114,25.5 A2.5,2.5 0 1,1 114,30.5 A2.5,2.5 0 1,1 114,25.5 Z"
+        android:fillColor="#ffffff"
+        android:strokeColor="#000000"
+        android:strokeWidth="1"/>
+
+    <!-- REAR TYRE -->
+    <path
+        android:pathData="M170,80 A12,12 0 1,1 170,104 A12,12 0 1,1 170,80 Z"
+        android:fillColor="#000000"/>
+    <path
+        android:pathData="M170,87 A5,5 0 1,1 170,97 A5,5 0 1,1 170,87 Z"
+        android:fillColor="#333333"/>
+
+</vector>

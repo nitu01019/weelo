@@ -1,0 +1,170 @@
+<!-- Container Truck - New Detailed Design -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="64dp"
+    android:height="64dp"
+    android:viewportWidth="340"
+    android:viewportHeight="130">
+
+    <!-- BACKGROUND -->
+    <path
+        android:pathData="M0,0 L340,0 L340,130 L0,130 Z"
+        android:fillColor="#ffffff"/>
+
+    <!-- CABIN -->
+    <path
+        android:pathData="M32,92 L32,46 C32,34 44,28 56,28 L96,28 L96,92 Z"
+        android:fillColor="#eef4ff"
+        android:strokeWidth="2"
+        android:strokeColor="#000000"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"/>
+
+    <!-- CABIN WINDOW -->
+    <path
+        android:pathData="M52,40 L78,40 C84,40 86,44 86,50 L86,60 C86,64 82,66 78,66 L58,66 C54,66 52,64 52,60 Z"
+        android:fillColor="#ffffff"
+        android:strokeWidth="2"
+        android:strokeColor="#000000"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"/>
+
+    <!-- SIDE MIRROR -->
+    <path
+        android:pathData="M28,48 L34,48 L34,60 L28,60 Z"
+        android:fillColor="#eef4ff"
+        android:strokeWidth="2"
+        android:strokeColor="#000000"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"/>
+
+    <!-- DOOR HANDLE -->
+    <path
+        android:pathData="M84,66 L92,66 L92,69 L84,69 Z"
+        android:fillColor="#eef4ff"
+        android:strokeWidth="2"
+        android:strokeColor="#000000"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"/>
+
+    <!-- HEADLIGHT (OUTLINE ONLY) -->
+    <path
+        android:pathData="M 32 73 m -5, 0 a 5,5 0 1,0 10,0 a 5,5 0 1,0 -10,0"
+        android:fillColor="#ffffff"
+        android:strokeWidth="2"
+        android:strokeColor="#000000"/>
+
+    <!-- GRILLE -->
+    <path
+        android:pathData="M38,70 L41,70 L41,82 L38,82 Z"
+        android:fillColor="#eef4ff"
+        android:strokeWidth="2"
+        android:strokeColor="#000000"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"/>
+    <path
+        android:pathData="M44,70 L47,70 L47,82 L44,82 Z"
+        android:fillColor="#eef4ff"
+        android:strokeWidth="2"
+        android:strokeColor="#000000"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"/>
+
+    <!-- FRONT TYRE (BLACK) -->
+    <path
+        android:pathData="M 64 80 m -12, 0 a 12,12 0 1,0 24,0 a 12,12 0 1,0 -24,0"
+        android:fillColor="#000000"
+        android:strokeWidth="2"
+        android:strokeColor="#000000"/>
+    <path
+        android:pathData="M 64 87 m -5, 0 a 5,5 0 1,0 10,0 a 5,5 0 1,0 -10,0"
+        android:fillColor="#000000"/>
+
+    <!-- HITCH BAR -->
+    <path
+        android:pathData="M96,88 L110,88 L110,92 L96,92 Z"
+        android:fillColor="#eef4ff"
+        android:strokeWidth="2"
+        android:strokeColor="#000000"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"/>
+
+    <!-- CONTAINER -->
+    <path
+        android:pathData="M112,30 L282,30 L282,92 L112,92 Z"
+        android:fillColor="#eef4ff"
+        android:strokeWidth="2"
+        android:strokeColor="#000000"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"/>
+
+    <!-- CONTAINER PANEL RIBS -->
+    <path
+        android:pathData="M132,34 L134,34 L134,88 L132,88 Z"
+        android:fillColor="#eef4ff"
+        android:strokeWidth="2"
+        android:strokeColor="#000000"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"/>
+    <path
+        android:pathData="M162,34 L164,34 L164,88 L162,88 Z"
+        android:fillColor="#eef4ff"
+        android:strokeWidth="2"
+        android:strokeColor="#000000"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"/>
+    <path
+        android:pathData="M192,34 L194,34 L194,88 L192,88 Z"
+        android:fillColor="#eef4ff"
+        android:strokeWidth="2"
+        android:strokeColor="#000000"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"/>
+    <path
+        android:pathData="M222,34 L224,34 L224,88 L222,88 Z"
+        android:fillColor="#eef4ff"
+        android:strokeWidth="2"
+        android:strokeColor="#000000"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"/>
+
+    <!-- CONTAINER MARKER LIGHTS (OUTLINE ONLY) -->
+    <path
+        android:pathData="M 126 31.5 m -2.5, 0 a 2.5,2.5 0 1,0 5,0 a 2.5,2.5 0 1,0 -5,0"
+        android:fillColor="#ffffff"
+        android:strokeWidth="2"
+        android:strokeColor="#000000"/>
+    <path
+        android:pathData="M 270 31.5 m -2.5, 0 a 2.5,2.5 0 1,0 5,0 a 2.5,2.5 0 1,0 -5,0"
+        android:fillColor="#ffffff"
+        android:strokeWidth="2"
+        android:strokeColor="#000000"/>
+
+    <!-- CONTAINER TYRES (BLACK) -->
+    <path
+        android:pathData="M 150 80 m -12, 0 a 12,12 0 1,0 24,0 a 12,12 0 1,0 -24,0"
+        android:fillColor="#000000"
+        android:strokeWidth="2"
+        android:strokeColor="#000000"/>
+    <path
+        android:pathData="M 150 87 m -5, 0 a 5,5 0 1,0 10,0 a 5,5 0 1,0 -10,0"
+        android:fillColor="#000000"/>
+
+    <path
+        android:pathData="M 225 80 m -12, 0 a 12,12 0 1,0 24,0 a 12,12 0 1,0 -24,0"
+        android:fillColor="#000000"
+        android:strokeWidth="2"
+        android:strokeColor="#000000"/>
+    <path
+        android:pathData="M 225 87 m -5, 0 a 5,5 0 1,0 10,0 a 5,5 0 1,0 -10,0"
+        android:fillColor="#000000"/>
+
+    <path
+        android:pathData="M 255 80 m -12, 0 a 12,12 0 1,0 24,0 a 12,12 0 1,0 -24,0"
+        android:fillColor="#000000"
+        android:strokeWidth="2"
+        android:strokeColor="#000000"/>
+    <path
+        android:pathData="M 255 87 m -5, 0 a 5,5 0 1,0 10,0 a 5,5 0 1,0 -10,0"
+        android:fillColor="#000000"/>
+
+</vector>

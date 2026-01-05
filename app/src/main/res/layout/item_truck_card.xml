@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/truckCardView"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_margin="8dp"
+    app:cardCornerRadius="12dp"
+    app:cardElevation="2dp"
+    android:foreground="?android:attr/selectableItemBackground">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp"
+        android:gravity="center"
+        android:minHeight="140dp">
+
+        <!-- Icon Container -->
+        <androidx.cardview.widget.CardView
+            android:layout_width="72dp"
+            android:layout_height="72dp"
+            app:cardCornerRadius="12dp"
+            app:cardElevation="0dp"
+            app:cardBackgroundColor="@color/background_gray"
+            android:layout_marginBottom="12dp">
+
+            <ImageView
+                android:id="@+id/truckIcon"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:scaleType="centerCrop"
+                android:scaleX="1.15"
+                android:scaleY="1.15"
+                android:src="@drawable/ic_open_main"
+                android:contentDescription="Truck Icon" />
+
+        </androidx.cardview.widget.CardView>
+
+        <!-- Truck Name -->
+        <TextView
+            android:id="@+id/truckName"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Open"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:textColor="@color/text_primary"
+            android:layout_marginBottom="4dp"
+            android:gravity="center" />
+
+        <!-- Capacity -->
+        <TextView
+            android:id="@+id/truckCapacity"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="7.5 - 43 Ton"
+            android:textSize="12sp"
+            android:textColor="@color/text_secondary"
+            android:gravity="center" />
+
+        <!-- Selected Badge -->
+        <TextView
+            android:id="@+id/selectedBadge"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:text="✓"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:textColor="@color/white"
+            android:background="@drawable/selected_badge"
+            android:gravity="center"
+            android:visibility="gone"
+            android:layout_gravity="end|top"
+            android:layout_marginTop="-110dp"
+            android:layout_marginEnd="8dp" />
+
+    </LinearLayout>
+
+</androidx.cardview.widget.CardView>

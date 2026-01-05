@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Button with STRONG BLINK effect on press -->
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    
+    <!-- Pressed/Clicked State - MUCH LIGHTER for dramatic blink effect -->
+    <item android:state_pressed="true">
+        <shape android:shape="rectangle">
+            <solid android:color="#FFEB99" />
+            <corners android:radius="12dp" />
+        </shape>
+    </item>
+    
+    <!-- Focused State -->
+    <item android:state_focused="true">
+        <shape android:shape="rectangle">
+            <solid android:color="#FFEB99" />
+            <corners android:radius="12dp" />
+        </shape>
+    </item>
+    
+    <!-- Normal State - Yellow to Orange gradient -->
+    <item>
+        <shape android:shape="rectangle">
+            <gradient
+                android:angle="90"
+                android:startColor="#FFC107"
+                android:centerColor="#FF9800"
+                android:endColor="#FF6B35"
+                android:type="linear" />
+            <corners android:radius="12dp" />
+        </shape>
+    </item>
+    
+</selector>

@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/subtypeCard"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:clickable="true"
+    android:focusable="true"
+    app:cardCornerRadius="12dp"
+    app:cardElevation="0dp"
+    app:cardBackgroundColor="@android:color/white">
+
+    <!-- RelativeLayout to layer image behind content -->
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="70dp">
+
+        <!-- Background truck image - BEHIND everything, opaque -->
+        <ImageView
+            android:id="@+id/subtypeIcon"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:scaleType="fitCenter"
+            android:alpha="0.7"
+            android:padding="0dp"
+            android:contentDescription="Truck Icon" />
+
+        <!-- Main content wrapper - ON TOP of image -->
+        <LinearLayout
+            android:id="@+id/cardContent"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="vertical"
+            android:gravity="center"
+            android:paddingHorizontal="6dp"
+            android:paddingTop="8dp"
+            android:paddingBottom="8dp"
+            android:background="@drawable/bg_subtype_card_unselected">
+
+            <!-- Truck name - bold text covering full area -->
+            <TextView
+                android:id="@+id/subtypeName"
+                android:text="17 Feet"
+                android:textSize="13sp"
+                android:textStyle="bold"
+                android:textColor="#1A237E"
+                android:gravity="center"
+                android:maxLines="2"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center" />
+
+            <!-- Add/Remove controls (hidden by default, shown after card click) -->
+            <LinearLayout
+                android:id="@+id/quantityControls"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center"
+                android:layout_marginTop="4dp"
+                android:visibility="gone">
+
+            <!-- Minus button -->
+            <TextView
+                android:id="@+id/minusButton"
+                android:layout_width="20dp"
+                android:layout_height="20dp"
+                android:background="@drawable/bg_round_button_blue"
+                android:text="−"
+                android:textSize="11sp"
+                android:textStyle="bold"
+                android:gravity="center"
+                android:textColor="#2196F3"
+                android:clickable="true"
+                android:focusable="true" />
+
+            <!-- Quantity display -->
+            <TextView
+                android:id="@+id/quantityText"
+                android:layout_width="22dp"
+                android:layout_height="wrap_content"
+                android:text="1"
+                android:textSize="12sp"
+                android:textStyle="bold"
+                android:gravity="center"
+                android:textColor="#1A237E" />
+
+            <!-- Plus button -->
+            <TextView
+                android:id="@+id/plusButton"
+                android:layout_width="20dp"
+                android:layout_height="20dp"
+                android:background="@drawable/bg_round_button_blue"
+                android:text="+"
+                android:textSize="11sp"
+                android:textStyle="bold"
+                android:gravity="center"
+                android:textColor="#2196F3"
+                android:clickable="true"
+                android:focusable="true" />
+
+            </LinearLayout>
+
+        </LinearLayout>
+
+    </RelativeLayout>
+
+</androidx.cardview.widget.CardView>

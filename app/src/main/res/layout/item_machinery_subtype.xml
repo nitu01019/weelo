@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/subtypeCard"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    app:cardCornerRadius="8dp"
+    app:cardElevation="1dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:gravity="center"
+        android:paddingHorizontal="6dp"
+        android:paddingTop="12dp"
+        android:paddingBottom="10dp"
+        android:minHeight="90dp">
+
+        <!-- Machinery icon -->
+        <TextView
+            android:text="🚜"
+            android:textSize="28sp"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content" />
+
+        <!-- Machinery name -->
+        <TextView
+            android:id="@+id/subtypeName"
+            android:text="Compact Loader"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:textColor="#1A237E"
+            android:gravity="center"
+            android:maxLines="3"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp" />
+
+        <!-- Add/Remove controls (hidden by default, shown after card click) -->
+        <LinearLayout
+            android:id="@+id/quantityControls"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center"
+            android:layout_marginTop="4dp"
+            android:visibility="gone">
+
+            <!-- Minus button -->
+            <TextView
+                android:id="@+id/minusButton"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:background="@drawable/circular_white_button"
+                android:text="−"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:gravity="center"
+                android:textColor="#000" />
+
+            <!-- Quantity display -->
+            <TextView
+                android:id="@+id/quantityText"
+                android:layout_width="28dp"
+                android:layout_height="wrap_content"
+                android:text="1"
+                android:textSize="14sp"
+                android:textStyle="bold"
+                android:gravity="center"
+                android:layout_marginStart="4dp"
+                android:layout_marginEnd="4dp"
+                android:textColor="#000" />
+
+            <!-- Plus button -->
+            <TextView
+                android:id="@+id/plusButton"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:background="@drawable/circular_white_button"
+                android:text="+"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:gravity="center"
+                android:textColor="#000" />
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+</androidx.cardview.widget.CardView>
