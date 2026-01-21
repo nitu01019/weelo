@@ -161,3 +161,38 @@
 
 # Don't warn about missing classes
 -dontwarn java.lang.invoke.StringConcatFactory
+
+# ============================================================
+# SECURITY RULES - Protect sensitive data
+# ============================================================
+
+# Obfuscate security-related classes
+-keep class com.weelo.logistics.data.remote.TokenManager { *; }
+-keep class com.weelo.logistics.data.remote.AuthInterceptor { *; }
+
+# Remove logging in release builds
+-assumenosideeffects class android.util.Log {
+    public static *** d(...);
+    public static *** v(...);
+    public static *** i(...);
+    public static *** w(...);
+    public static *** e(...);
+}
+
+# Remove Timber logging in release
+-assumenosideeffects class timber.log.Timber {
+    public static *** d(...);
+    public static *** v(...);
+    public static *** i(...);
+    public static *** w(...);
+    public static *** e(...);
+}
+
+# Protect WebView JavaScript interfaces
+-keepclassmembers class * {
+    @android.webkit.JavascriptInterface <methods>;
+}
+
+# Security: Don't keep class names that could reveal app structure
+-repackageclasses 'w'
+-allowaccessmodification

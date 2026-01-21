@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Progress Bar Drawable for Searching Vehicles Dialog
+    Gradient progress from orange to green
+-->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    
+    <!-- Background -->
+    <item android:id="@android:id/background">
+        <shape android:shape="rectangle">
+            <solid android:color="#E0E0E0" />
+            <corners android:radius="4dp" />
+        </shape>
+    </item>
+    
+    <!-- Progress -->
+    <item android:id="@android:id/progress">
+        <clip>
+            <shape android:shape="rectangle">
+                <gradient
+                    android:startColor="#FF9800"
+                    android:centerColor="#FFC107"
+                    android:endColor="#4CAF50"
+                    android:angle="0" />
+                <corners android:radius="4dp" />
+            </shape>
+        </clip>
+    </item>
+    
+</layer-list>

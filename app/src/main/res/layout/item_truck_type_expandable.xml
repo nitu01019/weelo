@@ -1,0 +1,134 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Expandable Truck Type Section (Rapido-Style)
+    =============================================
+    Accordion header with nested RecyclerView for subtypes
+    
+    Structure:
+    - Header: Icon, Name, Selection count, Price, Expand arrow
+    - Body: RecyclerView with subtype cards
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:layout_marginBottom="8dp">
+
+    <!-- Expandable Header -->
+    <com.google.android.material.card.MaterialCardView
+        android:id="@+id/headerCard"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="12dp"
+        app:cardCornerRadius="12dp"
+        app:cardElevation="2dp"
+        app:cardBackgroundColor="#FFFFFF"
+        app:strokeWidth="1dp"
+        app:strokeColor="#E0E0E0"
+        app:rippleColor="#20FFA000">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:padding="14dp"
+            android:gravity="center_vertical">
+
+            <!-- Truck Type Icon -->
+            <ImageView
+                android:id="@+id/truckTypeIcon"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:scaleType="fitCenter"
+                android:src="@drawable/ic_truck_open"
+                android:background="@drawable/bg_icon_circle"
+                android:padding="6dp" />
+
+            <!-- Middle: Name and Selection Info -->
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginStart="12dp"
+                android:layout_marginEnd="8dp"
+                android:orientation="vertical">
+
+                <!-- Truck Type Name -->
+                <TextView
+                    android:id="@+id/truckTypeName"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Open Body Trucks"
+                    android:textSize="16sp"
+                    android:textStyle="bold"
+                    android:textColor="#212121" />
+
+                <!-- Selection Count -->
+                <TextView
+                    android:id="@+id/selectionCount"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="2 selected"
+                    android:textSize="13sp"
+                    android:textColor="#FFA000"
+                    android:layout_marginTop="2dp" />
+
+            </LinearLayout>
+
+            <!-- Total Price for this truck type -->
+            <TextView
+                android:id="@+id/totalPrice"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="₹15,000"
+                android:textSize="14sp"
+                android:textStyle="bold"
+                android:textColor="#388E3C"
+                android:layout_marginEnd="8dp"
+                android:visibility="gone" />
+
+            <!-- Remove Button -->
+            <ImageView
+                android:id="@+id/removeButton"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:src="@drawable/ic_close"
+                android:padding="6dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="Remove truck type"
+                android:visibility="gone" />
+
+            <!-- Expand/Collapse Arrow -->
+            <ImageView
+                android:id="@+id/expandArrow"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:src="@drawable/ic_expand_more"
+                android:rotation="0"
+                android:contentDescription="Expand or collapse" />
+
+        </LinearLayout>
+
+    </com.google.android.material.card.MaterialCardView>
+
+    <!-- Subtypes Container (Expandable) -->
+    <LinearLayout
+        android:id="@+id/subtypesContainer"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:paddingTop="8dp"
+        android:visibility="gone">
+
+        <!-- Nested RecyclerView for Subtypes -->
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/subtypesRecyclerView"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:nestedScrollingEnabled="false"
+            android:overScrollMode="never" />
+
+    </LinearLayout>
+
+</LinearLayout>

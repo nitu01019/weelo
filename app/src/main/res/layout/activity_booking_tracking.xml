@@ -1,0 +1,312 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/background_white">
+
+    <!-- Map Fragment -->
+    <fragment
+        android:id="@+id/mapFragment"
+        android:name="com.google.android.gms.maps.SupportMapFragment"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
+
+    <!-- Back Button -->
+    <androidx.cardview.widget.CardView
+        android:id="@+id/btnBack"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:layout_margin="16dp"
+        app:cardCornerRadius="24dp"
+        app:cardElevation="4dp"
+        app:cardBackgroundColor="@color/white">
+
+        <ImageView
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:layout_gravity="center"
+            android:src="@drawable/ic_arrow_back"
+            android:contentDescription="@string/back"
+            app:tint="@color/text_primary" />
+
+    </androidx.cardview.widget.CardView>
+
+    <!-- Bottom Sheet with Truck Details -->
+    <LinearLayout
+        android:id="@+id/bottomSheet"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:background="@drawable/bottom_sheet_rounded_bg"
+        android:padding="16dp"
+        app:layout_behavior="com.google.android.material.bottomsheet.BottomSheetBehavior"
+        app:behavior_peekHeight="280dp"
+        app:behavior_hideable="false">
+
+        <!-- Drag Handle -->
+        <View
+            android:layout_width="40dp"
+            android:layout_height="4dp"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginBottom="16dp"
+            android:background="@drawable/drag_handle_bg" />
+
+        <!-- Status Header -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginBottom="16dp">
+
+            <com.airbnb.lottie.LottieAnimationView
+                android:id="@+id/lottieStatus"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                app:lottie_rawRes="@raw/truck_animation"
+                app:lottie_autoPlay="true"
+                app:lottie_loop="true" />
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginStart="12dp"
+                android:orientation="vertical">
+
+                <TextView
+                    android:id="@+id/tvTrackingStatus"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="En route to pickup"
+                    android:textColor="@color/text_primary"
+                    android:textSize="18sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/tvEta"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="ETA: 15 mins"
+                    android:textColor="@color/text_secondary"
+                    android:textSize="14sp" />
+
+            </LinearLayout>
+
+            <com.google.android.material.chip.Chip
+                android:id="@+id/chipLive"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="LIVE"
+                android:textColor="@color/white"
+                app:chipBackgroundColor="@color/success_green"
+                app:chipMinHeight="24dp" />
+
+        </LinearLayout>
+
+        <!-- Driver Info Card -->
+        <androidx.cardview.widget.CardView
+            android:id="@+id/cardDriverInfo"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="16dp"
+            app:cardCornerRadius="12dp"
+            app:cardElevation="2dp"
+            app:cardBackgroundColor="@color/gray_light">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:padding="12dp"
+                android:gravity="center_vertical">
+
+                <!-- Driver Avatar -->
+                <ImageView
+                    android:id="@+id/ivDriverAvatar"
+                    android:layout_width="56dp"
+                    android:layout_height="56dp"
+                    android:src="@drawable/ic_person"
+                    android:background="@drawable/bg_circle_light"
+                    android:padding="12dp"
+                    android:contentDescription="Driver photo" />
+
+                <!-- Driver Details -->
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:layout_marginStart="12dp"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:id="@+id/tvDriverName"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Driver Name"
+                        android:textColor="@color/text_primary"
+                        android:textSize="16sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:id="@+id/tvVehicleNumber"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="JK 02 AB 1234"
+                        android:textColor="@color/text_secondary"
+                        android:textSize="14sp" />
+
+                    <TextView
+                        android:id="@+id/tvVehicleType"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Open Truck • 17ft"
+                        android:textColor="@color/text_hint"
+                        android:textSize="12sp" />
+
+                </LinearLayout>
+
+                <!-- Call Button -->
+                <androidx.cardview.widget.CardView
+                    android:id="@+id/btnCallDriver"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    app:cardCornerRadius="24dp"
+                    app:cardElevation="2dp"
+                    app:cardBackgroundColor="@color/success_green">
+
+                    <ImageView
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:layout_gravity="center"
+                        android:src="@drawable/ic_phone"
+                        android:contentDescription="Call driver"
+                        app:tint="@color/white" />
+
+                </androidx.cardview.widget.CardView>
+
+            </LinearLayout>
+
+        </androidx.cardview.widget.CardView>
+
+        <!-- Route Summary -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:background="@drawable/bg_input_field"
+            android:padding="12dp"
+            android:layout_marginBottom="16dp">
+
+            <!-- Pickup -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
+
+                <View
+                    android:layout_width="12dp"
+                    android:layout_height="12dp"
+                    android:background="@drawable/green_dot" />
+
+                <TextView
+                    android:id="@+id/tvPickupAddress"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:layout_marginStart="12dp"
+                    android:text="Pickup location"
+                    android:textColor="@color/text_primary"
+                    android:textSize="14sp"
+                    android:maxLines="1"
+                    android:ellipsize="end" />
+
+            </LinearLayout>
+
+            <!-- Dotted Line -->
+            <View
+                android:layout_width="1dp"
+                android:layout_height="16dp"
+                android:layout_marginStart="5dp"
+                android:background="@color/divider_color" />
+
+            <!-- Drop -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
+
+                <View
+                    android:layout_width="12dp"
+                    android:layout_height="12dp"
+                    android:background="@drawable/bg_red_dot" />
+
+                <TextView
+                    android:id="@+id/tvDropAddress"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:layout_marginStart="12dp"
+                    android:text="Drop location"
+                    android:textColor="@color/text_primary"
+                    android:textSize="14sp"
+                    android:maxLines="1"
+                    android:ellipsize="end" />
+
+            </LinearLayout>
+
+        </LinearLayout>
+
+        <!-- Action Buttons -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <Button
+                android:id="@+id/btnShareTrip"
+                android:layout_width="0dp"
+                android:layout_height="48dp"
+                android:layout_weight="1"
+                android:layout_marginEnd="8dp"
+                android:background="@drawable/button_outlined"
+                android:text="Share Trip"
+                android:textColor="@color/primary_blue"
+                android:textAllCaps="false" />
+
+            <Button
+                android:id="@+id/btnEmergency"
+                android:layout_width="0dp"
+                android:layout_height="48dp"
+                android:layout_weight="1"
+                android:background="@drawable/bg_button_primary"
+                android:text="SOS"
+                android:textColor="@color/white"
+                android:textAllCaps="false" />
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+    <!-- Loading Overlay -->
+    <FrameLayout
+        android:id="@+id/loadingOverlay"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="#80FFFFFF"
+        android:visibility="gone"
+        android:clickable="true"
+        android:focusable="true">
+
+        <ProgressBar
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:layout_gravity="center" />
+
+    </FrameLayout>
+
+</androidx.coordinatorlayout.widget.CoordinatorLayout>

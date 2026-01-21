@@ -1,4 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+    Bottom Sheet for Truck Subtypes Selection
+    ==========================================
+    Simplified: Just truck images + quantity selectors + confirm button
+    Images already have all info on them
+-->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
@@ -6,159 +12,159 @@
     android:orientation="vertical"
     android:background="@drawable/bottom_sheet_rounded_bg">
 
-    <!-- Header with title and close button (Fixed at top) - Like reference -->
-    <LinearLayout
+    <!-- Top bar with drag handle and close button -->
+    <FrameLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:gravity="center_vertical"
-        android:paddingHorizontal="16dp"
-        android:paddingVertical="14dp">
+        android:paddingVertical="8dp">
 
-        <TextView
-            android:id="@+id/bottomSheetTitle"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="Container"
-            android:textSize="18sp"
-            android:textStyle="bold"
-            android:textColor="#000" />
+        <!-- Drag Handle -->
+        <View
+            android:layout_width="40dp"
+            android:layout_height="4dp"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginTop="4dp"
+            android:background="@drawable/drag_handle" />
 
+        <!-- Close Button - top right -->
         <ImageView
             android:id="@+id/closeButton"
-            android:layout_width="28dp"
-            android:layout_height="28dp"
-            android:src="@android:drawable/ic_menu_close_clear_cancel"
-            android:padding="2dp"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:layout_gravity="end|center_vertical"
+            android:layout_marginEnd="12dp"
+            android:src="@drawable/ic_close"
+            android:contentDescription="Close"
+            android:background="?attr/selectableItemBackgroundBorderless"
             android:clickable="true"
-            android:focusable="true" />
-    </LinearLayout>
+            android:focusable="true"
+            android:padding="4dp" />
 
-    <!-- Hidden header truck icon - keeping for code compatibility but hidden -->
+    </FrameLayout>
+
+    <!-- Hidden elements for code compatibility -->
     <ImageView
         android:id="@+id/bottomSheetTruckIcon"
         android:layout_width="0dp"
         android:layout_height="0dp"
-        android:visibility="gone"
-        android:contentDescription="Truck Icon" />
+        android:visibility="gone" />
 
-    <!-- Scrollable Content -->
+    <TextView
+        android:id="@+id/bottomSheetTitle"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:visibility="gone" />
+
+    <TextView
+        android:id="@+id/deselectAllButton"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:visibility="gone" />
+
+    <LinearLayout
+        android:id="@+id/selectionSummary"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:orientation="horizontal"
+        android:visibility="gone">
+
+        <TextView
+            android:id="@+id/selectedCountText"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:visibility="gone" />
+
+        <TextView
+            android:id="@+id/totalPriceText"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:visibility="gone" />
+
+    </LinearLayout>
+
+    <!-- Legacy scroll view - hidden -->
     <androidx.core.widget.NestedScrollView
         android:id="@+id/scrollView"
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_weight="1"
-        android:fillViewport="true">
+        android:visibility="gone">
 
         <LinearLayout
+            android:id="@+id/subtypesContainer"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:paddingHorizontal="12dp"
-            android:paddingBottom="8dp">
-
-            <!-- Grid of truck subtypes -->
-            <LinearLayout
-                android:id="@+id/subtypesContainer"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical" />
-
-            <!-- LCV Open Subtypes Section -->
-            <TextView
-                android:id="@+id/lcvOpenSectionTitle"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="LCV Open - Select Length"
-                android:textSize="14sp"
-                android:textStyle="bold"
-                android:textColor="#1A237E"
-                android:layout_marginTop="12dp"
-                android:layout_marginBottom="8dp"
-                android:visibility="gone" />
+            android:orientation="vertical">
 
             <LinearLayout
-                android:id="@+id/lcvOpenSubtypesContainer"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
+                android:id="@+id/lcvOpenSection"
+                android:layout_width="0dp"
+                android:layout_height="0dp"
                 android:orientation="vertical"
-                android:visibility="gone" />
-
-            <!-- LCV Container Subtypes Section -->
-            <TextView
-                android:id="@+id/lcvContainerSectionTitle"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="LCV Container - Select Length"
-                android:textSize="14sp"
-                android:textStyle="bold"
-                android:textColor="#1A237E"
-                android:layout_marginTop="12dp"
-                android:layout_marginBottom="8dp"
-                android:visibility="gone" />
+                android:visibility="gone">
+                <TextView android:id="@+id/lcvOpenSectionTitle" android:layout_width="0dp" android:layout_height="0dp" android:visibility="gone" />
+                <LinearLayout android:id="@+id/lcvOpenSubtypesContainer" android:layout_width="0dp" android:layout_height="0dp" android:orientation="vertical" android:visibility="gone" />
+            </LinearLayout>
 
             <LinearLayout
-                android:id="@+id/lcvContainerSubtypesContainer"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
+                android:id="@+id/lcvContainerSection"
+                android:layout_width="0dp"
+                android:layout_height="0dp"
                 android:orientation="vertical"
-                android:visibility="gone" />
+                android:visibility="gone">
+                <TextView android:id="@+id/lcvContainerSectionTitle" android:layout_width="0dp" android:layout_height="0dp" android:visibility="gone" />
+                <LinearLayout android:id="@+id/lcvContainerSubtypesContainer" android:layout_width="0dp" android:layout_height="0dp" android:orientation="vertical" android:visibility="gone" />
+            </LinearLayout>
 
-            <!-- Truck Length Section Header (for non-LCV trucks) -->
-            <TextView
-                android:id="@+id/lengthSectionTitle"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Truck Length"
-                android:textSize="14sp"
-                android:textStyle="bold"
-                android:textColor="#000"
-                android:layout_marginTop="12dp"
-                android:layout_marginBottom="8dp"
-                android:visibility="gone" />
-
-            <!-- Grid of truck lengths -->
+            <!-- Hidden container for length subtypes -->
             <LinearLayout
                 android:id="@+id/lengthSubtypesContainer"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
+                android:layout_width="0dp"
+                android:layout_height="0dp"
                 android:orientation="vertical"
                 android:visibility="gone" />
 
         </LinearLayout>
     </androidx.core.widget.NestedScrollView>
 
-    <!-- Action buttons (Fixed at bottom) - Like reference -->
+    <!-- RecyclerView for truck subtypes - MAIN CONTENT -->
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/subtypesRecyclerView"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:clipToPadding="false"
+        android:paddingVertical="8dp"
+        android:overScrollMode="never" />
+
+    <!-- Confirm Button at bottom -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
         android:paddingHorizontal="16dp"
-        android:paddingVertical="12dp"
-        android:background="@android:color/white">
+        android:paddingTop="8dp"
+        android:paddingBottom="16dp"
+        android:gravity="center_vertical">
 
-        <Button
+        <!-- Hidden clear all button for compatibility -->
+        <com.google.android.material.button.MaterialButton
             android:id="@+id/clearAllButton"
+            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
             android:layout_width="0dp"
-            android:layout_height="48dp"
-            android:layout_weight="1"
-            android:text="CLEAR ALL"
-            android:textSize="14sp"
-            android:textColor="#888"
-            android:background="@android:color/transparent"
-            android:layout_marginEnd="8dp" />
+            android:layout_height="0dp"
+            android:visibility="gone" />
 
-        <Button
+        <com.google.android.material.button.MaterialButton
             android:id="@+id/confirmSelectionButton"
-            android:layout_width="0dp"
-            android:layout_height="48dp"
-            android:layout_weight="1"
-            android:text="SHOW LOADS"
-            android:textSize="14sp"
-            android:textColor="#fff"
-            android:backgroundTint="#AAAAAA"
-            android:layout_marginStart="8dp" />
+            android:layout_width="match_parent"
+            android:layout_height="52dp"
+            android:text="CONFIRM"
+            android:textSize="15sp"
+            android:textStyle="bold"
+            android:textColor="#FFFFFF"
+            app:backgroundTint="#FF9800"
+            app:cornerRadius="12dp" />
+
     </LinearLayout>
 
 </LinearLayout>

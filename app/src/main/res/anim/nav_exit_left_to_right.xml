@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Smooth Exit Animation - Screen slides out to RIGHT
+    Used when navigating BACK (current screen exits to the right)
+-->
+<set xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shareInterpolator="false">
+    
+    <!-- Slide to right edge -->
+    <translate
+        android:fromXDelta="0%p"
+        android:toXDelta="100%p"
+        android:duration="300"
+        android:interpolator="@android:interpolator/fast_out_slow_in" />
+    
+    <!-- Fade out -->
+    <alpha
+        android:fromAlpha="1.0"
+        android:toAlpha="0.0"
+        android:duration="150"
+        android:interpolator="@android:interpolator/linear" />
+</set>

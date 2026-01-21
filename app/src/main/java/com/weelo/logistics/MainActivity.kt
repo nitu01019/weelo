@@ -1,8 +1,8 @@
 package com.weelo.logistics
 
-import android.app.Activity
 import android.content.Intent
 import android.os.Bundle
+import android.widget.LinearLayout
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.cardview.widget.CardView
@@ -10,6 +10,9 @@ import com.weelo.logistics.core.util.showToast
 import com.weelo.logistics.core.util.TransitionHelper
 import com.weelo.logistics.presentation.home.HomeNavigationEvent
 import com.weelo.logistics.presentation.home.HomeViewModel
+import com.weelo.logistics.presentation.profile.ProfileActivity
+import com.weelo.logistics.tutorial.OnboardingManager
+import com.weelo.logistics.tutorial.TutorialCoordinator
 import dagger.hilt.android.AndroidEntryPoint
 
 /**
@@ -27,6 +30,9 @@ import dagger.hilt.android.AndroidEntryPoint
  * 1. User sees home screen with search bar
  * 2. User clicks search → navigates to LocationInputActivity
  * 
+ * Features:
+ * - First-time user tutorial showing welcome and how to search
+ * 
  * @see HomeViewModel for business logic
  * @see LocationInputActivity for next screen in flow
  */
@@ -38,6 +44,10 @@ class MainActivity : AppCompatActivity() {
     
     // UI Components
     private lateinit var searchContainer: CardView
+    private var profileButton: LinearLayout? = null
+    
+    // Tutorial
+    private var tutorialCoordinator: TutorialCoordinator? = null
 
     // ========================================
     // Lifecycle Methods
@@ -50,6 +60,37 @@ class MainActivity : AppCompatActivity() {
         initializeViews()
         setupListeners()
         observeViewModel()
+        
+        // Start tutorial for first-time users (after layout settles)
+        window.decorView.post {
+            startTutorialIfNeeded()
+        }
+    }
+    
+    override fun onDestroy() {
+        super.onDestroy()
+        tutorialCoordinator = null
+    }
+    
+    // ========================================
+    // Tutorial
+    // ========================================
+    
+    /**
+     * Start home tutorial for first-time users
+     */
+    private fun startTutorialIfNeeded() {
+        val onboardingManager = OnboardingManager.getInstance(this)
+        
+        tutorialCoordinator = TutorialCoordinator(
+            activity = this,
+            onboardingManager = onboardingManager,
+            onComplete = {
+                tutorialCoordinator = null
+            }
+        )
+        
+        tutorialCoordinator?.startHomeTutorial()
     }
 
     // ========================================
@@ -61,6 +102,8 @@ class MainActivity : AppCompatActivity() {
      */
     private fun initializeViews() {
         searchContainer = findViewById(R.id.searchContainer)
+        // Find profile button in bottom nav (if exists)
+        profileButton = findViewById(R.id.profileNav)
     }
 
     /**
@@ -69,6 +112,11 @@ class MainActivity : AppCompatActivity() {
     private fun setupListeners() {
         searchContainer.setOnClickListener {
             handleSearchClick()
+        }
+        
+        // Profile navigation
+        profileButton?.setOnClickListener {
+            navigateToProfile()
         }
     }
 
@@ -136,6 +184,16 @@ class MainActivity : AppCompatActivity() {
      */
     private fun navigateToLocationInput() {
         val intent = Intent(this, LocationInputActivity::class.java)
+        startActivity(intent)
+        TransitionHelper.applySlideInLeftTransition(this)
+    }
+
+    /**
+     * Navigates to ProfileActivity
+     * User can view and edit their profile
+     */
+    private fun navigateToProfile() {
+        val intent = Intent(this, ProfileActivity::class.java)
         startActivity(intent)
         TransitionHelper.applySlideInLeftTransition(this)
     }

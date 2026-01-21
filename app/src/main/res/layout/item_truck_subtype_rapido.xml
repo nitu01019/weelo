@@ -1,0 +1,149 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Rapido-Style Truck Subtype Card
+    ================================
+    Clean, visible design with:
+    - Icon on left
+    - Title, description, price
+    - Quantity selector on right
+    - Selection highlight with yellow border
+-->
+<com.google.android.material.card.MaterialCardView 
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/subtypeCard"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginHorizontal="12dp"
+    android:layout_marginVertical="6dp"
+    android:clickable="true"
+    android:focusable="true"
+    app:cardCornerRadius="12dp"
+    app:cardElevation="2dp"
+    app:cardBackgroundColor="#FFFFFF"
+    app:strokeWidth="1dp"
+    app:strokeColor="#E0E0E0"
+    app:rippleColor="#20FFA000">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:padding="12dp"
+        android:gravity="center_vertical">
+
+        <!-- Truck Icon -->
+        <ImageView
+            android:id="@+id/subtypeIcon"
+            android:layout_width="56dp"
+            android:layout_height="56dp"
+            android:scaleType="fitCenter"
+            android:src="@drawable/ic_truck_open"
+            android:background="@drawable/bg_icon_circle"
+            android:padding="8dp" />
+
+        <!-- Middle Content: Name, Capacity, Price -->
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginStart="12dp"
+            android:layout_marginEnd="8dp"
+            android:orientation="vertical">
+
+            <!-- Truck Name -->
+            <TextView
+                android:id="@+id/subtypeName"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="17 Feet Open"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:textColor="#212121" />
+
+            <!-- Capacity -->
+            <TextView
+                android:id="@+id/subtypeCapacity"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="7.5 - 10 Ton"
+                android:textSize="13sp"
+                android:textColor="#757575"
+                android:layout_marginTop="2dp" />
+
+            <!-- Price -->
+            <TextView
+                android:id="@+id/subtypePrice"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="₹2,500"
+                android:textSize="15sp"
+                android:textStyle="bold"
+                android:textColor="#388E3C"
+                android:layout_marginTop="4dp" />
+
+        </LinearLayout>
+
+        <!-- Quantity Selector -->
+        <LinearLayout
+            android:id="@+id/quantitySelector"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:background="@drawable/bg_quantity_selector"
+            android:padding="4dp">
+
+            <!-- Minus Button -->
+            <TextView
+                android:id="@+id/minusButton"
+                android:layout_width="36dp"
+                android:layout_height="36dp"
+                android:background="@drawable/bg_circle_button"
+                android:text="−"
+                android:textSize="20sp"
+                android:textStyle="bold"
+                android:gravity="center"
+                android:textColor="#FFA000"
+                android:clickable="true"
+                android:focusable="true" />
+
+            <!-- Quantity Display -->
+            <TextView
+                android:id="@+id/quantityText"
+                android:layout_width="36dp"
+                android:layout_height="wrap_content"
+                android:text="0"
+                android:textSize="18sp"
+                android:textStyle="bold"
+                android:gravity="center"
+                android:textColor="#212121" />
+
+            <!-- Plus Button -->
+            <TextView
+                android:id="@+id/plusButton"
+                android:layout_width="36dp"
+                android:layout_height="36dp"
+                android:background="@drawable/bg_circle_button"
+                android:text="+"
+                android:textSize="20sp"
+                android:textStyle="bold"
+                android:gravity="center"
+                android:textColor="#FFA000"
+                android:clickable="true"
+                android:focusable="true" />
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+    <!-- Selection indicator overlay -->
+    <View
+        android:id="@+id/selectionIndicator"
+        android:layout_width="4dp"
+        android:layout_height="match_parent"
+        android:layout_gravity="start"
+        android:background="#FFA000"
+        android:visibility="gone" />
+
+</com.google.android.material.card.MaterialCardView>

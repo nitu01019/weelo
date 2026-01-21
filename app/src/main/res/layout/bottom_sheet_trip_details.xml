@@ -1,0 +1,404 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Trip Details Bottom Sheet - Rapido Style (Optimized for Scalability)
+    =====================================================================
+    Layout Structure:
+    - Fixed Header (Vehicle info + Progress bars)
+    - Scrollable Content (Locations, Vehicles list, Fare, Payment)
+    - Fixed Footer (Back + Cancel buttons) - ALWAYS visible at bottom
+    
+    Scalability Optimizations:
+    - Efficient view hierarchy with minimal nesting
+    - ScrollView only wraps dynamic content
+    - Fixed max height prevents full-screen takeover
+    - Ready for RecyclerView if vehicle list grows large
+    
+    Author: Weelo Team
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:background="@drawable/bottom_sheet_rounded_bg">
+
+    <!-- ============== FIXED HEADER ============== -->
+    
+    <!-- Drag Handle -->
+    <View
+        android:layout_width="40dp"
+        android:layout_height="4dp"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginTop="12dp"
+        android:background="@drawable/bg_drag_handle" />
+
+    <!-- Header: Vehicle Icon + Title + Progress -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingHorizontal="20dp"
+        android:paddingTop="16dp"
+        android:paddingBottom="12dp">
+
+        <!-- Vehicle Icon -->
+        <ImageView
+            android:id="@+id/vehicleIcon"
+            android:layout_width="50dp"
+            android:layout_height="50dp"
+            android:src="@drawable/ic_open_main"
+            android:scaleType="fitCenter" />
+
+        <!-- Title Section -->
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginStart="12dp"
+            android:orientation="vertical">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Looking for"
+                android:textColor="#666666"
+                android:textSize="13sp" />
+
+            <TextView
+                android:id="@+id/vehicleTypeText"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Open Truck"
+                android:textColor="#1A1A1A"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:maxLines="2"
+                android:ellipsize="end" />
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+    <!-- Progress Steps (4 bars) -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:paddingHorizontal="20dp"
+        android:paddingBottom="12dp"
+        android:gravity="center_vertical">
+
+        <View
+            android:id="@+id/progressBar1"
+            android:layout_width="0dp"
+            android:layout_height="4dp"
+            android:layout_weight="1"
+            android:layout_marginEnd="4dp"
+            android:background="#3366CC" />
+
+        <View
+            android:id="@+id/progressBar2"
+            android:layout_width="0dp"
+            android:layout_height="4dp"
+            android:layout_weight="1"
+            android:layout_marginHorizontal="4dp"
+            android:background="#E0E0E0" />
+
+        <View
+            android:id="@+id/progressBar3"
+            android:layout_width="0dp"
+            android:layout_height="4dp"
+            android:layout_weight="1"
+            android:layout_marginHorizontal="4dp"
+            android:background="#E0E0E0" />
+
+        <View
+            android:id="@+id/progressBar4"
+            android:layout_width="0dp"
+            android:layout_height="4dp"
+            android:layout_weight="1"
+            android:layout_marginStart="4dp"
+            android:background="#E0E0E0" />
+
+    </LinearLayout>
+
+    <!-- Divider -->
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="#EEEEEE" />
+
+    <!-- ============== SCROLLABLE CONTENT ============== -->
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:fillViewport="true"
+        android:maxHeight="350dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <!-- Location Details Section -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="16dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Location Details"
+                    android:textColor="#1A1A1A"
+                    android:textSize="15sp"
+                    android:textStyle="bold" />
+
+                <!-- Pickup Location -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:orientation="horizontal">
+
+                    <View
+                        android:layout_width="10dp"
+                        android:layout_height="10dp"
+                        android:layout_marginTop="4dp"
+                        android:background="@drawable/bg_green_dot" />
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:layout_marginStart="10dp"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:id="@+id/pickupTitle"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Pickup"
+                            android:textColor="#1A1A1A"
+                            android:textSize="14sp"
+                            android:textStyle="bold"
+                            android:maxLines="1"
+                            android:ellipsize="end" />
+
+                        <TextView
+                            android:id="@+id/pickupAddress"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Address"
+                            android:textColor="#666666"
+                            android:textSize="12sp"
+                            android:maxLines="2"
+                            android:ellipsize="end" />
+
+                    </LinearLayout>
+
+                </LinearLayout>
+
+                <!-- Connector Line -->
+                <View
+                    android:layout_width="1dp"
+                    android:layout_height="16dp"
+                    android:layout_marginStart="4dp"
+                    android:background="#DDDDDD" />
+
+                <!-- Drop Location -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal">
+
+                    <View
+                        android:layout_width="10dp"
+                        android:layout_height="10dp"
+                        android:layout_marginTop="4dp"
+                        android:background="@drawable/bg_red_dot" />
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:layout_marginStart="10dp"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:id="@+id/dropTitle"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Drop"
+                            android:textColor="#1A1A1A"
+                            android:textSize="14sp"
+                            android:textStyle="bold"
+                            android:maxLines="1"
+                            android:ellipsize="end" />
+
+                        <TextView
+                            android:id="@+id/dropAddress"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Address"
+                            android:textColor="#666666"
+                            android:textSize="12sp"
+                            android:maxLines="2"
+                            android:ellipsize="end" />
+
+                    </LinearLayout>
+
+                </LinearLayout>
+
+            </LinearLayout>
+
+            <!-- Divider -->
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:background="#EEEEEE" />
+
+            <!-- Vehicle Details Section -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="16dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Vehicle Details"
+                    android:textColor="#1A1A1A"
+                    android:textSize="15sp"
+                    android:textStyle="bold" />
+
+                <!-- Dynamic list of selected trucks (populated programmatically) -->
+                <LinearLayout
+                    android:id="@+id/trucksListContainer"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:orientation="vertical" />
+
+            </LinearLayout>
+
+            <!-- Divider -->
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:background="#EEEEEE" />
+
+            <!-- Total Fare Section -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:paddingHorizontal="16dp"
+                android:paddingVertical="12dp">
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Total Fare"
+                    android:textColor="#1A1A1A"
+                    android:textSize="15sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/totalFareText"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="₹ 1,500"
+                    android:textColor="#1A1A1A"
+                    android:textSize="16sp"
+                    android:textStyle="bold" />
+
+            </LinearLayout>
+
+            <!-- Divider -->
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:background="#EEEEEE" />
+
+            <!-- Payment Method Section -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:paddingHorizontal="16dp"
+                android:paddingVertical="12dp">
+
+                <ImageView
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:src="@drawable/ic_apps"
+                    app:tint="#666666" />
+
+                <TextView
+                    android:id="@+id/paymentMethodText"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="10dp"
+                    android:text="Paying via cash"
+                    android:textColor="#666666"
+                    android:textSize="13sp" />
+
+            </LinearLayout>
+
+        </LinearLayout>
+
+    </ScrollView>
+
+    <!-- ============== FIXED FOOTER (Always visible) ============== -->
+    
+    <!-- Divider above buttons -->
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="#EEEEEE" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp"
+        android:background="#FFFFFF">
+
+        <!-- Back Button (Yellow) -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/backButton"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:text="Back"
+            android:textColor="#1A1A1A"
+            android:textSize="15sp"
+            android:textStyle="bold"
+            app:backgroundTint="#FFCA28"
+            app:cornerRadius="24dp"
+            app:elevation="0dp" />
+
+        <!-- Cancel Ride Button (Outlined Red) -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/cancelRideButton"
+            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:layout_marginTop="10dp"
+            android:text="Cancel Ride"
+            android:textColor="#E53935"
+            android:textSize="15sp"
+            app:strokeColor="#E53935"
+            app:strokeWidth="1dp"
+            app:cornerRadius="24dp" />
+
+    </LinearLayout>
+
+</LinearLayout>

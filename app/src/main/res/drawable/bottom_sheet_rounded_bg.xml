@@ -1,8 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+    Production-style Bottom Sheet Background
+    =========================================
+    Large rounded corners at top (24dp) for modern app look
+    Clean white background with subtle shadow effect
+-->
 <shape xmlns:android="http://schemas.android.com/apk/res/android"
     android:shape="rectangle">
-    <solid android:color="@android:color/white" />
+    <solid android:color="#FFFFFF" />
     <corners
         android:topLeftRadius="24dp"
-        android:topRightRadius="24dp" />
+        android:topRightRadius="24dp"
+        android:bottomLeftRadius="0dp"
+        android:bottomRightRadius="0dp" />
 </shape>

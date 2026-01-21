@@ -5,6 +5,8 @@ plugins {
     id 'kotlin-parcelize'
     id 'kotlin-kapt'
     id 'dagger.hilt.android.plugin'
+    // Firebase - FCM for Push Notifications
+    id 'com.google.gms.google-services'
 }
 
 android {
@@ -25,6 +27,20 @@ android {
         
         // Vector drawable support for older devices
         vectorDrawables.useSupportLibrary = true
+        
+        // Load API keys from local.properties (not in version control)
+        def localProperties = new Properties()
+        def localPropertiesFile = rootProject.file('local.properties')
+        if (localPropertiesFile.exists()) {
+            localProperties.load(new FileInputStream(localPropertiesFile))
+        }
+        
+        // Inject Maps API key into manifest and BuildConfig
+        def mapsApiKey = localProperties.getProperty('MAPS_API_KEY', '')
+        manifestPlaceholders = [
+            MAPS_API_KEY: mapsApiKey
+        ]
+        buildConfigField "String", "MAPS_API_KEY", "\"${mapsApiKey}\""
     }
 
     // Signing configuration for release builds
@@ -140,14 +156,25 @@ dependencies {
     // Gson for JSON serialization
     implementation 'com.google.code.gson:gson:2.10.1'
     
-    // Material Icons Extended for vehicle icons
-    implementation 'androidx.compose.material:material-icons-extended:1.5.4'
+    // Material Icons Extended - REMOVED (not using Compose, using PNG icons instead)
     
     // Retrofit for Network calls
     implementation 'com.squareup.retrofit2:retrofit:2.9.0'
     implementation 'com.squareup.retrofit2:converter-gson:2.9.0'
     implementation 'com.squareup.okhttp3:okhttp:4.12.0'
     implementation 'com.squareup.okhttp3:logging-interceptor:4.12.0'
+    
+    // Socket.IO for real-time updates
+    implementation 'io.socket:socket.io-client:2.1.0'
+    
+    // Security - Encrypted SharedPreferences for token storage
+    implementation 'androidx.security:security-crypto:1.1.0-alpha06'
+    
+    // Lottie for animations
+    implementation 'com.airbnb.android:lottie:6.3.0'
+    
+    // SwipeRefreshLayout
+    implementation 'androidx.swiperefreshlayout:swiperefreshlayout:1.1.0'
     
     // Timber for Logging
     implementation 'com.jakewharton.timber:timber:5.0.1'
@@ -159,6 +186,15 @@ dependencies {
     
     // DataStore (modern SharedPreferences)
     implementation "androidx.datastore:datastore-preferences:1.0.0"
+    
+    // ============================================================
+    // FIREBASE - FCM ONLY (For Push Notifications)
+    // ============================================================
+    implementation platform('com.google.firebase:firebase-bom:32.7.0')
+    implementation 'com.google.firebase:firebase-messaging-ktx'
+    // ============================================================
+    // END FIREBASE
+    // ============================================================
     
     // Testing
     testImplementation 'junit:junit:4.13.2'

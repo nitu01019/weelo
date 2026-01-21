@@ -104,3 +104,33 @@ inline fun <reified T : Parcelable> Intent.getParcelableExtraCompat(key: String)
         getParcelableExtra(key) as? T
     }
 }
+
+// Intent ArrayList Parcelable extension for API compatibility
+inline fun <reified T : Parcelable> Intent.getParcelableArrayListExtraCompat(key: String): ArrayList<T>? {
+    return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+        getParcelableArrayListExtra(key, T::class.java)
+    } else {
+        @Suppress("DEPRECATION")
+        getParcelableArrayListExtra(key)
+    }
+}
+
+// Bundle Parcelable extension for API compatibility
+inline fun <reified T : Parcelable> android.os.Bundle.getParcelableCompat(key: String): T? {
+    return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+        getParcelable(key, T::class.java)
+    } else {
+        @Suppress("DEPRECATION")
+        getParcelable(key) as? T
+    }
+}
+
+// Bundle ArrayList Parcelable extension for API compatibility
+inline fun <reified T : Parcelable> android.os.Bundle.getParcelableArrayListCompat(key: String): ArrayList<T>? {
+    return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+        getParcelableArrayList(key, T::class.java)
+    } else {
+        @Suppress("DEPRECATION")
+        getParcelableArrayList(key)
+    }
+}

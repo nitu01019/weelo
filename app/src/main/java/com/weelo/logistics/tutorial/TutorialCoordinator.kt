@@ -1,21 +1,30 @@
 package com.weelo.logistics.tutorial
 
 import android.app.Activity
+import android.graphics.Color
+import android.graphics.Typeface
 import android.os.Handler
 import android.os.Looper
+import android.view.Gravity
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
 import android.widget.FrameLayout
+import android.widget.LinearLayout
+import android.widget.TextView
 import androidx.cardview.widget.CardView
 import com.weelo.logistics.R
 
 /**
  * TutorialCoordinator - Orchestrates the entire tutorial flow
  * 
- * Manages the sequence of tutorial steps
- * Coordinates overlay, TTS, and animations
- * Handles scanning effect across truck buttons
+ * Manages the sequence of tutorial steps for different screens:
+ * - Home screen tutorial (welcome, search bar, vehicle types)
+ * - Location input tutorial (from/to fields, add stops, continue)
+ * - Truck selection tutorial (truck types scanning)
+ * 
+ * Coordinates overlay, text hints, and animations
+ * Handles scanning effect across buttons
  * 
  * Modular and self-contained - can be removed easily
  */
@@ -28,9 +37,221 @@ class TutorialCoordinator(
     private var overlayView: TutorialOverlayView? = null
     private var ttsManager: TextToSpeechManager? = null
     private var skipButton: Button? = null
+    private var hintTextView: TextView? = null
+    private var titleTextView: TextView? = null
+    private var hintContainer: LinearLayout? = null
     private val handler = Handler(Looper.getMainLooper())
     private var currentStepIndex = 0
     private val steps = mutableListOf<TutorialStep>()
+    private var currentTutorialType: TutorialType = TutorialType.TRUCK_SELECTION
+    
+    /**
+     * Tutorial types for different screens
+     */
+    enum class TutorialType {
+        HOME,
+        LOCATION_INPUT,
+        MAP_BOOKING,
+        TRUCK_SELECTION
+    }
+    
+    // ========================================
+    // Home Screen Tutorial
+    // ========================================
+    
+    /**
+     * Start the home screen tutorial
+     * Shows welcome message and guides through search
+     */
+    fun startHomeTutorial() {
+        if (onboardingManager.isHomeTutorialCompleted()) {
+            onComplete()
+            return
+        }
+        
+        currentTutorialType = TutorialType.HOME
+        setupOverlay()
+        setupSkipButton()
+        setupHintViews()
+        setupHomeTutorialSteps()
+        
+        handler.postDelayed({
+            executeStep(0)
+        }, 300)
+    }
+    
+    private fun setupHomeTutorialSteps() {
+        steps.clear()
+        
+        // Step 1: Welcome message (no highlight)
+        steps.add(TutorialStep(
+            stepId = "welcome",
+            targetView = null,
+            spokenText = "Welcome to Weelo! Your trusted logistics partner for all transportation needs.",
+            durationMs = 2500,
+            highlightType = HighlightType.NONE
+        ))
+        
+        // Step 2: Highlight search bar
+        val searchContainer = activity.findViewById<View>(R.id.searchContainer)
+        steps.add(TutorialStep(
+            stepId = "search_bar",
+            targetView = searchContainer,
+            spokenText = "Tap here to enter pickup and drop locations to book a vehicle",
+            durationMs = 2500,
+            highlightType = HighlightType.RECTANGLE
+        ))
+        
+        // Step 3: Show vehicle types (if visible)
+        steps.add(TutorialStep(
+            stepId = "vehicle_types",
+            targetView = null,
+            spokenText = "Choose from Trucks, Tractors, Tempos and more for your logistics needs",
+            durationMs = 2000,
+            highlightType = HighlightType.NONE
+        ))
+    }
+    
+    // ========================================
+    // Location Input Tutorial
+    // ========================================
+    
+    /**
+     * Start the location input tutorial
+     * Guides through entering pickup and drop locations
+     */
+    fun startLocationInputTutorial() {
+        if (onboardingManager.isLocationInputTutorialCompleted()) {
+            onComplete()
+            return
+        }
+        
+        currentTutorialType = TutorialType.LOCATION_INPUT
+        setupOverlay()
+        setupSkipButton()
+        setupHintViews()
+        setupLocationInputSteps()
+        
+        handler.postDelayed({
+            executeStep(0)
+        }, 300)
+    }
+    
+    private fun setupLocationInputSteps() {
+        steps.clear()
+        
+        // Step 1: From location field
+        val fromContainer = activity.findViewById<View>(R.id.fromLocationContainer)
+        steps.add(TutorialStep(
+            stepId = "from_location",
+            targetView = fromContainer,
+            spokenText = "Enter your pickup location here. Start typing for suggestions.",
+            durationMs = 2500,
+            highlightType = HighlightType.RECTANGLE
+        ))
+        
+        // Step 2: To location field
+        val toContainer = activity.findViewById<View>(R.id.toLocationContainer)
+        steps.add(TutorialStep(
+            stepId = "to_location",
+            targetView = toContainer,
+            spokenText = "Enter your drop-off destination here",
+            durationMs = 2000,
+            highlightType = HighlightType.RECTANGLE
+        ))
+        
+        // Step 3: Add stops button
+        val addStopsButton = activity.findViewById<View>(R.id.addStopsButton)
+        steps.add(TutorialStep(
+            stepId = "add_stops",
+            targetView = addStopsButton,
+            spokenText = "Need multiple stops? Tap here to add intermediate locations",
+            durationMs = 2000,
+            highlightType = HighlightType.SPOTLIGHT
+        ))
+        
+        // Step 4: Select on map button
+        val selectOnMapButton = activity.findViewById<View>(R.id.selectOnMapButton)
+        steps.add(TutorialStep(
+            stepId = "select_on_map",
+            targetView = selectOnMapButton,
+            spokenText = "Or select locations directly on the map",
+            durationMs = 2000,
+            highlightType = HighlightType.SPOTLIGHT
+        ))
+        
+        // Step 5: Continue button
+        val continueButton = activity.findViewById<View>(R.id.continueButton)
+        steps.add(TutorialStep(
+            stepId = "continue_button",
+            targetView = continueButton,
+            spokenText = "Once locations are entered, tap Continue to proceed",
+            durationMs = 2000,
+            highlightType = HighlightType.RECTANGLE
+        ))
+    }
+    
+    // ========================================
+    // Map Booking Tutorial
+    // ========================================
+    
+    /**
+     * Start the map booking tutorial
+     * Guides through route confirmation
+     */
+    fun startMapBookingTutorial() {
+        if (onboardingManager.isMapBookingTutorialCompleted()) {
+            onComplete()
+            return
+        }
+        
+        currentTutorialType = TutorialType.MAP_BOOKING
+        setupOverlay()
+        setupSkipButton()
+        setupHintViews()
+        setupMapBookingSteps()
+        
+        handler.postDelayed({
+            executeStep(0)
+        }, 500)
+    }
+    
+    private fun setupMapBookingSteps() {
+        steps.clear()
+        
+        // Step 1: Map overview
+        steps.add(TutorialStep(
+            stepId = "map_overview",
+            targetView = null,
+            spokenText = "Your route is shown on the map. Review the pickup and drop points.",
+            durationMs = 2500,
+            highlightType = HighlightType.NONE
+        ))
+        
+        // Step 2: Proceed to truck selection - try to find proceed/continue button
+        // Try different possible button IDs
+        var proceedButton: View? = null
+        try {
+            proceedButton = activity.findViewById<View>(R.id.continueButton)
+                ?: activity.findViewById<View>(R.id.confirmButton)
+        } catch (e: Exception) {
+            // Button not found, skip this step
+        }
+        
+        if (proceedButton != null) {
+            steps.add(TutorialStep(
+                stepId = "proceed_button",
+                targetView = proceedButton,
+                spokenText = "Tap here to select your vehicle type",
+                durationMs = 2000,
+                highlightType = HighlightType.RECTANGLE
+            ))
+        }
+    }
+    
+    // ========================================
+    // Truck Selection Tutorial
+    // ========================================
     
     /**
      * Start the truck selection tutorial
@@ -43,23 +264,56 @@ class TutorialCoordinator(
             return
         }
         
-        // NO TTS - animation only
-        // ttsManager = TextToSpeechManager(activity)
-        
-        // Create and add overlay
+        currentTutorialType = TutorialType.TRUCK_SELECTION
         setupOverlay()
-        
-        // Create skip button
         setupSkipButton()
-        
-        // Define tutorial steps
-        setupTutorialSteps()
+        setupHintViews()
+        setupTruckSelectionSteps()
         
         // Start animation quickly
         handler.postDelayed({
             executeStep(0)
         }, 500)
     }
+    
+    /**
+     * Define truck selection tutorial steps
+     */
+    private fun setupTruckSelectionSteps() {
+        steps.clear()
+        
+        // Step 1: Introduction
+        steps.add(TutorialStep(
+            stepId = "truck_intro",
+            targetView = null,
+            spokenText = "Choose the right vehicle for your cargo",
+            durationMs = 1500,
+            highlightType = HighlightType.NONE
+        ))
+        
+        // Step 2: Highlight truck section
+        val trucksContainer = activity.findViewById<View>(R.id.trucksContainer)
+        steps.add(TutorialStep(
+            stepId = "truck_section",
+            targetView = trucksContainer,
+            spokenText = "Browse through different truck types available",
+            durationMs = 1500,
+            highlightType = HighlightType.RECTANGLE
+        ))
+        
+        // Step 3: Fast scan through truck buttons
+        steps.add(TutorialStep(
+            stepId = "scan_trucks",
+            targetView = null,
+            spokenText = "Tap any truck to see sizes and prices",
+            durationMs = 2500,
+            shouldScan = true
+        ))
+    }
+    
+    // ========================================
+    // Common Setup Methods
+    // ========================================
     
     /**
      * Setup the overlay view
@@ -76,6 +330,48 @@ class TutorialCoordinator(
     }
     
     /**
+     * Setup hint text views for displaying tutorial messages
+     */
+    private fun setupHintViews() {
+        val rootView = activity.findViewById<ViewGroup>(android.R.id.content)
+        
+        // Create container for hint text
+        hintContainer = LinearLayout(activity).apply {
+            orientation = LinearLayout.VERTICAL
+            gravity = Gravity.CENTER
+            setPadding(48, 32, 48, 32)
+            layoutParams = FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT,
+                FrameLayout.LayoutParams.WRAP_CONTENT
+            ).apply {
+                gravity = Gravity.BOTTOM
+                setMargins(0, 0, 0, 200)
+            }
+        }
+        
+        // Title text (step indicator)
+        titleTextView = TextView(activity).apply {
+            textSize = 14f
+            setTextColor(Color.parseColor("#BBBBBB"))
+            gravity = Gravity.CENTER
+            setPadding(0, 0, 0, 8)
+        }
+        hintContainer?.addView(titleTextView)
+        
+        // Main hint text
+        hintTextView = TextView(activity).apply {
+            textSize = 18f
+            setTextColor(Color.WHITE)
+            setTypeface(null, Typeface.BOLD)
+            gravity = Gravity.CENTER
+            setShadowLayer(4f, 0f, 2f, Color.BLACK)
+        }
+        hintContainer?.addView(hintTextView)
+        
+        rootView.addView(hintContainer)
+    }
+    
+    /**
      * Setup skip button
      */
     private fun setupSkipButton() {
@@ -89,7 +385,7 @@ class TutorialCoordinator(
                 FrameLayout.LayoutParams.WRAP_CONTENT
             ).apply {
                 setMargins(32, 32, 32, 32)
-                gravity = android.view.Gravity.TOP or android.view.Gravity.END
+                gravity = Gravity.TOP or Gravity.END
             }
             setOnClickListener {
                 skipTutorial()
@@ -100,31 +396,9 @@ class TutorialCoordinator(
         rootView.addView(skipButton)
     }
     
-    /**
-     * Define tutorial steps - ANIMATION ONLY (NO VOICE)
-     */
-    private fun setupTutorialSteps() {
-        steps.clear()
-        
-        // Step 1: Highlight truck section
-        val trucksContainer = activity.findViewById<View>(R.id.trucksContainer)
-        steps.add(TutorialStep(
-            stepId = "truck_section",
-            targetView = trucksContainer,
-            spokenText = "",  // NO VOICE
-            durationMs = 1500,
-            highlightType = HighlightType.RECTANGLE
-        ))
-        
-        // Step 2: Fast scan through truck buttons
-        steps.add(TutorialStep(
-            stepId = "scan_trucks",
-            targetView = null,
-            spokenText = "",  // NO VOICE
-            durationMs = 2500,
-            shouldScan = true
-        ))
-    }
+    // ========================================
+    // Step Execution
+    // ========================================
     
     /**
      * Execute a tutorial step
@@ -138,6 +412,9 @@ class TutorialCoordinator(
         currentStepIndex = index
         val step = steps[index]
         
+        // Update hint text
+        updateHintText(step.spokenText, index + 1, steps.size)
+        
         if (step.shouldScan) {
             // Perform scanning animation
             performScanAnimation()
@@ -149,11 +426,26 @@ class TutorialCoordinator(
                 overlayView?.setTarget(null, step.highlightType)
             }
             
-            // NO SPEECH - just animation
+            // Move to next step after duration
             handler.postDelayed({
                 executeStep(index + 1)
             }, step.durationMs)
         }
+    }
+    
+    /**
+     * Update the hint text displayed on screen
+     */
+    private fun updateHintText(text: String, currentStep: Int, totalSteps: Int) {
+        titleTextView?.text = "Step $currentStep of $totalSteps"
+        hintTextView?.text = text
+        
+        // Animate hint text
+        hintContainer?.alpha = 0f
+        hintContainer?.animate()
+            ?.alpha(1f)
+            ?.setDuration(300)
+            ?.start()
     }
     
     /**
@@ -198,6 +490,10 @@ class TutorialCoordinator(
         highlightNextTruck()
     }
     
+    // ========================================
+    // Tutorial Completion
+    // ========================================
+    
     /**
      * Skip tutorial
      */
@@ -209,8 +505,13 @@ class TutorialCoordinator(
      * Complete tutorial and clean up
      */
     private fun completeTutorial() {
-        // Mark as completed
-        onboardingManager.markTruckSelectionTutorialCompleted()
+        // Mark as completed based on tutorial type
+        when (currentTutorialType) {
+            TutorialType.HOME -> onboardingManager.markHomeTutorialCompleted()
+            TutorialType.LOCATION_INPUT -> onboardingManager.markLocationInputTutorialCompleted()
+            TutorialType.MAP_BOOKING -> onboardingManager.markMapBookingTutorialCompleted()
+            TutorialType.TRUCK_SELECTION -> onboardingManager.markTruckSelectionTutorialCompleted()
+        }
         
         // Clean up
         cleanup()
@@ -229,11 +530,15 @@ class TutorialCoordinator(
         val rootView = activity.findViewById<ViewGroup>(android.R.id.content)
         rootView.removeView(overlayView)
         rootView.removeView(skipButton)
+        rootView.removeView(hintContainer)
         
         ttsManager?.release()
         
         overlayView = null
         skipButton = null
+        hintContainer = null
+        hintTextView = null
+        titleTextView = null
         ttsManager = null
     }
 }

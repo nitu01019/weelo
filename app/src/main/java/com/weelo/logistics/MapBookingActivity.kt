@@ -251,12 +251,66 @@ class MapBookingActivity : AppCompatActivity(), OnMapReadyCallback {
     /**
      * Fetch route from Google Directions API and draw on map
      * This will show proper curved roads instead of straight lines
-     * NOTE: Currently disabled until Google Directions API billing is enabled
+     * 
+     * ENABLED: Route drawing is now active
+     * Falls back to straight line if API fails
      */
     private fun fetchAndDrawRoute() {
-        // Silently skip route fetching - will be enabled when API is ready
-        // No errors, no crashes, just shows markers
-        // TODO: Enable this when Google Directions API billing is set up
+        // Check network first
+        if (!NetworkUtils.isNetworkAvailable(this)) {
+            drawStraightLineRoute()
+            return
+        }
+
+        val apiKey = BuildConfig.MAPS_API_KEY
+        val origin = "${userLatLng.latitude},${userLatLng.longitude}"
+        val destination = "${destinationLatLng.latitude},${destinationLatLng.longitude}"
+        
+        // Build waypoints string for intermediate stops
+        val waypoints = if (intermediateStopsLatLng.isNotEmpty()) {
+            intermediateStopsLatLng.joinToString("|") { "${it.latitude},${it.longitude}" }
+        } else null
+
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                val response = if (waypoints != null) {
+                    mapsService.getDirectionsWithWaypoints(
+                        origin = origin,
+                        destination = destination,
+                        waypoints = waypoints,
+                        apiKey = apiKey
+                    )
+                } else {
+                    mapsService.getDirections(
+                        origin = origin,
+                        destination = destination,
+                        apiKey = apiKey
+                    )
+                }
+                
+                withContext(Dispatchers.Main) {
+                    if (response.isSuccessful && response.body() != null) {
+                        val directions = response.body()!!
+                        if (directions.routes.isNotEmpty()) {
+                            val encodedPolyline = directions.routes[0].overviewPolyline.points
+                            val routePoints = PolylineDecoder.decode(encodedPolyline)
+                            drawRoutePolyline(routePoints)
+                        } else {
+                            // No routes found, draw straight line
+                            drawStraightLineRoute()
+                        }
+                    } else {
+                        // API error, fall back to straight line
+                        drawStraightLineRoute()
+                    }
+                }
+            } catch (e: Exception) {
+                timber.log.Timber.e(e, "Error fetching directions")
+                withContext(Dispatchers.Main) {
+                    drawStraightLineRoute()
+                }
+            }
+        }
     }
     
     /**
@@ -376,10 +430,8 @@ class MapBookingActivity : AppCompatActivity(), OnMapReadyCallback {
                     .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED))
             )
 
-            // Route rendering will be enabled when Google Directions API is set up
-            // For now, just show markers without route lines
-            // Uncomment below when API billing is enabled:
-            // fetchAndDrawRoute()
+            // Draw route between markers
+            fetchAndDrawRoute()
 
             // Move camera to show all markers
             val allPoints = mutableListOf(userLatLng)
@@ -404,8 +456,8 @@ class MapBookingActivity : AppCompatActivity(), OnMapReadyCallback {
             googleMap.uiSettings.isCompassEnabled = true
             
         } catch (e: Exception) {
-            Toast.makeText(this, "Error loading map. Please try again.", Toast.LENGTH_SHORT).show()
-            e.printStackTrace()
+            timber.log.Timber.e(e, "Error loading map")
+            Toast.makeText(this, "Error loading map. Please check your internet connection.", Toast.LENGTH_SHORT).show()
         }
     }
 

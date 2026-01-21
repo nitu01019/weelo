@@ -1,0 +1,358 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Searching Vehicles Bottom Sheet Dialog - Rapido Style
+    =====================================================
+    Clean, compact design with:
+    - Title + Trip Details button
+    - Progress steps (4 dots)
+    - Animated search icon
+    - Skip the wait feature (shows after 15 seconds)
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:background="@drawable/bottom_sheet_rounded_bg">
+
+    <!-- Drag Handle -->
+    <View
+        android:layout_width="40dp"
+        android:layout_height="4dp"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginTop="12dp"
+        android:background="@drawable/bg_drag_handle" />
+
+    <!-- Header Row: Title + Trip Details Button -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingHorizontal="20dp"
+        android:paddingTop="20dp"
+        android:paddingBottom="12dp">
+
+        <!-- Title Section -->
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/statusSubtitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Looking for your"
+                android:textColor="#666666"
+                android:textSize="16sp" />
+
+            <TextView
+                android:id="@+id/statusTitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Open Truck"
+                android:textColor="#1A1A1A"
+                android:textSize="20sp"
+                android:textStyle="bold" />
+
+        </LinearLayout>
+
+        <!-- Trip Details Button -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/tripDetailsButton"
+            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+            android:layout_width="wrap_content"
+            android:layout_height="40dp"
+            android:text="Trip Details"
+            android:textColor="#333333"
+            android:textSize="12sp"
+            app:strokeColor="#CCCCCC"
+            app:strokeWidth="1dp"
+            app:cornerRadius="20dp"
+            android:paddingHorizontal="16dp" />
+
+    </LinearLayout>
+
+    <!-- Progress Steps (4 dots with lines) -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:paddingHorizontal="20dp"
+        android:paddingBottom="12dp"
+        android:gravity="center_vertical">
+
+        <!-- Step 1 - Active -->
+        <View
+            android:id="@+id/progressDot1"
+            android:layout_width="12dp"
+            android:layout_height="12dp"
+            android:background="@drawable/bg_green_dot" />
+
+        <View
+            android:id="@+id/progressLine1"
+            android:layout_width="0dp"
+            android:layout_height="4dp"
+            android:layout_weight="1"
+            android:layout_marginHorizontal="4dp"
+            android:background="#3366CC" />
+
+        <!-- Step 2 -->
+        <View
+            android:id="@+id/progressDot2"
+            android:layout_width="12dp"
+            android:layout_height="12dp"
+            android:background="#E0E0E0" />
+
+        <View
+            android:id="@+id/progressLine2"
+            android:layout_width="0dp"
+            android:layout_height="4dp"
+            android:layout_weight="1"
+            android:layout_marginHorizontal="4dp"
+            android:background="#E0E0E0" />
+
+        <!-- Step 3 -->
+        <View
+            android:id="@+id/progressDot3"
+            android:layout_width="12dp"
+            android:layout_height="12dp"
+            android:background="#E0E0E0" />
+
+        <View
+            android:id="@+id/progressLine3"
+            android:layout_width="0dp"
+            android:layout_height="4dp"
+            android:layout_weight="1"
+            android:layout_marginHorizontal="4dp"
+            android:background="#E0E0E0" />
+
+        <!-- Step 4 -->
+        <View
+            android:id="@+id/progressDot4"
+            android:layout_width="12dp"
+            android:layout_height="12dp"
+            android:background="#E0E0E0" />
+
+    </LinearLayout>
+
+    <!-- Divider -->
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="6dp"
+        android:background="#F5F5F5" />
+
+    <!-- Animation Container -->
+    <FrameLayout
+        android:id="@+id/animationContainer"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingVertical="32dp">
+
+        <com.airbnb.lottie.LottieAnimationView
+            android:id="@+id/searchingAnimation"
+            android:layout_width="160dp"
+            android:layout_height="160dp"
+            android:layout_gravity="center"
+            app:lottie_rawRes="@raw/search_lens_animation"
+            app:lottie_loop="true"
+            app:lottie_autoPlay="true" />
+
+    </FrameLayout>
+
+    <!-- Skip Wait Card (Initially Hidden - Shows after 15 seconds) -->
+    <androidx.cardview.widget.CardView
+        android:id="@+id/skipWaitCard"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="16dp"
+        android:layout_marginBottom="16dp"
+        android:visibility="gone"
+        app:cardCornerRadius="16dp"
+        app:cardElevation="2dp"
+        app:cardBackgroundColor="#F8F8F8">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="16dp">
+
+            <!-- Skip Wait Header -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
+
+                <!-- Boost Icon -->
+                <ImageView
+                    android:id="@+id/boostIcon"
+                    android:layout_width="36dp"
+                    android:layout_height="36dp"
+                    android:src="@drawable/ic_truck"
+                    app:tint="#FFA000" />
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:layout_marginStart="12dp"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Skip the wait!"
+                        android:textColor="#1A1A1A"
+                        android:textSize="15sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:id="@+id/skipWaitSubtitle"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Get a vehicle faster by adding extra"
+                        android:textColor="#666666"
+                        android:textSize="12sp" />
+
+                </LinearLayout>
+
+            </LinearLayout>
+
+            <!-- Price Boost Options -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:orientation="horizontal"
+                android:gravity="center">
+
+                <!-- +₹50 -->
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/boost50Button"
+                    style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                    android:layout_width="0dp"
+                    android:layout_height="40dp"
+                    android:layout_weight="1"
+                    android:layout_marginEnd="6dp"
+                    android:text="+ ₹50"
+                    android:textColor="#333333"
+                    android:textSize="12sp"
+                    app:strokeColor="#DDDDDD"
+                    app:strokeWidth="1dp"
+                    app:cornerRadius="20dp"
+                    android:insetTop="0dp"
+                    android:insetBottom="0dp" />
+
+                <!-- +₹100 -->
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/boost100Button"
+                    style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                    android:layout_width="0dp"
+                    android:layout_height="40dp"
+                    android:layout_weight="1"
+                    android:layout_marginEnd="6dp"
+                    android:text="+ ₹100"
+                    android:textColor="#333333"
+                    android:textSize="12sp"
+                    app:strokeColor="#DDDDDD"
+                    app:strokeWidth="1dp"
+                    app:cornerRadius="20dp"
+                    android:insetTop="0dp"
+                    android:insetBottom="0dp" />
+
+                <!-- +₹150 -->
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/boost150Button"
+                    style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                    android:layout_width="0dp"
+                    android:layout_height="40dp"
+                    android:layout_weight="1"
+                    android:layout_marginEnd="6dp"
+                    android:text="+ ₹150"
+                    android:textColor="#333333"
+                    android:textSize="12sp"
+                    app:strokeColor="#DDDDDD"
+                    app:strokeWidth="1dp"
+                    app:cornerRadius="20dp"
+                    android:insetTop="0dp"
+                    android:insetBottom="0dp" />
+
+                <!-- +₹200 -->
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/boost200Button"
+                    style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                    android:layout_width="0dp"
+                    android:layout_height="40dp"
+                    android:layout_weight="1"
+                    android:text="+ ₹200"
+                    android:textColor="#333333"
+                    android:textSize="12sp"
+                    app:strokeColor="#DDDDDD"
+                    app:strokeWidth="1dp"
+                    app:cornerRadius="20dp"
+                    android:insetTop="0dp"
+                    android:insetBottom="0dp" />
+
+            </LinearLayout>
+
+        </LinearLayout>
+
+    </androidx.cardview.widget.CardView>
+
+    <!-- Hidden fields for data storage (used by Kotlin code) -->
+    <TextView
+        android:id="@+id/pickupLocationText"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:visibility="gone" />
+
+    <TextView
+        android:id="@+id/dropLocationText"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:visibility="gone" />
+
+    <TextView
+        android:id="@+id/selectedTrucksText"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:visibility="gone" />
+
+    <TextView
+        android:id="@+id/totalPriceText"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:visibility="gone" />
+
+    <ProgressBar
+        android:id="@+id/searchProgressBar"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:visibility="gone" />
+
+    <TextView
+        android:id="@+id/timerText"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:visibility="gone" />
+
+    <!-- Cancel Button -->
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/cancelButton"
+        style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+        android:layout_width="match_parent"
+        android:layout_height="48dp"
+        android:layout_marginHorizontal="16dp"
+        android:layout_marginBottom="20dp"
+        android:text="CANCEL"
+        android:textColor="#E53935"
+        android:textSize="14sp"
+        app:strokeColor="#E53935"
+        app:strokeWidth="1dp"
+        app:cornerRadius="24dp" />
+
+</LinearLayout>

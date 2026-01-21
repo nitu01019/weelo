@@ -15,6 +15,7 @@ import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.cardview.widget.CardView
 import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.weelo.logistics.adapters.SelectedTrucksAdapter
 import com.weelo.logistics.data.models.SelectedTruckItem
@@ -28,10 +29,28 @@ import com.weelo.logistics.data.models.TruckConfig
 import com.weelo.logistics.data.models.TruckSubtypesConfig
 import com.weelo.logistics.domain.model.LocationModel
 import com.weelo.logistics.domain.model.VehicleModel
+import com.weelo.logistics.presentation.trucks.TruckPricingHelper
 import com.weelo.logistics.presentation.trucks.TruckTypesNavigationEvent
 import com.weelo.logistics.presentation.trucks.TruckTypesViewModel
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import dagger.hilt.android.AndroidEntryPoint
+import javax.inject.Inject
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import com.weelo.logistics.data.repository.PricingRepository
+import com.weelo.logistics.adapters.TruckSubtypeAdapter
+import com.weelo.logistics.adapters.SubtypeItem
+import com.weelo.logistics.adapters.TruckTypePickerAdapter
+import com.weelo.logistics.adapters.TruckTypePickerItem
+import com.weelo.logistics.presentation.booking.BookingConfirmationActivity
+import com.weelo.logistics.ui.dialogs.SearchingVehiclesDialog
+import com.weelo.logistics.adapters.SubtypeWithQuantityAdapter
+import com.weelo.logistics.adapters.SubtypeQuantityItem
+import android.widget.ViewFlipper
+import android.widget.EditText
+import android.widget.ProgressBar
 
 /**
  * TruckTypesActivity - Production-Ready Truck Selection Screen
@@ -39,12 +58,15 @@ import dagger.hilt.android.AndroidEntryPoint
 @AndroidEntryPoint
 class TruckTypesActivity : AppCompatActivity() {
 
+    @Inject
+    lateinit var pricingRepository: PricingRepository
+    
     private val viewModel: TruckTypesViewModel by viewModels()
-
+    
     // UI Components
     private lateinit var backButton: ImageView
     private lateinit var routeText: TextView
-    private lateinit var continueButton: CardView
+    // Continue button removed - flow now goes directly from bottom sheet CONFIRM to search dialog
     
     // Toggle Components
     private lateinit var toggleTrucksButton: CardView
@@ -52,12 +74,8 @@ class TruckTypesActivity : AppCompatActivity() {
     private lateinit var trucksContainer: LinearLayout
     private var areTrucksVisible = true
     
-    // Selected Trucks Section
-    private lateinit var selectedTrucksSection: LinearLayout
-    private lateinit var selectedTrucksRecyclerView: RecyclerView
-    private lateinit var emptyStateText: TextView
-    private lateinit var truckCountText: TextView
-    private lateinit var selectedTrucksAdapter: SelectedTrucksAdapter
+    // Selected Trucks Section - REMOVED (selection now handled in bottom sheet only)
+    // Variables removed: selectedTrucksSection, selectedTrucksRecyclerView, emptyStateText, truckCountText, selectedTrucksAdapter
     private val selectedTrucksList = mutableListOf<SelectedTruckItem>()
     
     // Tutorial
@@ -91,7 +109,7 @@ class TruckTypesActivity : AppCompatActivity() {
         toLocation = intent.getParcelableExtraCompat<Location>("TO_LOCATION") ?: Location("Unknown")
 
         setupViews()
-        setupSelectedTrucksSection()
+        // setupSelectedTrucksSection() - REMOVED (selection now handled in bottom sheet only)
         observeViewModel()
         
         // Start tutorial on first launch (after a short delay for layout to settle)
@@ -104,7 +122,6 @@ class TruckTypesActivity : AppCompatActivity() {
         // Initialize UI components
         backButton = findViewById(R.id.backButton)
         routeText = findViewById(R.id.routeText)
-        continueButton = findViewById(R.id.continueButton)
         
         // Initialize toggle components
         toggleTrucksButton = findViewById(R.id.toggleTrucksButton)
@@ -132,136 +149,23 @@ class TruckTypesActivity : AppCompatActivity() {
         
         setupVehicleCardClicks()
 
-        continueButton.setOnClickListener {
-            // Check if we have any selections
-            val hasSelections = truckSelections.values.any { it.isNotEmpty() }
-            
-            if (hasSelections) {
-                val details = mutableListOf<String>()
-                var totalTrucks = 0
-                var firstSelectedVehicleId = ""
-                
-                truckSelections.forEach { (truckType, subtypes) ->
-                    val count = subtypes.values.sum()
-                    if (count > 0) {
-                        if (firstSelectedVehicleId.isEmpty()) {
-                            firstSelectedVehicleId = truckType
-                        }
-                        totalTrucks += count
-                        val displayName = TruckSubtypesConfig.getConfigById(truckType)?.displayName ?: truckType
-                        details.add("$displayName: $count")
-                    }
-                }
-                
-                // Navigate to pricing screen
-                navigateToPricing(firstSelectedVehicleId)
-            } else {
-                showToast("Please select a vehicle type")
+        routeText.text = "${capitalizeFirstWord(fromLocation.address)} → ${capitalizeFirstWord(toLocation.address)}"
+    }
+    
+    /**
+     * Capitalize the first letter of each word in an address
+     */
+    private fun capitalizeFirstWord(address: String): String {
+        return address.trim().split(" ").joinToString(" ") { word ->
+            word.lowercase().replaceFirstChar { 
+                if (it.isLowerCase()) it.titlecase() else it.toString() 
             }
         }
-
-        routeText.text = "${fromLocation.address} - ${toLocation.address}"
     }
     
-    /**
-     * Setup the Selected Trucks section with RecyclerView
-     * Always visible with vertical list layout
-     */
-    private fun setupSelectedTrucksSection() {
-        selectedTrucksSection = findViewById(R.id.selectedTrucksSection)
-        selectedTrucksRecyclerView = findViewById(R.id.selectedTrucksRecyclerView)
-        emptyStateText = findViewById(R.id.emptyStateText)
-        truckCountText = findViewById(R.id.truckCountText)
-        
-        // Setup adapter with callbacks
-        selectedTrucksAdapter = SelectedTrucksAdapter(
-            onQuantityChanged = { item, newQuantity ->
-                // FAST UPDATE - Immediate UI refresh
-                val index = selectedTrucksList.indexOfFirst { it.id == item.id }
-                if (index != -1) {
-                    // Update the mutable item
-                    selectedTrucksList[index].quantity = newQuantity
-                    
-                    // Update the main selection map IMMEDIATELY
-                    val key = if (item.specification.contains("|")) {
-                        item.specification // LCV format: "LCV Open|17 Feet"
-                    } else {
-                        item.specification
-                    }
-                    truckSelections[item.truckTypeId]?.put(key, newQuantity)
-                    
-                    // IMMEDIATE refresh - create NEW list with copies to trigger DiffUtil
-                    val newList = selectedTrucksList.map { it.copy() }
-                    selectedTrucksAdapter.submitList(newList) {
-                        // After list is submitted, update count
-                        updateTruckCount()
-                    }
-                }
-            },
-            onRemove = { item ->
-                // Remove from list
-                selectedTrucksList.removeIf { it.id == item.id }
-                selectedTrucksAdapter.submitList(ArrayList(selectedTrucksList))
-                
-                // Remove from main selection map
-                val key = if (item.specification.contains("|")) {
-                    item.specification
-                } else {
-                    item.specification
-                }
-                truckSelections[item.truckTypeId]?.remove(key)
-                
-                // Update vehicle card background
-                val vehicleCard = getVehicleCardById(item.truckTypeId)
-                val hasRemaining = truckSelections[item.truckTypeId]?.isNotEmpty() == true
-                if (!hasRemaining) {
-                    vehicleCard?.setCardBackgroundColor(getColor(android.R.color.darker_gray))
-                }
-                
-                // Show empty state if no trucks
-                updateEmptyState()
-                updateTruckCount()
-                
-                if (selectedTrucksList.isEmpty()) {
-                    continueButton.visibility = View.GONE
-                }
-                
-                showToast("${item.truckTypeName} removed")
-            }
-        )
-        
-        // Setup RecyclerView with VERTICAL layout
-        selectedTrucksRecyclerView.apply {
-            layoutManager = LinearLayoutManager(this@TruckTypesActivity, LinearLayoutManager.VERTICAL, false)
-            adapter = selectedTrucksAdapter
-        }
-        
-        // Section is always visible, show empty state initially
-        updateEmptyState()
-    }
+    // setupSelectedTrucksSection() - REMOVED (selection now handled in bottom sheet only)
     
-    /**
-     * Update empty state visibility
-     * Shows "No trucks selected" when list is empty
-     */
-    private fun updateEmptyState() {
-        if (selectedTrucksList.isEmpty()) {
-            emptyStateText.visibility = View.VISIBLE
-            selectedTrucksRecyclerView.visibility = View.GONE
-        } else {
-            emptyStateText.visibility = View.GONE
-            selectedTrucksRecyclerView.visibility = View.VISIBLE
-        }
-    }
-    
-    /**
-     * Update truck count display
-     * Shows total number of trucks selected (just the number)
-     */
-    private fun updateTruckCount() {
-        val totalCount = selectedTrucksList.sumOf { it.quantity }
-        truckCountText.text = totalCount.toString()
-    }
+    // updateEmptyState() and updateTruckCount() - REMOVED (selection now handled in bottom sheet only)
     
     /**
      * Start tutorial if this is the first time user sees this screen
@@ -320,10 +224,7 @@ class TruckTypesActivity : AppCompatActivity() {
             }
         }
         
-        // Update adapter and empty state
-        selectedTrucksAdapter.submitList(ArrayList(selectedTrucksList))
-        updateEmptyState()
-        updateTruckCount()
+        // Update adapter and empty state - REMOVED (selection now handled in bottom sheet only)
     }
     
     private fun setupVehicleCardClicks() {
@@ -340,8 +241,367 @@ class TruckTypesActivity : AppCompatActivity() {
     
     private fun selectVehicle(vehicleId: String) {
         TruckSubtypesConfig.getConfigById(vehicleId)?.let {
-            showTruckSubtypesDialog(vehicleId)
+            showMultiTruckSelectionSheet(vehicleId)
         }
+    }
+    
+    /**
+     * Show the new Rapido-style multi-truck selection bottom sheet
+     */
+    private fun showMultiTruckSelectionSheet(initialTruckTypeId: String) {
+        val distanceKm = calculateDistanceKm()
+        
+        val bottomSheet = com.weelo.logistics.ui.dialogs.MultiTruckSelectionBottomSheet.newInstance(
+            initialTruckTypeId = initialTruckTypeId,
+            distanceKm = distanceKm
+        )
+        
+        // Handle confirmation - show search dialog
+        bottomSheet.setOnConfirmListener { selections, totalPrice ->
+            // Convert selections to SelectedTruckItem list for search dialog
+            val trucksForDialog = ArrayList<SelectedTruckItem>()
+            selections.forEach { truckType ->
+                truckType.subtypes.forEach { subtype ->
+                    trucksForDialog.add(SelectedTruckItem(
+                        id = "${truckType.truckTypeId}_${subtype.subtypeId}",
+                        truckTypeId = truckType.truckTypeId,
+                        truckTypeName = truckType.truckTypeName,
+                        specification = subtype.subtypeName,
+                        iconResource = truckType.iconRes,
+                        quantity = subtype.quantity
+                    ))
+                }
+            }
+            
+            // Show the search dialog
+            showSearchingVehiclesDialog(trucksForDialog, totalPrice, distanceKm)
+        }
+        
+        // Handle add truck type - show simple picker dialog (no Step 2)
+        bottomSheet.setOnAddTruckTypeListener { availableTypes ->
+            showSimpleTruckTypePickerDialog(availableTypes) { selectedType ->
+                bottomSheet.addTruckType(selectedType)
+            }
+        }
+        
+        bottomSheet.show(supportFragmentManager, "multi_truck_selection")
+    }
+    
+    /**
+     * Shows a SIMPLE truck type picker dialog - just grid selection
+     * Used when adding truck types from MultiTruckSelectionBottomSheet
+     * No Step 2 - just selects the truck type and closes
+     */
+    private fun showSimpleTruckTypePickerDialog(availableTypes: List<String>, onSelected: (String) -> Unit) {
+        val dialog = BottomSheetDialog(this)
+        
+        val view = layoutInflater.inflate(R.layout.dialog_truck_type_picker, null)
+        dialog.setContentView(view)
+        
+        // Configure bottom sheet using helper for consistency and scalability
+        com.weelo.logistics.core.util.BottomSheetHelper.configureBottomSheet(
+            dialog = dialog,
+            style = com.weelo.logistics.core.util.BottomSheetHelper.Style.FIXED_LARGE,
+            isDismissable = true
+        )
+        
+        // Hide Step 2 completely - we only need Step 1
+        view.findViewById<View>(R.id.step2SubtypeSelection)?.visibility = View.GONE
+        
+        // Build truck type items with icons
+        val allTruckTypeItems = availableTypes.map { typeId ->
+            val config = TruckSubtypesConfig.getConfigById(typeId)
+            TruckTypePickerItem(
+                truckTypeId = typeId,
+                displayName = config?.displayName ?: typeId,
+                description = getTruckTypeDescription(typeId),
+                iconRes = getTruckIconResource(typeId)
+            )
+        }
+        
+        // Setup grid
+        val gridRecyclerView = view.findViewById<RecyclerView>(R.id.truckTypesGridRecyclerView)
+        gridRecyclerView.layoutManager = GridLayoutManager(this, 4) // 4-column grid
+        
+        val gridAdapter = TruckTypePickerAdapter(allTruckTypeItems) { selectedTypeId ->
+            // Directly select and close - no Step 2
+            dialog.dismiss()
+            onSelected(selectedTypeId)
+        }
+        gridRecyclerView.adapter = gridAdapter
+        
+        // Search functionality
+        val searchInput = view.findViewById<EditText>(R.id.searchTruckType)
+        val clearSearchBtn = view.findViewById<ImageView>(R.id.clearSearchButton)
+        
+        searchInput?.addTextChangedListener(object : android.text.TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
+            override fun afterTextChanged(s: android.text.Editable?) {
+                val query = s?.toString()?.trim()?.lowercase() ?: ""
+                clearSearchBtn?.visibility = if (query.isNotEmpty()) View.VISIBLE else View.GONE
+                
+                val filteredItems = if (query.isEmpty()) {
+                    allTruckTypeItems
+                } else {
+                    allTruckTypeItems.filter { 
+                        it.displayName.lowercase().contains(query) ||
+                        it.description.lowercase().contains(query)
+                    }
+                }
+                gridAdapter.updateItems(filteredItems)
+            }
+        })
+        
+        clearSearchBtn?.setOnClickListener {
+            searchInput?.text?.clear()
+        }
+        
+        dialog.show()
+    }
+
+    /**
+     * Shows the Rapido-style multi-step truck type picker dialog
+     * Step 1: Grid of truck types with search
+     * Step 2: Subtype selection with quantity selectors
+     * 
+     * Features:
+     * - Horizontal slide transitions between steps
+     * - Search functionality to filter truck types
+     * - Inline quantity selectors for subtypes
+     * - All selection done within the dialog (no page navigation)
+     */
+    private fun showTruckTypePickerDialog(availableTypes: List<String>, onSelected: (String) -> Unit) {
+        val dialog = BottomSheetDialog(this)
+        
+        val view = layoutInflater.inflate(R.layout.dialog_truck_type_picker, null)
+        dialog.setContentView(view)
+        
+        // Configure bottom sheet using helper for consistency and scalability
+        com.weelo.logistics.core.util.BottomSheetHelper.configureBottomSheet(
+            dialog = dialog,
+            style = com.weelo.logistics.core.util.BottomSheetHelper.Style.FIXED_LARGE,
+            isDismissable = true
+        )
+        
+        // Get ViewFlipper for step transitions
+        val viewFlipper = view.findViewById<ViewFlipper>(R.id.dialogViewFlipper)
+        
+        // Build truck type items with icons
+        val allTruckTypeItems = availableTypes.map { typeId ->
+            val config = TruckSubtypesConfig.getConfigById(typeId)
+            TruckTypePickerItem(
+                truckTypeId = typeId,
+                displayName = config?.displayName ?: typeId,
+                description = getTruckTypeDescription(typeId),
+                iconRes = getTruckIconResource(typeId)
+            )
+        }
+        
+        // ==================== STEP 1: Truck Type Grid ====================
+        val gridRecyclerView = view.findViewById<RecyclerView>(R.id.truckTypesGridRecyclerView)
+        gridRecyclerView.layoutManager = GridLayoutManager(this, 4) // 4-column grid
+        
+        val gridAdapter = TruckTypePickerAdapter(allTruckTypeItems) { selectedTypeId ->
+            // Transition to Step 2 with selected truck type
+            showStep2SubtypeSelection(view, viewFlipper, selectedTypeId, dialog, onSelected)
+        }
+        gridRecyclerView.adapter = gridAdapter
+        
+        // Search functionality
+        val searchInput = view.findViewById<EditText>(R.id.searchTruckType)
+        val clearSearchBtn = view.findViewById<ImageView>(R.id.clearSearchButton)
+        
+        searchInput?.addTextChangedListener(object : android.text.TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
+            override fun afterTextChanged(s: android.text.Editable?) {
+                val query = s?.toString()?.trim()?.lowercase() ?: ""
+                clearSearchBtn?.visibility = if (query.isNotEmpty()) View.VISIBLE else View.GONE
+                
+                // Filter truck types based on search query
+                val filteredItems = if (query.isEmpty()) {
+                    allTruckTypeItems
+                } else {
+                    allTruckTypeItems.filter { 
+                        it.displayName.lowercase().contains(query) ||
+                        it.description.lowercase().contains(query)
+                    }
+                }
+                gridAdapter.updateItems(filteredItems)
+            }
+        })
+        
+        clearSearchBtn?.setOnClickListener {
+            searchInput?.text?.clear()
+        }
+        
+        dialog.show()
+    }
+    
+    /**
+     * Shows Step 2 of the dialog - Subtype selection with quantity
+     * Slides in from right with animation
+     */
+    private fun showStep2SubtypeSelection(
+        dialogView: View,
+        viewFlipper: ViewFlipper,
+        truckTypeId: String,
+        dialog: BottomSheetDialog,
+        onSelected: (String) -> Unit
+    ) {
+        // Set animations for forward navigation (slide left)
+        viewFlipper.inAnimation = android.view.animation.AnimationUtils.loadAnimation(this, R.anim.slide_in_from_right)
+        viewFlipper.outAnimation = android.view.animation.AnimationUtils.loadAnimation(this, R.anim.slide_out_to_left)
+        
+        // Update header with selected truck type name
+        val config = TruckSubtypesConfig.getConfigById(truckTypeId)
+        dialogView.findViewById<TextView>(R.id.selectedTruckTypeName)?.text = "${config?.displayName ?: truckTypeId} Trucks"
+        
+        // Setup subtypes RecyclerView
+        val subtypesRecyclerView = dialogView.findViewById<RecyclerView>(R.id.subtypesRecyclerView)
+        subtypesRecyclerView.layoutManager = LinearLayoutManager(this)
+        
+        // Get subtypes for selected truck type and convert to SubtypeQuantityItem
+        val subtypeStrings = config?.subtypes ?: emptyList()
+        val subtypeItems = subtypeStrings.map { subtypeName ->
+            // Get capacity info if available
+            val capacityInfo = TruckSubtypesConfig.getCapacityInfo(truckTypeId, subtypeName)
+            val capacityText = if (capacityInfo != null) {
+                "${capacityInfo.minTonnage.toInt()}-${capacityInfo.maxTonnage.toInt()} Tons"
+            } else {
+                "Standard capacity"
+            }
+            SubtypeQuantityItem(
+                id = subtypeName, // Use name as ID
+                name = subtypeName,
+                capacity = capacityText
+            )
+        }
+        
+        // Track quantities for each subtype
+        val subtypeQuantities = mutableMapOf<String, Int>()
+        subtypeItems.forEach { subtypeQuantities[it.id] = 0 }
+        
+        // Selection summary views
+        val summaryLayout = dialogView.findViewById<LinearLayout>(R.id.selectionSummaryLayout)
+        val selectedCountText = dialogView.findViewById<TextView>(R.id.selectedCountText)
+        val addToBookingBtn = dialogView.findViewById<com.google.android.material.button.MaterialButton>(R.id.addToBookingButton)
+        
+        // Function to update summary
+        fun updateSummary() {
+            val totalSelected = subtypeQuantities.values.sum()
+            if (totalSelected > 0) {
+                summaryLayout?.visibility = View.VISIBLE
+                selectedCountText?.text = "$totalSelected truck${if (totalSelected > 1) "s" else ""}"
+                addToBookingBtn?.isEnabled = true
+                addToBookingBtn?.alpha = 1f
+            } else {
+                summaryLayout?.visibility = View.GONE
+                addToBookingBtn?.isEnabled = false
+                addToBookingBtn?.alpha = 0.5f
+            }
+        }
+        
+        // Setup subtypes adapter with quantity callbacks
+        subtypesRecyclerView.adapter = SubtypeWithQuantityAdapter(
+            subtypes = subtypeItems,
+            truckTypeIconRes = getTruckIconResource(truckTypeId),
+            quantities = subtypeQuantities,
+            onQuantityChanged = { subtypeId, newQty ->
+                subtypeQuantities[subtypeId] = newQty
+                updateSummary()
+            }
+        )
+        
+        // Initialize summary state
+        updateSummary()
+        
+        // Back button - go back to Step 1
+        dialogView.findViewById<ImageView>(R.id.backToStep1Button)?.setOnClickListener {
+            // Set animations for back navigation (slide right)
+            viewFlipper.inAnimation = android.view.animation.AnimationUtils.loadAnimation(this, R.anim.slide_in_from_left)
+            viewFlipper.outAnimation = android.view.animation.AnimationUtils.loadAnimation(this, R.anim.slide_out_to_right)
+            viewFlipper.showPrevious()
+        }
+        
+        // Close button
+        dialogView.findViewById<ImageView>(R.id.closeDialogButton)?.setOnClickListener {
+            dialog.dismiss()
+        }
+        
+        // Add to Booking button
+        addToBookingBtn?.setOnClickListener {
+            // Add selected trucks to the booking with correct quantity
+            subtypeQuantities.forEach { (subtypeName, quantity) ->
+                if (quantity > 0) {
+                    // Find the subtype item for capacity info
+                    val subtypeItem = subtypeItems.find { it.id == subtypeName }
+                    addTruckToSelectionWithQuantity(truckTypeId, subtypeName, subtypeItem?.capacity ?: "", quantity)
+                }
+            }
+            
+            // Update empty state after adding - REMOVED (selection now handled in bottom sheet only)
+            
+            dialog.dismiss()
+            onSelected(truckTypeId)
+            
+            // Show confirmation toast
+            val totalAdded = subtypeQuantities.values.sum()
+            if (totalAdded > 0) {
+                showToast("$totalAdded truck${if (totalAdded > 1) "s" else ""} added to booking")
+            }
+        }
+        
+        // Show Step 2
+        viewFlipper.showNext()
+    }
+    
+    /**
+     * Helper function to add a truck to the current selection
+     * Uses the existing selectedTrucksList and updates the UI
+     */
+    private fun addTruckToSelection(truckTypeId: String, subtypeName: String, capacity: String) {
+        addTruckToSelectionWithQuantity(truckTypeId, subtypeName, capacity, 1)
+    }
+    
+    /**
+     * Helper function to add a truck with specific quantity to the current selection
+     * Uses the existing selectedTrucksList and updates the UI
+     */
+    private fun addTruckToSelectionWithQuantity(truckTypeId: String, subtypeName: String, capacity: String, quantity: Int) {
+        val config = TruckSubtypesConfig.getConfigById(truckTypeId)
+        val displayName = config?.displayName ?: truckTypeId
+        
+        // Check if same truck type + specification already exists
+        val existingIndex = selectedTrucksList.indexOfFirst { 
+            it.truckTypeId == truckTypeId && it.specification == subtypeName 
+        }
+        
+        if (existingIndex >= 0) {
+            // Update quantity of existing item
+            selectedTrucksList[existingIndex].quantity = quantity
+        } else {
+            // Add new item with specified quantity
+            val newItem = SelectedTruckItem(
+                id = "${truckTypeId}_${subtypeName}_${System.currentTimeMillis()}",
+                truckTypeId = truckTypeId,
+                truckTypeName = displayName,
+                specification = subtypeName,
+                iconResource = getTruckIconResource(truckTypeId),
+                quantity = quantity
+            )
+            selectedTrucksList.add(newItem)
+        }
+        
+        // Update the adapter with new list - REMOVED (selection now handled in bottom sheet only)
+    }
+    
+    /**
+     * Get description text for each truck type - delegates to TruckPricingHelper
+     */
+    private fun getTruckTypeDescription(truckTypeId: String): String {
+        return TruckPricingHelper.getTruckTypeDescription(truckTypeId)
     }
     
     /**
@@ -387,97 +647,229 @@ class TruckTypesActivity : AppCompatActivity() {
         val config = TruckSubtypesConfig.getConfigById(truckTypeId) ?: return
         val selectedSubtypes = truckSelections[truckTypeId] ?: return
         val vehicleCard = getVehicleCardById(truckTypeId)
+        val distanceKm = calculateDistanceKm()
         
         val bottomSheet = BottomSheetDialog(this)
-        bottomSheet.behavior.isDraggable = true
-        bottomSheet.behavior.state = com.google.android.material.bottomsheet.BottomSheetBehavior.STATE_EXPANDED
         
         val view = layoutInflater.inflate(R.layout.bottom_sheet_truck_subtypes, null)
         bottomSheet.setContentView(view)
         
+        // Configure bottom sheet using helper for consistency and scalability
+        com.weelo.logistics.core.util.BottomSheetHelper.configureBottomSheet(
+            dialog = bottomSheet,
+            style = com.weelo.logistics.core.util.BottomSheetHelper.Style.FIXED_LARGE,
+            isDismissable = true
+        )
+        
+        // Setup header
         view.findViewById<TextView>(R.id.bottomSheetTitle)?.text = config.displayName
         
-        // Set the truck icon based on truck type
-        val truckIcon = view.findViewById<ImageView>(R.id.bottomSheetTruckIcon)
-        truckIcon?.setImageResource(getTruckIconResource(truckTypeId))
+        // Set header icon - same as truck type card icon
+        val headerIconRes = getTruckIconResource(truckTypeId)
+        view.findViewById<ImageView>(R.id.bottomSheetTruckIcon)?.setImageResource(headerIconRes)
         
+        // Close button
         view.findViewById<ImageView>(R.id.closeButton)?.setOnClickListener {
-            resetBottomSheetSelections(view, truckTypeId)
             bottomSheet.dismiss()
         }
         
-        val subtypesContainer = view.findViewById<LinearLayout>(R.id.subtypesContainer)
-        val scrollView = view.findViewById<androidx.core.widget.NestedScrollView>(R.id.scrollView)
+        // Get UI components
+        val recyclerView = view.findViewById<RecyclerView>(R.id.subtypesRecyclerView)
+        val selectionSummary = view.findViewById<LinearLayout>(R.id.selectionSummary)
+        val selectedCountText = view.findViewById<TextView>(R.id.selectedCountText)
+        val totalPriceText = view.findViewById<TextView>(R.id.totalPriceText)
+        val confirmButton = view.findViewById<Button>(R.id.confirmSelectionButton)
+        val clearAllButton = view.findViewById<Button>(R.id.clearAllButton)
+        val deselectAllButton = view.findViewById<TextView>(R.id.deselectAllButton)
         
-        // Check if this is LCV - handle specially as category headers
-        if (truckTypeId == "lcv" && config.subtypeLengths.isNotEmpty()) {
-            setupLcvCategoryDialog(view, config, selectedSubtypes, vehicleCard, scrollView)
-        } else {
-            // Standard truck types - direct selection with 4 columns like reference
-            subtypesContainer?.let {
-                // Clear any existing views first to prevent duplicates
-                it.removeAllViews()
-                
-                val gridLayout = GridLayout(this)
-                gridLayout.columnCount = 4  // 4 columns like reference design
-                gridLayout.rowCount = (config.subtypes.size + 3) / 4
-                
-                config.subtypes.forEach { subtype ->
-                    addSubtypeCard(gridLayout, subtype, truckTypeId, selectedSubtypes, vehicleCard, view)
-                }
-                
-                it.addView(gridLayout)
+        // Build subtype items with pricing
+        val subtypeItems = mutableListOf<SubtypeItem>()
+        val iconRes = getTruckIconResource(truckTypeId)
+        
+        // Get capacity info for subtypes
+        val capacities = TruckSubtypesConfig.getAllCapacitiesForType(truckTypeId)
+        
+        config.subtypes.forEach { subtypeName ->
+            // subtypeName is a String like "17 Feet", "19 Feet" etc.
+            val subtypeId = subtypeName.lowercase().replace(" ", "_")
+            val capacityInfo = capacities[subtypeName]
+            val capacityText = if (capacityInfo != null) {
+                "${capacityInfo.minTonnage} - ${capacityInfo.maxTonnage} Ton"
+            } else {
+                ""
             }
             
-            // Add length subtypes if configured (for non-LCV trucks)
-            if (config.lengthSubtypes.isNotEmpty()) {
-                view.findViewById<TextView>(R.id.lengthSectionTitle)?.visibility = View.VISIBLE
-                val lengthContainer = view.findViewById<LinearLayout>(R.id.lengthSubtypesContainer)
-                lengthContainer?.visibility = View.VISIBLE
-                
-                lengthContainer?.let {
-                    // Clear any existing views first to prevent duplicates
-                    it.removeAllViews()
-                    
-                    val gridLayout = GridLayout(this)
-                    gridLayout.columnCount = 4
-                    gridLayout.rowCount = (config.lengthSubtypes.size + 3) / 4
-                    
-                    config.lengthSubtypes.forEach { lengthSubtype ->
-                        addSubtypeCard(gridLayout, lengthSubtype, truckTypeId, selectedSubtypes, vehicleCard, view)
-                    }
-                    
-                    it.addView(gridLayout)
-                }
-            }
+            // Calculate base price for this subtype
+            val basePrice = calculateBasePrice(truckTypeId, subtypeId, distanceKm)
+            
+            subtypeItems.add(
+                SubtypeItem(
+                    id = subtypeId,
+                    name = subtypeName,
+                    capacity = capacityText,
+                    price = basePrice,
+                    iconRes = iconRes,
+                    initialQuantity = selectedSubtypes[subtypeName] ?: 0
+                )
+            )
         }
         
-        view.findViewById<Button>(R.id.confirmSelectionButton)?.setOnClickListener {
-            if (selectedSubtypes.isNotEmpty()) {
-                vehicleCard?.setCardBackgroundColor(getColor(android.R.color.holo_blue_light))
-                continueButton.visibility = View.VISIBLE
+        // Create adapter with quantity change callback
+        var adapter: TruckSubtypeAdapter? = null
+        adapter = TruckSubtypeAdapter(subtypeItems) { subtypeId, quantity, price ->
+            // Find the original subtype name
+            val subtypeName = subtypeItems.find { it.id == subtypeId }?.name ?: subtypeId
+            selectedSubtypes[subtypeName] = quantity
+            
+            // Update UI
+            updateSelectionSummary(
+                selectionSummary, 
+                selectedCountText, 
+                totalPriceText,
+                confirmButton,
+                deselectAllButton,
+                adapter!!
+            )
+        }
+        
+        // Hide old scrollView/subtypesContainer, show RecyclerView
+        view.findViewById<View>(R.id.scrollView)?.visibility = View.GONE
+        recyclerView?.visibility = View.VISIBLE
+        
+        // Setup RecyclerView
+        recyclerView?.layoutManager = LinearLayoutManager(this)
+        recyclerView?.adapter = adapter
+        
+        // Initial UI state
+        updateSelectionSummary(selectionSummary, selectedCountText, totalPriceText, confirmButton, deselectAllButton, adapter)
+        
+        // Confirm button
+        confirmButton?.setOnClickListener {
+            val selected = adapter.getSelectedItems()
+            if (selected.isNotEmpty()) {
+                // Map back to original subtype names and save selections
+                val namedSelections = mutableMapOf<String, Int>()
+                selected.forEach { (subtypeId, qty) ->
+                    val subtypeName = subtypeItems.find { it.id == subtypeId }?.name ?: subtypeId
+                    namedSelections[subtypeName] = qty
+                    selectedSubtypes[subtypeName] = qty
+                }
                 
-                // Add to selected trucks section
-                addToSelectedTrucks(truckTypeId, selectedSubtypes)
+                // Add to selected trucks list
+                addToSelectedTrucks(truckTypeId, namedSelections)
+                
+                // Update vehicle card checkmark
+                vehicleCard?.let { card ->
+                    card.findViewById<View>(R.id.selectedBadge)?.visibility = View.VISIBLE
+                }
                 
                 bottomSheet.dismiss()
-                showToast("${selectedSubtypes.values.sum()} ${config.displayName} trucks selected")
+                
+                val totalTrucks = selected.values.sum()
+                
+                // Build trucks list for search dialog
+                val trucksForDialog = ArrayList<SelectedTruckItem>()
+                selected.forEach { (subtypeId, qty) ->
+                    val subtypeInfo = subtypeItems.find { it.id == subtypeId }
+                    trucksForDialog.add(SelectedTruckItem(
+                        id = "${truckTypeId}_${subtypeId}",
+                        truckTypeId = truckTypeId,
+                        truckTypeName = config.displayName,
+                        specification = subtypeInfo?.name ?: subtypeId,
+                        iconResource = getTruckIconResource(truckTypeId),
+                        quantity = qty
+                    ))
+                }
+                
+                // Calculate total price
+                val totalPrice = adapter.getTotalPrice()
+                
+                // Show searching vehicles dialog directly
+                showSearchingVehiclesDialog(trucksForDialog, totalPrice, distanceKm)
+                
             } else {
                 showToast("Please select at least one truck")
             }
         }
         
-        view.findViewById<Button>(R.id.clearAllButton)?.setOnClickListener {
-            resetBottomSheetSelections(view, truckTypeId)
+        // Clear All button
+        clearAllButton?.setOnClickListener {
+            adapter.clearAll()
+            config.subtypes.forEach { selectedSubtypes[it] = 0 }
+            updateSelectionSummary(selectionSummary, selectedCountText, totalPriceText, confirmButton, deselectAllButton, adapter)
         }
+        
+        // Deselect All in header
+        deselectAllButton?.setOnClickListener {
+            adapter.clearAll()
+            config.subtypes.forEach { selectedSubtypes[it] = 0 }
+            updateSelectionSummary(selectionSummary, selectedCountText, totalPriceText, confirmButton, deselectAllButton, adapter)
+        }
+        
+        // Fetch real pricing from backend
+        fetchPricingForSubtypes(truckTypeId, subtypeItems, adapter, distanceKm)
         
         bottomSheet.show()
     }
     
-    /**
-     * Setup LCV dialog with category headers (LCV Open, LCV Container)
-     * Clicking a category expands to show its length subtypes
-     */
+    private fun updateSelectionSummary(
+        summaryLayout: LinearLayout?,
+        countText: TextView?,
+        priceText: TextView?,
+        confirmButton: Button?,
+        deselectButton: TextView?,
+        adapter: TruckSubtypeAdapter
+    ) {
+        val totalCount = adapter.getTotalCount()
+        val totalPrice = adapter.getTotalPrice()
+        
+        if (totalCount > 0) {
+            summaryLayout?.visibility = View.VISIBLE
+            deselectButton?.visibility = View.VISIBLE
+            countText?.text = "$totalCount truck${if (totalCount > 1) "s" else ""} selected"
+            priceText?.text = "₹${String.format("%,d", totalPrice)}"
+            confirmButton?.isEnabled = true
+            confirmButton?.backgroundTintList = android.content.res.ColorStateList.valueOf(0xFFFF9800.toInt())
+        } else {
+            summaryLayout?.visibility = View.GONE
+            deselectButton?.visibility = View.GONE
+            confirmButton?.isEnabled = false
+            confirmButton?.backgroundTintList = android.content.res.ColorStateList.valueOf(0xFFAAAAAA.toInt())
+        }
+    }
+    
+    private fun calculateBasePrice(truckTypeId: String, subtypeId: String, distanceKm: Int): Int {
+        return TruckPricingHelper.calculateBasePrice(truckTypeId, subtypeId, distanceKm)
+    }
+    
+    private fun fetchPricingForSubtypes(
+        truckTypeId: String,
+        subtypeItems: MutableList<SubtypeItem>,
+        adapter: TruckSubtypeAdapter,
+        distanceKm: Int
+    ) {
+        lifecycleScope.launch {
+            subtypeItems.forEachIndexed { index, item ->
+                try {
+                    val result = pricingRepository.getEstimate(
+                        vehicleType = truckTypeId,
+                        vehicleSubtype = item.name,
+                        distanceKm = distanceKm,
+                        trucksNeeded = 1
+                    )
+                    
+                    if (result is com.weelo.logistics.core.common.Result.Success) {
+                        // Update price in the item
+                        subtypeItems[index] = item.copy(price = result.data.totalPrice)
+                        adapter.notifyItemChanged(index)
+                    }
+                } catch (e: Exception) {
+                    timber.log.Timber.e(e, "Failed to fetch pricing for ${item.name}")
+                }
+            }
+        }
+    }
+
     private fun setupLcvCategoryDialog(
         view: View,
         config: TruckConfig,
@@ -702,7 +1094,6 @@ class TruckTypesActivity : AppCompatActivity() {
                 quantityText?.text = "1"
                 cardContent?.setBackgroundResource(R.drawable.bg_subtype_card_selected)
                 vehicleCard?.setCardBackgroundColor(getColor(android.R.color.holo_blue_light))
-                continueButton.visibility = View.VISIBLE
             } else {
                 selectedSubtypes[uniqueKey] = currentQty + 1
                 quantityText?.text = "${currentQty + 1}"
@@ -722,7 +1113,6 @@ class TruckTypesActivity : AppCompatActivity() {
                 quantityText?.text = "1"
                 cardContent?.setBackgroundResource(R.drawable.bg_subtype_card_selected)
                 vehicleCard?.setCardBackgroundColor(getColor(android.R.color.holo_blue_light))
-                continueButton.visibility = View.VISIBLE
             } else {
                 selectedSubtypes[uniqueKey] = currentQty + 1
                 quantityText?.text = "${currentQty + 1}"
@@ -746,7 +1136,6 @@ class TruckTypesActivity : AppCompatActivity() {
                 if (selectedSubtypes.isEmpty()) {
                     vehicleCard?.setCardBackgroundColor(getColor(android.R.color.white))
                     if (truckSelections.values.all { it.isEmpty() }) {
-                        continueButton.visibility = View.GONE
                     }
                 }
                 updateConfirmButton(parentView, selectedSubtypes)
@@ -825,7 +1214,6 @@ class TruckTypesActivity : AppCompatActivity() {
                 quantityText?.text = "1"
                 cardContent?.setBackgroundResource(R.drawable.bg_subtype_card_selected)
                 vehicleCard?.setCardBackgroundColor(getColor(android.R.color.holo_blue_light))
-                continueButton.visibility = View.VISIBLE
             } else {
                 // Already selected - increment quantity
                 selectedSubtypes[subtype] = currentQty + 1
@@ -846,7 +1234,6 @@ class TruckTypesActivity : AppCompatActivity() {
                 quantityText?.text = "1"
                 cardContent?.setBackgroundResource(R.drawable.bg_subtype_card_selected)
                 vehicleCard?.setCardBackgroundColor(getColor(android.R.color.holo_blue_light))
-                continueButton.visibility = View.VISIBLE
             } else {
                 selectedSubtypes[subtype] = currentQty + 1
                 quantityText?.text = "${currentQty + 1}"
@@ -870,7 +1257,6 @@ class TruckTypesActivity : AppCompatActivity() {
                 if (selectedSubtypes.isEmpty()) {
                     vehicleCard?.setCardBackgroundColor(getColor(android.R.color.white))
                     if (truckSelections.values.all { it.isEmpty() }) {
-                        continueButton.visibility = View.GONE
                     }
                 }
                 updateConfirmButton(parentView, selectedSubtypes)
@@ -965,7 +1351,6 @@ class TruckTypesActivity : AppCompatActivity() {
         vehicleCard?.setCardBackgroundColor(getColor(android.R.color.white))
         
         if (truckSelections.values.all { it.isEmpty() }) {
-            continueButton.visibility = View.GONE
         }
         
         // Reset main subtypes container
@@ -1008,38 +1393,207 @@ class TruckTypesActivity : AppCompatActivity() {
     }
     
     /**
-     * Navigate to pricing screen with selected vehicle
-     * REMOVED: Payment screen temporarily removed
+     * Show searching vehicles dialog with selected trucks
+     * This is the main entry point after user confirms truck selection
      */
-    private fun navigateToPricing(vehicleId: String) {
-        // Payment/Booking screen removed - will be added later
-        Toast.makeText(
-            this,
-            "Booking confirmed! Payment feature coming soon.",
-            Toast.LENGTH_LONG
-        ).show()
-        // TODO: Navigate to payment/booking confirmation screen when ready
-        // val intent = Intent(this, PricingActivity::class.java)
+    // Store pending data for after pickup confirmation
+    private var pendingTrucksForDialog: ArrayList<SelectedTruckItem>? = null
+    private var pendingTotalPrice: Int = 0
+    private var pendingDistanceKm: Int = 0
+    
+    // Activity result launcher for Confirm Pickup
+    private val confirmPickupLauncher = registerForActivityResult(
+        androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            result.data?.let { data ->
+                // Get confirmed pickup location
+                val confirmedPickup = data.getParcelableExtraCompat<Location>(
+                    com.weelo.logistics.presentation.booking.ConfirmPickupActivity.RESULT_CONFIRMED_PICKUP
+                )
+                
+                if (confirmedPickup != null) {
+                    // Update fromLocation with confirmed pickup
+                    fromLocation = confirmedPickup
+                    
+                    // Now show the searching dialog
+                    pendingTrucksForDialog?.let { trucks ->
+                        showSearchingDialogInternal(trucks, pendingTotalPrice, pendingDistanceKm)
+                    }
+                }
+            }
+        }
+        // Clear pending data
+        pendingTrucksForDialog = null
     }
     
     /**
-     * Get the truck icon resource based on truck type ID
-     * Returns clean vector/png truck icons for subtypes dialog
-     * Uses the new uploaded clean line-art icons
+     * Show Confirm Pickup Activity first, then search dialog
+     * Flow: Select trucks -> Confirm Pickup -> Search for vehicles
+     */
+    private fun showSearchingVehiclesDialog(
+        trucksForDialog: ArrayList<SelectedTruckItem>,
+        totalPrice: Int,
+        distanceKm: Int
+    ) {
+        android.util.Log.d("WEELO_DEBUG", "Launching confirm pickup: trucks=${trucksForDialog.size}, price=$totalPrice, distance=${distanceKm}km")
+        
+        // Store data for after confirmation
+        pendingTrucksForDialog = trucksForDialog
+        pendingTotalPrice = totalPrice
+        pendingDistanceKm = distanceKm
+        
+        // Launch Confirm Pickup Activity
+        val intent = Intent(this, com.weelo.logistics.presentation.booking.ConfirmPickupActivity::class.java).apply {
+            putExtra(com.weelo.logistics.presentation.booking.ConfirmPickupActivity.EXTRA_PICKUP_LOCATION, fromLocation)
+            putExtra(com.weelo.logistics.presentation.booking.ConfirmPickupActivity.EXTRA_DROP_LOCATION, toLocation)
+            putParcelableArrayListExtra(com.weelo.logistics.presentation.booking.ConfirmPickupActivity.EXTRA_SELECTED_TRUCKS, trucksForDialog)
+            putExtra(com.weelo.logistics.presentation.booking.ConfirmPickupActivity.EXTRA_TOTAL_PRICE, totalPrice)
+            putExtra(com.weelo.logistics.presentation.booking.ConfirmPickupActivity.EXTRA_DISTANCE_KM, distanceKm)
+        }
+        
+        confirmPickupLauncher.launch(intent)
+    }
+    
+    /**
+     * Internal function to show the actual searching dialog
+     * Called after pickup location is confirmed
+     */
+    private fun showSearchingDialogInternal(
+        trucksForDialog: ArrayList<SelectedTruckItem>,
+        totalPrice: Int,
+        distanceKm: Int
+    ) {
+        android.util.Log.d("WEELO_DEBUG", "Showing search dialog: trucks=${trucksForDialog.size}, price=$totalPrice, distance=${distanceKm}km")
+        
+        try {
+            val searchDialog = SearchingVehiclesDialog.newInstance(
+                fromLocation = fromLocation,
+                toLocation = toLocation,
+                selectedTrucks = trucksForDialog,
+                totalPrice = totalPrice,
+                distanceKm = distanceKm
+            )
+            
+            // Set callbacks
+            searchDialog.setOnBookingCreatedListener(object : SearchingVehiclesDialog.OnBookingCreatedListener {
+                override fun onBookingCreated(bookingId: String) {
+                    android.util.Log.d("WEELO_DEBUG", "Booking created: $bookingId")
+                }
+            })
+            
+            searchDialog.setOnSearchCancelledListener(object : SearchingVehiclesDialog.OnSearchCancelledListener {
+                override fun onSearchCancelled() {
+                    android.util.Log.d("WEELO_DEBUG", "Search cancelled by user")
+                    Toast.makeText(this@TruckTypesActivity, "Search cancelled", Toast.LENGTH_SHORT).show()
+                }
+            })
+            
+            searchDialog.setOnSearchTimeoutListener(object : SearchingVehiclesDialog.OnSearchTimeoutListener {
+                override fun onSearchTimeout(bookingId: String?) {
+                    android.util.Log.d("WEELO_DEBUG", "Search timed out, bookingId: $bookingId")
+                    Toast.makeText(this@TruckTypesActivity, "No drivers found. Please try again.", Toast.LENGTH_LONG).show()
+                }
+            })
+            
+            searchDialog.setOnDriverFoundListener(object : SearchingVehiclesDialog.OnDriverFoundListener {
+                override fun onDriverFound(bookingId: String, driverName: String, vehicleNumber: String) {
+                    android.util.Log.d("WEELO_DEBUG", "Driver found: $driverName ($vehicleNumber)")
+                    // Navigate to booking confirmation
+                    val intent = Intent(this@TruckTypesActivity, BookingConfirmationActivity::class.java)
+                    intent.putExtra("booking_id", bookingId)
+                    intent.putExtra("driver_name", driverName)
+                    intent.putExtra("vehicle_number", vehicleNumber)
+                    startActivity(intent)
+                    searchDialog.dismiss()
+                }
+            })
+            
+            searchDialog.show(supportFragmentManager, "searching_vehicles_dialog")
+            
+        } catch (e: Exception) {
+            android.util.Log.e("WEELO_DEBUG", "ERROR showing search dialog: ${e.message}", e)
+            Toast.makeText(this, "Error: ${e.message}", Toast.LENGTH_LONG).show()
+        }
+    }
+
+    /**
+     * Navigate to booking confirmation screen with selected vehicles
+     */
+    private fun navigateToPricing(vehicleId: String) {
+        android.util.Log.e("WEELO_DEBUG", "=== navigateToPricing START ===")
+        
+        // Build trucks list from truckSelections if selectedTrucksList is empty
+        val trucksToSend = if (selectedTrucksList.isNotEmpty()) {
+            ArrayList(selectedTrucksList.map { it.copy() })
+        } else {
+            // Build from truckSelections map as fallback
+            val fallbackList = ArrayList<SelectedTruckItem>()
+            truckSelections.forEach { (truckTypeId, subtypes) ->
+                if (subtypes.isNotEmpty()) {
+                    val config = TruckSubtypesConfig.getConfigById(truckTypeId)
+                    val iconResource = getTruckIconResource(truckTypeId)
+                    
+                    subtypes.forEach { (specification, quantity) ->
+                        if (quantity > 0) {
+                            fallbackList.add(
+                                SelectedTruckItem(
+                                    id = "${truckTypeId}_${specification}_${System.currentTimeMillis()}",
+                                    truckTypeId = truckTypeId,
+                                    truckTypeName = config?.displayName ?: truckTypeId,
+                                    specification = specification,
+                                    iconResource = iconResource,
+                                    quantity = quantity
+                                )
+                            )
+                        }
+                    }
+                }
+            }
+            fallbackList
+        }
+        
+        android.util.Log.e("WEELO_DEBUG", "trucksToSend size: ${trucksToSend.size}")
+        
+        if (trucksToSend.isEmpty()) {
+            showToast("Please select at least one truck")
+            return
+        }
+        
+        val distanceKm = calculateDistanceKm()
+        
+        android.util.Log.e("WEELO_DEBUG", "Distance: ${distanceKm}km")
+        android.util.Log.e("WEELO_DEBUG", "From: ${fromLocation.address}")
+        android.util.Log.e("WEELO_DEBUG", "To: ${toLocation.address}")
+        
+        // SIMPLE DIRECT NAVIGATION
+        try {
+            android.util.Log.e("WEELO_DEBUG", "Creating Intent...")
+            
+            val intent = Intent(this, com.weelo.logistics.presentation.pricing.PricingActivity::class.java)
+            intent.putExtra("from_location", fromLocation)
+            intent.putExtra("to_location", toLocation)
+            intent.putParcelableArrayListExtra("selected_trucks", trucksToSend)
+            intent.putExtra("distance_km", distanceKm)
+            
+            startActivity(intent)
+            TransitionHelper.applyCustomTransition(this, R.anim.slide_in_right, R.anim.slide_out_left)
+            
+        } catch (e: Exception) {
+            timber.log.Timber.e(e, "Error navigating to pricing")
+            Toast.makeText(this, "Error: ${e.message}", Toast.LENGTH_LONG).show()
+        }
+    }
+
+    private fun calculateDistanceKm(): Int {
+        return TruckPricingHelper.calculateDistanceKm(fromLocation, toLocation)
+    }
+    
+    /**
+     * Get truck icon resource - delegates to TruckPricingHelper
      */
     private fun getTruckIconResource(truckTypeId: String): Int {
-        return when (truckTypeId) {
-            "open" -> R.drawable.ic_truck_open
-            "container" -> R.drawable.ic_truck_container_subtype  // New clean container icon
-            "lcv" -> R.drawable.ic_lcv_clean
-            "mini" -> R.drawable.ic_truck_mini_subtype            // NEW: Updated mini subtype image
-            "trailer" -> R.drawable.ic_truck_trailer_subtype      // New clean trailer icon
-            "tipper" -> R.drawable.ic_truck_tipper_subtype        // NEW: Updated tipper subtype image
-            "tanker" -> R.drawable.ic_truck_tanker_subtype        // NEW: Updated tanker subtype image
-            "dumper" -> R.drawable.ic_truck_dumper_subtype        // New clean dumper icon
-            "bulker" -> R.drawable.ic_truck_bulker_subtype        // New clean bulker icon
-            else -> R.drawable.ic_truck_open
-        }
+        return TruckPricingHelper.getTruckIconResource(truckTypeId)
     }
 }
 

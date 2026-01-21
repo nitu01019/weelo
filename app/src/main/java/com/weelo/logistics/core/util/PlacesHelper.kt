@@ -48,7 +48,7 @@ object PlacesHelper {
             if (!isInitialized) {
                 try {
                     if (!Places.isInitialized()) {
-                        Places.initialize(activity.applicationContext, activity.getString(com.weelo.logistics.R.string.google_maps_key))
+                        Places.initialize(activity.applicationContext, com.weelo.logistics.BuildConfig.MAPS_API_KEY)
                     }
                     isInitialized = true
                 } catch (e: Exception) {

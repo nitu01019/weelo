@@ -9,10 +9,15 @@ import com.weelo.logistics.data.local.dao.VehicleDao
 import com.weelo.logistics.data.local.preferences.PreferencesManager
 import com.weelo.logistics.data.repository.LocationRepositoryImpl
 import com.weelo.logistics.data.repository.VehicleRepositoryImpl
-import com.weelo.logistics.data.repository.BookingRepositoryImpl
+import com.weelo.logistics.data.repository.BookingApiRepository
+import com.weelo.logistics.data.repository.AuthRepositoryImpl
+import com.weelo.logistics.data.repository.PricingRepository
 import com.weelo.logistics.domain.repository.LocationRepository
 import com.weelo.logistics.domain.repository.VehicleRepository
 import com.weelo.logistics.domain.repository.BookingRepository
+import com.weelo.logistics.domain.repository.AuthRepository
+import com.weelo.logistics.data.remote.api.WeeloApiService
+import com.weelo.logistics.data.remote.TokenManager
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -77,7 +82,29 @@ object DataModule {
 
     @Provides
     @Singleton
-    fun provideBookingRepository(): BookingRepository {
-        return BookingRepositoryImpl()
+    fun provideBookingRepository(
+        apiService: WeeloApiService,
+        tokenManager: TokenManager
+    ): BookingRepository {
+        return BookingApiRepository(apiService, tokenManager)
     }
+
+    @Provides
+    @Singleton
+    fun provideAuthRepository(
+        apiService: WeeloApiService,
+        tokenManager: TokenManager
+    ): AuthRepository {
+        return AuthRepositoryImpl(apiService, tokenManager)
+    }
+
+    @Provides
+    @Singleton
+    fun providePricingRepository(
+        apiService: WeeloApiService,
+        tokenManager: TokenManager
+    ): PricingRepository {
+        return PricingRepository(apiService, tokenManager)
+    }
+    
 }

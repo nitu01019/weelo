@@ -55,11 +55,17 @@
     <string name="included_features">Included Features</string>
     <string name="price_breakdown">Price Breakdown</string>
     <string name="base_fare">Base Fare</string>
-    <string name="gst">GST (18%%)</string>
+    <string name="gst">GST (5%%)</string>
     <string name="total_amount">Total Amount</string>
     <string name="payment_method">Payment Method</string>
     <string name="total">Total</string>
     <string name="confirm_booking_btn">Confirm Booking</string>
+    
+    <!-- Accessibility -->
+    <string name="back">Go back</string>
+    <string name="loading">Loading</string>
+    <string name="call_driver">Call driver</string>
+    <string name="driver_photo">Driver photo</string>
     
     <!-- Alerts -->
     <string name="required">Required</string>
@@ -68,5 +74,5 @@
     <string name="locations_must_differ">From and To locations must be different</string>
     <string name="select_truck">Please select a truck type to continue</string>
     <string name="booking_confirmed">Booking Confirmed! 🎉</string>
-    <string name="booking_message">Your %s has been booked!\\n\\nTotal: ₹%d\\n\\nDriver will contact you shortly.</string>
+    <string name="booking_message" formatted="false">Your %s has been booked!\n\nTotal: ₹%d\n\nDriver will contact you shortly.</string>
 </resources>

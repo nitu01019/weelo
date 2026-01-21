@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="120dp"
+    android:height="60dp"
+    android:viewportWidth="120"
+    android:viewportHeight="60">
+    
+    <!-- Truck body -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M10,40 L10,20 L50,20 L50,15 L85,15 L90,25 L100,25 L100,40 Z" />
+    
+    <!-- Cabin -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M85,15 L85,25 L100,25 L90,15 Z"
+        android:strokeWidth="1"
+        android:strokeColor="#FF8C00" />
+    
+    <!-- Window -->
+    <path
+        android:fillColor="#FF8C00"
+        android:pathData="M87,17 L87,23 L95,23 L91,17 Z" />
+    
+    <!-- Front wheel (circle as path: center 25,42 radius 8) -->
+    <path
+        android:fillColor="#FF8C00"
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="2"
+        android:pathData="M25,34 A8,8 0 1,1 25,50 A8,8 0 1,1 25,34 Z" />
+    
+    <!-- Back wheel (circle as path: center 80,42 radius 8) -->
+    <path
+        android:fillColor="#FF8C00"
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="2"
+        android:pathData="M80,34 A8,8 0 1,1 80,50 A8,8 0 1,1 80,34 Z" />
+    
+    <!-- Front wheel center (circle as path: center 25,42 radius 3) -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M25,39 A3,3 0 1,1 25,45 A3,3 0 1,1 25,39 Z" />
+    
+    <!-- Back wheel center (circle as path: center 80,42 radius 3) -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M80,39 A3,3 0 1,1 80,45 A3,3 0 1,1 80,39 Z" />
+</vector>

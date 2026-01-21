@@ -19,7 +19,7 @@ class GeocodingDataSource @Inject constructor(
 ) {
     
     private val apiKey: String by lazy {
-        context.getString(R.string.google_maps_key)
+        com.weelo.logistics.BuildConfig.MAPS_API_KEY
     }
     
     /**

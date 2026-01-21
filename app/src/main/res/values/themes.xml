@@ -23,4 +23,68 @@
         <item name="android:windowEnterAnimation">@android:anim/slide_in_left</item>
         <item name="android:windowExitAnimation">@android:anim/slide_out_right</item>
     </style>
+    
+    <!-- OTP Input Style -->
+    <style name="OtpInputStyle">
+        <item name="android:background">@drawable/bg_otp_input</item>
+        <item name="android:gravity">center</item>
+        <item name="android:inputType">number</item>
+        <item name="android:maxLength">1</item>
+        <item name="android:textColor">@color/text_primary</item>
+        <item name="android:textSize">20sp</item>
+        <item name="android:textStyle">bold</item>
+    </style>
+
+    <!-- Splash Screen Theme - INSTANT load with circle -->
+    <style name="Theme.Weelo.Splash" parent="Theme.MaterialComponents.Light.NoActionBar">
+        <!-- Full splash with circle shows INSTANTLY -->
+        <item name="android:windowBackground">@drawable/splash_window_background</item>
+        <item name="android:statusBarColor">@color/splashBackground</item>
+        <item name="android:navigationBarColor">@color/splashBackground</item>
+        <item name="android:windowLightStatusBar">false</item>
+    </style>
+    
+    <!-- Transparent Dialog Theme for SearchingVehiclesDialog -->
+    <style name="Theme.Weelo.Dialog.Transparent" parent="Theme.MaterialComponents.Light.Dialog">
+        <item name="android:windowIsFloating">true</item>
+        <item name="android:windowBackground">@android:color/transparent</item>
+        <item name="android:windowNoTitle">true</item>
+        <item name="android:backgroundDimEnabled">true</item>
+        <item name="android:backgroundDimAmount">0.6</item>
+        <item name="android:windowAnimationStyle">@style/DialogAnimation</item>
+    </style>
+    
+    <!-- Dialog Animation -->
+    <style name="DialogAnimation">
+        <item name="android:windowEnterAnimation">@android:anim/fade_in</item>
+        <item name="android:windowExitAnimation">@android:anim/fade_out</item>
+    </style>
+    
+    <!-- Bottom Sheet Dialog Theme - Always attached to bottom -->
+    <style name="BottomSheetDialogTheme" parent="Theme.MaterialComponents.Light.BottomSheetDialog">
+        <item name="bottomSheetStyle">@style/BottomSheetStyle</item>
+        <item name="android:windowIsFloating">false</item>
+        <item name="android:windowSoftInputMode">adjustResize</item>
+        <item name="android:backgroundDimEnabled">true</item>
+        <item name="android:backgroundDimAmount">0.5</item>
+    </style>
+    
+    <!-- Bottom Sheet Style - Forces bottom sheet to stay at bottom -->
+    <style name="BottomSheetStyle" parent="Widget.MaterialComponents.BottomSheet.Modal">
+        <item name="android:background">@drawable/bottom_sheet_rounded_bg</item>
+        <item name="behavior_peekHeight">auto</item>
+        <item name="behavior_fitToContents">false</item>
+        <item name="behavior_skipCollapsed">true</item>
+        <item name="behavior_hideable">true</item>
+        <item name="shapeAppearance">@style/BottomSheetShapeAppearance</item>
+    </style>
+    
+    <!-- Shape appearance for rounded corners -->
+    <style name="BottomSheetShapeAppearance" parent="ShapeAppearance.MaterialComponents.LargeComponent">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSizeTopLeft">24dp</item>
+        <item name="cornerSizeTopRight">24dp</item>
+        <item name="cornerSizeBottomLeft">0dp</item>
+        <item name="cornerSizeBottomRight">0dp</item>
+    </style>
 </resources>

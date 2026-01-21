@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Loading/Error/Empty state view IDs -->
+    <item name="tvLoadingMessage" type="id"/>
+    <item name="tvErrorTitle" type="id"/>
+    <item name="tvErrorMessage" type="id"/>
+    <item name="btnRetry" type="id"/>
+    <item name="tvEmptyTitle" type="id"/>
+    <item name="tvEmptySubtitle" type="id"/>
+    <item name="btnEmptyAction" type="id"/>
+    <item name="offlineBanner" type="id"/>
+    <item name="shimmerLayout" type="id"/>
+</resources>

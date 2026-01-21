@@ -1,12 +1,17 @@
 package com.weelo.logistics.core.util
 
+import com.weelo.logistics.data.remote.ApiConfig
+
 /**
  * Application-wide constants
  */
 object Constants {
     
-    // Network
-    const val BASE_URL = "https://api.weelo.in/v1/"
+    // Network - Backend URL
+    // NOW USES ApiConfig for centralized URL management!
+    // To change URL, update ApiConfig.kt -> DEVICE_IP
+    val BASE_URL: String get() = ApiConfig.BASE_URL
+    
     const val CONNECT_TIMEOUT = 30L
     const val READ_TIMEOUT = 30L
     const val WRITE_TIMEOUT = 30L

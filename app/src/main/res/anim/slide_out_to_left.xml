@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Slide Out To Left Animation
+    For ViewFlipper horizontal transitions (next step)
+-->
+<set xmlns:android="http://schemas.android.com/apk/res/android">
+    <translate
+        android:fromXDelta="0"
+        android:toXDelta="-100%p"
+        android:duration="250"
+        android:interpolator="@android:anim/accelerate_interpolator" />
+    <alpha
+        android:fromAlpha="1.0"
+        android:toAlpha="0.8"
+        android:duration="250" />
+</set>

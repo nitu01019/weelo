@@ -1,0 +1,185 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Multi-Truck Selection Bottom Sheet (Rapido-Style)
+    ==================================================
+    Expandable accordion for selecting multiple truck types
+    
+    Features:
+    - Draggable handle
+    - "Your Selection" header
+    - RecyclerView with expandable truck type sections
+    - Add Another Truck Type button
+    - Summary bar with total count and price
+    - CLEAR and CONFIRM buttons
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:background="@drawable/bottom_sheet_rounded_bg">
+
+    <!-- Drag Handle -->
+    <View
+        android:layout_width="40dp"
+        android:layout_height="4dp"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginTop="12dp"
+        android:layout_marginBottom="8dp"
+        android:background="@drawable/drag_handle_bg" />
+
+    <!-- Header: Your Selection -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingHorizontal="16dp"
+        android:paddingVertical="12dp">
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Your Selection"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:textColor="#212121" />
+
+        <!-- Close Button -->
+        <ImageView
+            android:id="@+id/closeButton"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:src="@drawable/ic_close"
+            android:padding="4dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="Close" />
+
+    </LinearLayout>
+
+    <!-- Divider -->
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="#E0E0E0" />
+
+    <!-- Selection Summary Bar -->
+    <LinearLayout
+        android:id="@+id/selectionSummaryBar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingHorizontal="16dp"
+        android:paddingVertical="10dp"
+        android:background="#FFF8E1"
+        android:visibility="gone">
+
+        <ImageView
+            android:layout_width="20dp"
+            android:layout_height="20dp"
+            android:src="@drawable/ic_check_circle"
+            app:tint="#4CAF50" />
+
+        <TextView
+            android:id="@+id/selectedCountText"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginStart="8dp"
+            android:text="3 trucks selected"
+            android:textSize="14sp"
+            android:textColor="#388E3C" />
+
+        <TextView
+            android:id="@+id/totalPriceText"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="₹45,000"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:textColor="#212121" />
+
+    </LinearLayout>
+
+    <!-- Expandable Truck Types RecyclerView -->
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/truckTypesRecyclerView"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:paddingTop="12dp"
+        android:paddingBottom="8dp"
+        android:clipToPadding="false"
+        android:overScrollMode="ifContentScrolls" />
+
+    <!-- Add Another Truck Type Button -->
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/addTruckTypeButton"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="16dp"
+        android:layout_marginBottom="8dp"
+        android:text="+ Add Another Truck Type"
+        android:textSize="14sp"
+        android:textColor="#FFA000"
+        android:textAllCaps="false"
+        style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+        app:strokeColor="#FFA000"
+        app:strokeWidth="1dp"
+        app:cornerRadius="8dp"
+        app:rippleColor="#30FFA000"
+        app:icon="@drawable/ic_add"
+        app:iconTint="#FFA000"
+        app:iconGravity="textStart" />
+
+    <!-- Divider -->
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="#E0E0E0" />
+
+    <!-- Bottom Buttons: Clear and Confirm -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:padding="16dp"
+        android:gravity="center_vertical"
+        android:background="#FFFFFF"
+        android:elevation="8dp">
+
+        <!-- Clear All Button -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/clearAllButton"
+            android:layout_width="0dp"
+            android:layout_height="52dp"
+            android:layout_weight="1"
+            android:text="CLEAR"
+            android:textSize="14sp"
+            android:textColor="#757575"
+            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+            app:strokeColor="#BDBDBD"
+            app:strokeWidth="1dp"
+            app:cornerRadius="12dp"
+            android:layout_marginEnd="8dp" />
+
+        <!-- Confirm & Search Button -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/confirmButton"
+            android:layout_width="0dp"
+            android:layout_height="52dp"
+            android:layout_weight="1.5"
+            android:text="CONFIRM &amp; SEARCH"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:textColor="#FFFFFF"
+            app:backgroundTint="#FFA000"
+            app:cornerRadius="12dp"
+            android:enabled="false"
+            android:layout_marginStart="8dp" />
+
+    </LinearLayout>
+
+</LinearLayout>

@@ -21,7 +21,12 @@ data class BookingModel(
     val createdAt: Long = System.currentTimeMillis(),
     val driverId: String? = null,
     val driverName: String? = null,
-    val driverPhone: String? = null
+    val driverPhone: String? = null,
+    
+    // Multi-truck booking fields (Firebase mock integration)
+    val trucksNeeded: Int = 1,         // Number of trucks customer wants
+    val trucksFilled: Int = 0,         // Trucks assigned so far
+    val broadcastId: String? = null    // Firebase broadcast document ID
 ) {
     /**
      * Check if driver is assigned
@@ -37,6 +42,22 @@ data class BookingModel(
      * Check if booking is active
      */
     fun isActive(): Boolean = status != BookingStatus.CANCELLED && status != BookingStatus.COMPLETED
+    
+    /**
+     * Check if all trucks are assigned (multi-truck booking)
+     */
+    fun isFullyFilled(): Boolean = trucksFilled >= trucksNeeded
+    
+    /**
+     * Get truck fill percentage for progress display
+     */
+    fun getFillPercentage(): Float = 
+        if (trucksNeeded > 0) trucksFilled.toFloat() / trucksNeeded else 0f
+    
+    /**
+     * Get trucks status display text
+     */
+    fun getTrucksStatusDisplay(): String = "$trucksFilled / $trucksNeeded trucks assigned"
 }
 
 /**
@@ -93,5 +114,7 @@ enum class BookingStatus(val displayName: String) {
     DRIVER_ASSIGNED("Driver Assigned"),
     IN_PROGRESS("In Progress"),
     COMPLETED("Completed"),
-    CANCELLED("Cancelled")
+    CANCELLED("Cancelled"),
+    EXPIRED("Expired"),                    // No trucks assigned before timeout
+    PARTIALLY_FILLED("Partially Filled")   // Some trucks assigned, timeout for rest
 }

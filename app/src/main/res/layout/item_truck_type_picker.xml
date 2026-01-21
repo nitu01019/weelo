@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Truck Type Grid Item - Clean & Shiny
+    =====================================
+    Simple, clean cards with proper separation
+    Sky blue ripple on click
+-->
+<FrameLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/truckTypePickerCard"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:padding="5dp"
+    android:clickable="true"
+    android:focusable="true">
+
+    <!-- Clean Shiny Card -->
+    <androidx.cardview.widget.CardView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        app:cardCornerRadius="12dp"
+        app:cardElevation="4dp"
+        app:cardBackgroundColor="#FFFFFF"
+        android:foreground="@drawable/ripple_skyblue">
+
+        <ImageView
+            android:id="@+id/truckTypePickerIcon"
+            android:layout_width="match_parent"
+            android:layout_height="85dp"
+            android:scaleType="centerInside"
+            android:scaleX="1.7"
+            android:scaleY="1.7"
+            android:src="@drawable/ic_open_main" />
+
+    </androidx.cardview.widget.CardView>
+
+    <!-- Hidden TextViews for code compatibility -->
+    <TextView
+        android:id="@+id/truckNameInCard"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:visibility="gone" />
+
+    <TextView
+        android:id="@+id/truckTonnageInCard"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:visibility="gone" />
+
+    <TextView
+        android:id="@+id/truckTypePickerName"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:visibility="gone" />
+
+</FrameLayout>

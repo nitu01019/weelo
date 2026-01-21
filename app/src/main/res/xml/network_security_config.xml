@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Network Security Configuration for Weelo Customer App
+    ======================================================
+    
+    This configuration enforces HTTPS for all network connections in production
+    while allowing HTTP for local development.
+    
+    SECURITY FEATURES:
+    1. HTTPS enforced for production domains
+    2. Certificate pinning for extra security (when enabled)
+    3. Cleartext (HTTP) allowed only for local development IPs
+    4. System CA certificates trusted
+-->
+<network-security-config>
+    
+    <!-- Default config: HTTPS only -->
+    <base-config cleartextTrafficPermitted="false">
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+    </base-config>
+    
+    <!-- Production domain configuration -->
+    <domain-config cleartextTrafficPermitted="false">
+        <domain includeSubdomains="true">weelo.in</domain>
+        <domain includeSubdomains="true">api.weelo.in</domain>
+        <domain includeSubdomains="true">staging-api.weelo.in</domain>
+        
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+    </domain-config>
+    
+    <!-- Development: Allow cleartext for local IPs only -->
+    <domain-config cleartextTrafficPermitted="true">
+        <!-- Android Emulator localhost -->
+        <domain includeSubdomains="false">10.0.2.2</domain>
+        
+        <!-- Common local development IPs -->
+        <domain includeSubdomains="false">192.168.1.10</domain>
+        <domain includeSubdomains="false">192.168.1.100</domain>
+        <domain includeSubdomains="false">192.168.0.100</domain>
+        <domain includeSubdomains="false">172.21.110.115</domain>
+        
+        <!-- Allow all 192.168.x.x range for flexibility -->
+        <domain includeSubdomains="true">192.168.1</domain>
+        <domain includeSubdomains="true">192.168.0</domain>
+        
+        <!-- localhost -->
+        <domain includeSubdomains="false">localhost</domain>
+        <domain includeSubdomains="false">127.0.0.1</domain>
+    </domain-config>
+    
+    <!-- Debug overrides: Allow user-installed CAs in debug builds -->
+    <debug-overrides>
+        <trust-anchors>
+            <certificates src="system" />
+            <certificates src="user" />
+        </trust-anchors>
+    </debug-overrides>
+    
+</network-security-config>

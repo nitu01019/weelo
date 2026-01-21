@@ -55,17 +55,19 @@ data class VehicleModel(
 
 /**
  * Vehicle category enum
+ * Must match backend vehicleTypeSchema: mini, lcv, tipper, container, trailer, tanker, bulker, open, dumper, tractor
  */
-enum class VehicleCategory(val displayName: String) {
-    OPEN("Open"),
-    CONTAINER("Container"),
-    LCV("LCV"),
-    MINI("Mini/Pickup"),
-    TRAILER("Trailer"),
-    TIPPER("Tipper"),
-    TANKER("Tanker"),
-    DUMPER("Dumper"),
-    BULKER("Bulker");
+enum class VehicleCategory(val displayName: String, val apiValue: String) {
+    OPEN("Open", "open"),
+    CONTAINER("Container", "container"),
+    LCV("LCV", "lcv"),
+    MINI("Mini/Pickup", "mini"),
+    TRAILER("Trailer", "trailer"),
+    TIPPER("Tipper", "tipper"),
+    TANKER("Tanker", "tanker"),
+    DUMPER("Dumper", "dumper"),
+    BULKER("Bulker", "bulker"),
+    TRACTOR("Tractor", "tractor");
     
     companion object {
         fun fromId(id: String): VehicleCategory {
@@ -79,6 +81,7 @@ enum class VehicleCategory(val displayName: String) {
                 "tanker" -> TANKER
                 "dumper" -> DUMPER
                 "bulker" -> BULKER
+                "tractor" -> TRACTOR
                 else -> OPEN
             }
         }

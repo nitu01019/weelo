@@ -1,0 +1,603 @@
+package com.weelo.logistics.data.repository
+
+import com.weelo.logistics.core.common.Result
+import com.weelo.logistics.core.common.WeeloException
+import com.weelo.logistics.data.remote.TokenManager
+import com.weelo.logistics.data.remote.api.*
+import com.weelo.logistics.domain.model.BookingModel
+import com.weelo.logistics.domain.model.BookingStatus
+import com.weelo.logistics.domain.model.LocationModel
+import com.weelo.logistics.domain.model.PricingModel
+import com.weelo.logistics.domain.model.VehicleModel
+import com.weelo.logistics.domain.model.VehicleCategory
+import com.weelo.logistics.domain.repository.BookingRepository
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flow
+import timber.log.Timber
+import javax.inject.Inject
+
+/**
+ * Booking Repository Implementation with real API
+ * 
+ * Handles booking operations:
+ * - Create bookings (broadcasts to transporters)
+ * - Get booking status
+ * - Track assigned trucks
+ * - Cancel bookings
+ */
+class BookingApiRepository @Inject constructor(
+    private val apiService: WeeloApiService,
+    private val tokenManager: TokenManager
+) : BookingRepository {
+
+    /**
+     * Get valid auth token, refreshing if necessary
+     * 
+     * This method checks if the token needs refresh and attempts to refresh it
+     * before returning. If refresh fails or no token exists, throws an exception.
+     */
+    private suspend fun getAuthToken(): String {
+        // First check if we have a valid (non-expired) token
+        val currentToken = tokenManager.getAccessToken()
+        
+        // If we have a valid token, use it
+        if (!currentToken.isNullOrBlank()) {
+            return "Bearer $currentToken"
+        }
+        
+        // Token is null/expired - try to refresh using refresh token
+        val refreshToken = tokenManager.getRefreshToken()
+        if (!refreshToken.isNullOrBlank()) {
+            try {
+                Timber.d("Token expired/missing, attempting refresh...")
+                val response = apiService.refreshToken(
+                    RefreshTokenRequest(refreshToken = refreshToken)
+                )
+                
+                if (response.isSuccessful && response.body()?.success == true) {
+                    val data = response.body()?.data
+                    if (data != null) {
+                        // Update tokens
+                        tokenManager.saveTokens(
+                            accessToken = data.accessToken,
+                            refreshToken = refreshToken,
+                            expiresInSeconds = data.expiresIn
+                        )
+                        Timber.d("Token refreshed successfully")
+                        return "Bearer ${data.accessToken}"
+                    }
+                }
+                
+                // Refresh failed - clear tokens and require re-login
+                Timber.w("Token refresh failed, clearing tokens")
+                tokenManager.clearTokens()
+            } catch (e: Exception) {
+                Timber.e(e, "Token refresh error")
+                tokenManager.clearTokens()
+            }
+        }
+        
+        // No valid token available - user needs to login again
+        throw WeeloException.AuthException("Session expired. Please login again.")
+    }
+    
+    /**
+     * Legacy sync version for backward compatibility
+     * Note: This should be avoided - use suspend version instead
+     */
+    private fun getAuthTokenSync(): String {
+        val token = tokenManager.getAccessToken()
+        if (token.isNullOrBlank()) {
+            Timber.w("No valid token available (sync call)")
+            return "Bearer "
+        }
+        return "Bearer $token"
+    }
+
+    override suspend fun createBooking(booking: BookingModel): Result<BookingModel> {
+        return try {
+            val request = CreateBookingRequest(
+                pickup = LocationRequest(
+                    coordinates = CoordinatesRequest(
+                        latitude = booking.fromLocation.latitude,
+                        longitude = booking.fromLocation.longitude
+                    ),
+                    address = booking.fromLocation.address,
+                    city = booking.fromLocation.city,
+                    state = booking.fromLocation.state,
+                    pincode = booking.fromLocation.pincode
+                ),
+                drop = LocationRequest(
+                    coordinates = CoordinatesRequest(
+                        latitude = booking.toLocation.latitude,
+                        longitude = booking.toLocation.longitude
+                    ),
+                    address = booking.toLocation.address,
+                    city = booking.toLocation.city,
+                    state = booking.toLocation.state,
+                    pincode = booking.toLocation.pincode
+                ),
+                vehicleType = booking.vehicle.category.apiValue,
+                vehicleSubtype = booking.vehicle.name,
+                trucksNeeded = booking.trucksNeeded,
+                distanceKm = booking.distanceKm,
+                pricePerTruck = booking.pricing.totalAmount
+            )
+
+            val response = apiService.createBooking(getAuthToken(), request)
+
+            if (response.isSuccessful && response.body()?.success == true) {
+                val data = response.body()?.data?.booking
+                if (data != null) {
+                    val createdBooking = mapToBookingModel(data, booking.vehicle)
+                    Timber.d("Booking created: ${createdBooking.id}")
+                    Result.Success(createdBooking)
+                } else {
+                    Result.Error(WeeloException.BookingException("Invalid response"))
+                }
+            } else {
+                val error = response.body()?.error
+                Timber.w("Booking creation failed: ${error?.code}")
+                Result.Error(WeeloException.BookingException(error?.message ?: "Failed to create booking"))
+            }
+        } catch (e: Exception) {
+            Timber.e(e, "Create booking error")
+            Result.Error(WeeloException.NetworkException("Network error. Please try again."))
+        }
+    }
+
+    override suspend fun getBookingById(bookingId: String): Result<BookingModel> {
+        return try {
+            val response = apiService.getBookingById(getAuthToken(), bookingId)
+
+            if (response.isSuccessful && response.body()?.success == true) {
+                val data = response.body()?.data?.booking
+                if (data != null) {
+                    Result.Success(mapToBookingModel(data))
+                } else {
+                    Result.Error(WeeloException.BookingException("Booking not found"))
+                }
+            } else {
+                val error = response.body()?.error
+                Result.Error(WeeloException.BookingException(error?.message ?: "Failed to load booking"))
+            }
+        } catch (e: Exception) {
+            Timber.e(e, "Get booking error")
+            Result.Error(WeeloException.NetworkException("Network error"))
+        }
+    }
+
+    override fun getUserBookings(): Flow<Result<List<BookingModel>>> = flow {
+        try {
+            val token = getAuthToken()
+            val response = apiService.getMyBookings(token)
+
+            if (response.isSuccessful && response.body()?.success == true) {
+                val bookings = response.body()?.data?.bookings?.map { mapToBookingModel(it) } ?: emptyList()
+                emit(Result.Success(bookings))
+            } else {
+                val error = response.body()?.error
+                emit(Result.Error(WeeloException.BookingException(error?.message ?: "Failed to load bookings")))
+            }
+        } catch (e: WeeloException.AuthException) {
+            Timber.w("Auth error in getUserBookings: ${e.message}")
+            emit(Result.Error(e))
+        } catch (e: Exception) {
+            Timber.e(e, "Get bookings error")
+            emit(Result.Error(WeeloException.NetworkException("Network error")))
+        }
+    }
+
+    override suspend fun cancelBooking(bookingId: String): Result<Unit> {
+        return try {
+            val response = apiService.cancelBooking(getAuthToken(), bookingId)
+
+            if (response.isSuccessful && response.body()?.success == true) {
+                Timber.d("Booking cancelled: $bookingId")
+                Result.Success(Unit)
+            } else {
+                val error = response.body()?.error
+                Result.Error(WeeloException.BookingException(error?.message ?: "Failed to cancel booking"))
+            }
+        } catch (e: Exception) {
+            Timber.e(e, "Cancel booking error")
+            Result.Error(WeeloException.NetworkException("Network error"))
+        }
+    }
+
+    /**
+     * Create booking with simple parameters (used by BookingConfirmationActivity)
+     * Returns booking ID on success
+     */
+    suspend fun createBookingSimple(
+        pickup: LocationRequest,
+        drop: LocationRequest,
+        vehicleType: String,
+        vehicleSubtype: String,
+        trucksNeeded: Int,
+        distanceKm: Int,
+        pricePerTruck: Int
+    ): Result<String> {
+        return try {
+            val request = CreateBookingRequest(
+                pickup = pickup,
+                drop = drop,
+                vehicleType = vehicleType,
+                vehicleSubtype = vehicleSubtype,
+                trucksNeeded = trucksNeeded,
+                distanceKm = distanceKm,
+                pricePerTruck = pricePerTruck
+            )
+
+            val response = apiService.createBooking(getAuthToken(), request)
+
+            if (response.isSuccessful && response.body()?.success == true) {
+                val bookingId = response.body()?.data?.booking?.id
+                if (bookingId != null) {
+                    Timber.d("Booking created: $bookingId")
+                    Result.Success(bookingId)
+                } else {
+                    Result.Error(WeeloException.BookingException("Invalid response - no booking ID"))
+                }
+            } else {
+                val error = response.body()?.error
+                Timber.w("Booking creation failed: ${error?.code}")
+                Result.Error(WeeloException.BookingException(error?.message ?: "Failed to create booking"))
+            }
+        } catch (e: Exception) {
+            Timber.e(e, "Create booking error")
+            Result.Error(WeeloException.NetworkException("Network error. Please try again."))
+        }
+    }
+
+    /**
+     * Get assigned trucks for a booking
+     */
+    suspend fun getAssignedTrucks(bookingId: String): Result<List<AssignedTruckData>> {
+        return try {
+            val response = apiService.getAssignedTrucks(getAuthToken(), bookingId)
+
+            if (response.isSuccessful && response.body()?.success == true) {
+                val trucks = response.body()?.data?.trucks ?: emptyList()
+                Result.Success(trucks)
+            } else {
+                val error = response.body()?.error
+                Result.Error(WeeloException.BookingException(error?.message ?: "Failed to load trucks"))
+            }
+        } catch (e: Exception) {
+            Timber.e(e, "Get assigned trucks error")
+            Result.Error(WeeloException.NetworkException("Network error"))
+        }
+    }
+
+    override suspend fun calculateDistance(
+        fromLat: Double,
+        fromLng: Double,
+        toLat: Double,
+        toLng: Double
+    ): Result<Int> {
+        // Use local calculation for now
+        // Could integrate with Google Maps API via backend
+        return try {
+            val distance = calculateHaversineDistance(fromLat, fromLng, toLat, toLng)
+            Result.Success(distance)
+        } catch (e: Exception) {
+            Result.Error(WeeloException.BookingException("Failed to calculate distance"))
+        }
+    }
+
+    // ============================================================
+    // PRIVATE HELPERS
+    // ============================================================
+
+    private fun mapToBookingModel(data: BookingData, vehicle: VehicleModel? = null): BookingModel {
+        return BookingModel(
+            id = data.id,
+            fromLocation = LocationModel(
+                latitude = data.pickup.coordinates.latitude,
+                longitude = data.pickup.coordinates.longitude,
+                address = data.pickup.address
+            ),
+            toLocation = LocationModel(
+                latitude = data.drop.coordinates.latitude,
+                longitude = data.drop.coordinates.longitude,
+                address = data.drop.address
+            ),
+            vehicle = vehicle ?: VehicleModel(
+                id = "",
+                name = data.vehicleSubtype,
+                category = VehicleCategory.fromId(data.vehicleType),
+                capacityTons = "",
+                basePrice = 0,
+                pricePerKm = 0,
+                priceMultiplier = 1.0
+            ),
+            distanceKm = data.distanceKm,
+            pricing = PricingModel(
+                baseFare = 0,
+                distanceCharge = 0,
+                gstAmount = 0,
+                totalAmount = data.pricePerTruck,
+                distanceKm = data.distanceKm,
+                pricePerKm = 0
+            ),
+            status = mapStatus(data.status),
+            createdAt = parseTimestamp(data.createdAt),
+            trucksNeeded = data.trucksNeeded,
+            trucksFilled = data.trucksFilled,
+            broadcastId = data.id
+        )
+    }
+
+    // ============================================================
+    // NEW: ORDER SYSTEM (Multi-Truck Requests)
+    // ============================================================
+
+    /**
+     * Create order with multiple truck types
+     * 
+     * Each truck type creates separate TruckRequests that are
+     * broadcast only to transporters who have matching vehicles.
+     */
+    suspend fun createOrder(
+        pickup: LocationModel,
+        drop: LocationModel,
+        distanceKm: Int,
+        trucks: List<TruckSelection>,
+        goodsType: String? = null,
+        weight: String? = null,
+        notes: String? = null
+    ): Result<OrderResult> {
+        return try {
+            val request = CreateOrderRequest(
+                pickup = LocationRequest(
+                    coordinates = CoordinatesRequest(
+                        latitude = pickup.latitude,
+                        longitude = pickup.longitude
+                    ),
+                    address = pickup.address,
+                    city = pickup.city,
+                    state = pickup.state,
+                    pincode = pickup.pincode
+                ),
+                drop = LocationRequest(
+                    coordinates = CoordinatesRequest(
+                        latitude = drop.latitude,
+                        longitude = drop.longitude
+                    ),
+                    address = drop.address,
+                    city = drop.city,
+                    state = drop.state,
+                    pincode = drop.pincode
+                ),
+                distanceKm = distanceKm,
+                trucks = trucks.map { truck ->
+                    TruckSelectionRequest(
+                        vehicleType = truck.vehicleType,
+                        vehicleSubtype = truck.vehicleSubtype,
+                        quantity = truck.quantity,
+                        pricePerTruck = truck.pricePerTruck
+                    )
+                },
+                goodsType = goodsType,
+                weight = weight,
+                notes = notes
+            )
+
+            Timber.d("Creating order with ${trucks.sumOf { it.quantity }} trucks")
+            
+            val response = apiService.createOrder(getAuthToken(), request)
+            
+            if (response.isSuccessful && response.body()?.success == true) {
+                val data = response.body()!!.data!!
+                
+                Timber.i("Order created: ${data.order.id}")
+                Timber.i("Total requests: ${data.broadcastSummary.totalRequests}")
+                Timber.i("Transporters notified: ${data.broadcastSummary.totalTransportersNotified}")
+                
+                Result.Success(
+                    OrderResult(
+                        orderId = data.order.id,
+                        totalTrucks = data.order.totalTrucks,
+                        totalAmount = data.order.totalAmount,
+                        status = data.order.status,
+                        truckRequests = data.truckRequests.map { req ->
+                            TruckRequestResult(
+                                id = req.id,
+                                requestNumber = req.requestNumber,
+                                vehicleType = req.vehicleType,
+                                vehicleSubtype = req.vehicleSubtype,
+                                pricePerTruck = req.pricePerTruck,
+                                status = req.status
+                            )
+                        },
+                        broadcastSummary = BroadcastSummaryResult(
+                            totalRequests = data.broadcastSummary.totalRequests,
+                            totalTransportersNotified = data.broadcastSummary.totalTransportersNotified,
+                            groupedBy = data.broadcastSummary.groupedBy.map { group ->
+                                BroadcastGroupResult(
+                                    vehicleType = group.vehicleType,
+                                    vehicleSubtype = group.vehicleSubtype,
+                                    count = group.count,
+                                    transportersNotified = group.transportersNotified
+                                )
+                            }
+                        ),
+                        timeoutSeconds = data.timeoutSeconds,
+                        expiresAt = data.order.expiresAt
+                    )
+                )
+            } else {
+                val errorMsg = response.body()?.error?.message 
+                    ?: response.errorBody()?.string() 
+                    ?: "Failed to create order"
+                Timber.e("Order creation failed: $errorMsg")
+                Result.Error(WeeloException.BookingException(errorMsg))
+            }
+        } catch (e: Exception) {
+            Timber.e(e, "Order creation exception")
+            Result.Error(e, e.message ?: "Network error")
+        }
+    }
+
+    /**
+     * Get order details with all truck requests
+     */
+    suspend fun getOrderDetails(orderId: String): Result<OrderDetailResult> {
+        return try {
+            val response = apiService.getOrderById(getAuthToken(), orderId)
+            
+            if (response.isSuccessful && response.body()?.success == true) {
+                val data = response.body()!!.data!!
+                
+                Result.Success(
+                    OrderDetailResult(
+                        orderId = data.order.id,
+                        status = data.order.status,
+                        totalTrucks = data.summary.totalTrucks,
+                        trucksFilled = data.summary.trucksFilled,
+                        trucksSearching = data.summary.trucksSearching,
+                        trucksExpired = data.summary.trucksExpired,
+                        requests = data.requests.map { req ->
+                            TruckRequestDetailResult(
+                                id = req.id,
+                                requestNumber = req.requestNumber,
+                                vehicleType = req.vehicleType,
+                                vehicleSubtype = req.vehicleSubtype,
+                                pricePerTruck = req.pricePerTruck,
+                                status = req.status,
+                                assignedVehicleNumber = req.assignedVehicleNumber,
+                                assignedDriverName = req.assignedDriverName,
+                                assignedDriverPhone = req.assignedDriverPhone,
+                                tripId = req.tripId
+                            )
+                        }
+                    )
+                )
+            } else {
+                val errorMsg = response.body()?.error?.message ?: "Failed to get order details"
+                Result.Error(WeeloException.NetworkException(errorMsg))
+            }
+        } catch (e: Exception) {
+            Timber.e(e, "Get order details exception")
+            Result.Error(e, e.message ?: "Network error")
+        }
+    }
+
+    // ============================================================
+    // Helper methods
+    // ============================================================
+
+    private fun mapStatus(status: String): BookingStatus {
+        return when (status.lowercase()) {
+            "active" -> BookingStatus.PENDING
+            "searching" -> BookingStatus.PENDING
+            "partially_filled" -> BookingStatus.PENDING
+            "fully_filled" -> BookingStatus.CONFIRMED
+            "in_progress" -> BookingStatus.IN_PROGRESS
+            "completed" -> BookingStatus.COMPLETED
+            "cancelled" -> BookingStatus.CANCELLED
+            "expired" -> BookingStatus.CANCELLED
+            else -> BookingStatus.PENDING
+        }
+    }
+
+    private fun parseTimestamp(timestamp: String): Long {
+        return try {
+            java.time.Instant.parse(timestamp).toEpochMilli()
+        } catch (e: Exception) {
+            System.currentTimeMillis()
+        }
+    }
+
+    private fun calculateHaversineDistance(
+        lat1: Double, lon1: Double,
+        lat2: Double, lon2: Double
+    ): Int {
+        val earthRadius = 6371.0
+        val dLat = Math.toRadians(lat2 - lat1)
+        val dLon = Math.toRadians(lon2 - lon1)
+        val a = kotlin.math.sin(dLat / 2).let { it * it } +
+                kotlin.math.cos(Math.toRadians(lat1)) * 
+                kotlin.math.cos(Math.toRadians(lat2)) *
+                kotlin.math.sin(dLon / 2).let { it * it }
+        val c = 2 * kotlin.math.atan2(kotlin.math.sqrt(a), kotlin.math.sqrt(1 - a))
+        return (earthRadius * c).toInt()
+    }
+}
+
+// ============================================================
+// ORDER DATA CLASSES
+// ============================================================
+
+/**
+ * Input for truck selection in an order
+ */
+data class TruckSelection(
+    val vehicleType: String,
+    val vehicleSubtype: String,
+    val quantity: Int,
+    val pricePerTruck: Int
+)
+
+/**
+ * Result of creating an order
+ */
+data class OrderResult(
+    val orderId: String,
+    val totalTrucks: Int,
+    val totalAmount: Int,
+    val status: String,
+    val truckRequests: List<TruckRequestResult>,
+    val broadcastSummary: BroadcastSummaryResult,
+    val timeoutSeconds: Int,
+    val expiresAt: String
+)
+
+data class TruckRequestResult(
+    val id: String,
+    val requestNumber: Int,
+    val vehicleType: String,
+    val vehicleSubtype: String,
+    val pricePerTruck: Int,
+    val status: String
+)
+
+data class BroadcastSummaryResult(
+    val totalRequests: Int,
+    val totalTransportersNotified: Int,
+    val groupedBy: List<BroadcastGroupResult>
+)
+
+data class BroadcastGroupResult(
+    val vehicleType: String,
+    val vehicleSubtype: String,
+    val count: Int,
+    val transportersNotified: Int
+)
+
+/**
+ * Result of getting order details
+ */
+data class OrderDetailResult(
+    val orderId: String,
+    val status: String,
+    val totalTrucks: Int,
+    val trucksFilled: Int,
+    val trucksSearching: Int,
+    val trucksExpired: Int,
+    val requests: List<TruckRequestDetailResult>
+)
+
+data class TruckRequestDetailResult(
+    val id: String,
+    val requestNumber: Int,
+    val vehicleType: String,
+    val vehicleSubtype: String,
+    val pricePerTruck: Int,
+    val status: String,
+    val assignedVehicleNumber: String?,
+    val assignedDriverName: String?,
+    val assignedDriverPhone: String?,
+    val tripId: String?
+)

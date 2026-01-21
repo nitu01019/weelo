@@ -2,10 +2,18 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
-    android:layout_height="wrap_content"
+    android:layout_height="match_parent"
     android:orientation="vertical"
-    android:padding="12dp"
     android:background="@drawable/bottom_sheet_rounded_bg">
+
+    <!-- Drag Handle -->
+    <View
+        android:layout_width="40dp"
+        android:layout_height="4dp"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginTop="12dp"
+        android:layout_marginBottom="8dp"
+        android:background="@drawable/drag_handle_bg" />
 
     <!-- Header with title and close button -->
     <LinearLayout
@@ -13,6 +21,7 @@
         android:layout_height="wrap_content"
         android:orientation="horizontal"
         android:gravity="center_vertical"
+        android:paddingHorizontal="16dp"
         android:paddingBottom="12dp">
 
         <TextView
@@ -23,49 +32,83 @@
             android:text="Loader"
             android:textSize="18sp"
             android:textStyle="bold"
-            android:textColor="#000" />
+            android:textColor="#212121" />
 
         <ImageView
             android:id="@+id/closeButton"
             android:layout_width="32dp"
             android:layout_height="32dp"
-            android:src="@android:drawable/ic_menu_close_clear_cancel"
-            android:padding="4dp" />
+            android:src="@drawable/ic_close"
+            android:padding="4dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="Close" />
     </LinearLayout>
 
-    <!-- Grid of machinery subtypes -->
-    <LinearLayout
-        android:id="@+id/subtypesContainer"
+    <!-- Divider -->
+    <View
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="vertical" />
+        android:layout_height="1dp"
+        android:background="#E0E0E0" />
 
-    <!-- Action buttons -->
+    <!-- Scrollable content area -->
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:fillViewport="true">
+
+        <!-- Grid of machinery subtypes -->
+        <LinearLayout
+            android:id="@+id/subtypesContainer"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="12dp" />
+
+    </ScrollView>
+
+    <!-- Divider above buttons -->
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="#E0E0E0" />
+
+    <!-- Fixed Bottom Action buttons -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
-        android:layout_marginTop="12dp">
+        android:padding="16dp"
+        android:background="#FFFFFF"
+        android:elevation="8dp">
 
-        <Button
+        <com.google.android.material.button.MaterialButton
             android:id="@+id/clearAllButton"
+            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
             android:layout_width="0dp"
-            android:layout_height="wrap_content"
+            android:layout_height="52dp"
             android:layout_weight="1"
-            android:text="CLEAR ALL"
-            android:textColor="#666"
-            android:background="@android:color/transparent"
+            android:text="CLEAR"
+            android:textSize="14sp"
+            android:textColor="#757575"
+            app:strokeColor="#BDBDBD"
+            app:strokeWidth="1dp"
+            app:cornerRadius="12dp"
             android:layout_marginEnd="8dp" />
 
-        <Button
+        <com.google.android.material.button.MaterialButton
             android:id="@+id/confirmSelectionButton"
             android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="CONFIRM"
-            android:textColor="#fff"
-            android:backgroundTint="#4CAF50"
+            android:layout_height="52dp"
+            android:layout_weight="1.5"
+            android:text="CONFIRM &amp; SEARCH"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:textColor="#FFFFFF"
+            app:backgroundTint="#FFA000"
+            app:cornerRadius="12dp"
             android:layout_marginStart="8dp" />
+
     </LinearLayout>
 
 </LinearLayout>

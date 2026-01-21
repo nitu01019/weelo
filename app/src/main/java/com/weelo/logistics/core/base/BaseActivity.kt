@@ -3,24 +3,39 @@ package com.weelo.logistics.core.base
 import android.os.Bundle
 import android.view.View
 import android.widget.Toast
+import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import com.google.android.material.snackbar.Snackbar
+import com.weelo.logistics.core.util.TransitionHelper
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
 
 /**
- * Base Activity for all activities in the app
+ * =============================================================================
+ * BASE ACTIVITY - Foundation for All Screens
+ * =============================================================================
+ * 
  * Provides:
+ * - Smooth right-to-left navigation transitions
  * - Common error handling
  * - Loading state management
  * - Lifecycle-aware flow collection
  * - Memory leak prevention
  * - Scalable architecture foundation
+ * 
+ * All activities should extend this class for consistent behavior.
+ * =============================================================================
  */
 abstract class BaseActivity : AppCompatActivity() {
+    
+    /**
+     * Override to disable smooth back navigation for specific screens
+     * Default is true (smooth transitions enabled)
+     */
+    protected open val enableSmoothBackNavigation: Boolean = true
 
     /**
      * Called after onCreate to initialize UI components
@@ -36,12 +51,46 @@ abstract class BaseActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        
+        // Setup smooth back navigation
+        setupBackNavigation()
+        
         try {
             initializeUI()
             setupObservers()
         } catch (e: Exception) {
             handleError(e, "Failed to initialize screen")
         }
+    }
+    
+    /**
+     * Setup smooth back navigation with right-to-left slide
+     */
+    private fun setupBackNavigation() {
+        if (enableSmoothBackNavigation) {
+            onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
+                override fun handleOnBackPressed() {
+                    finishWithSlideAnimation()
+                }
+            })
+        }
+    }
+    
+    /**
+     * Finish activity with smooth slide-out animation
+     * Call this instead of finish() for consistent transitions
+     */
+    protected fun finishWithSlideAnimation() {
+        finish()
+        TransitionHelper.slideOutToRight(this)
+    }
+    
+    /**
+     * Navigate to activity with smooth slide-in animation
+     * Call this after startActivity() for consistent transitions
+     */
+    protected fun applyEnterTransition() {
+        TransitionHelper.slideInFromRight(this)
     }
 
     /**

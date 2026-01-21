@@ -7,41 +7,55 @@
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
     <application
         android:name=".WeeloApplication"
-        android:allowBackup="true"
+        android:allowBackup="false"
         android:icon="@mipmap/ic_launcher"
         android:label="Weelo"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.Weelo"
         android:extractNativeLibs="true"
-        android:usesCleartextTraffic="true"
+        android:networkSecurityConfig="@xml/network_security_config"
         android:hardwareAccelerated="true"
         android:largeHeap="true"
         tools:targetApi="31">
 
-        <!-- Google Maps API Key -->
+        <!-- Google Maps API Key - Loaded from local.properties via BuildConfig -->
         <meta-data
             android:name="com.google.android.geo.API_KEY"
-            android:value="AIzaSyBfeysh6WtoFQAdagvLSt8iXA7GdNbb4dw" />
+            android:value="${MAPS_API_KEY}" />
         
         <!-- Enable Places API -->
         <meta-data
             android:name="com.google.android.gms.version"
             android:value="@integer/google_play_services_version" />
 
-        <!-- Main Activity - Home Screen -->
+        <!-- Splash Activity - Entry Point -->
         <activity
-            android:name=".MainActivity"
+            android:name=".presentation.splash.SplashActivity"
             android:exported="true"
-            android:screenOrientation="portrait">
+            android:screenOrientation="portrait"
+            android:theme="@style/Theme.Weelo.Splash">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <!-- Login Activity -->
+        <activity
+            android:name=".presentation.auth.LoginActivity"
+            android:exported="false"
+            android:screenOrientation="portrait" />
+
+        <!-- Main Activity - Home Screen -->
+        <activity
+            android:name=".MainActivity"
+            android:exported="false"
+            android:screenOrientation="portrait" />
 
         <!-- Location Input Activity -->
         <activity
@@ -79,6 +93,60 @@
             android:exported="false"
             android:screenOrientation="portrait"
             android:theme="@style/Theme.Weelo" />
+
+        <!-- Pricing Activity -->
+        <activity
+            android:name=".presentation.pricing.PricingActivity"
+            android:exported="false"
+            android:screenOrientation="portrait" />
+
+        <!-- Booking Confirmation Activity -->
+        <activity
+            android:name=".presentation.booking.BookingConfirmationActivity"
+            android:exported="false"
+            android:screenOrientation="portrait" />
+
+        <!-- Booking Request Activity (Searching/Waiting Screen) -->
+        <activity
+            android:name=".presentation.booking.BookingRequestActivity"
+            android:exported="false"
+            android:screenOrientation="portrait" />
+
+        <!-- Booking Tracking Activity -->
+        <activity
+            android:name=".presentation.booking.BookingTrackingActivity"
+            android:exported="false"
+            android:screenOrientation="portrait" />
+
+        <!-- Confirm Pickup Activity - Rapido Style Pickup Confirmation -->
+        <activity
+            android:name=".presentation.booking.ConfirmPickupActivity"
+            android:exported="false"
+            android:screenOrientation="portrait" />
+
+        <activity
+            android:name=".presentation.profile.ProfileActivity"
+            android:exported="false"
+            android:screenOrientation="portrait" />
+
+        <!-- Firebase Cloud Messaging Service -->
+        <service
+            android:name=".data.remote.WeeloFirebaseService"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.google.firebase.MESSAGING_EVENT" />
+            </intent-filter>
+        </service>
+
+        <!-- FCM Default Notification Channel -->
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_channel_id"
+            android:value="weelo_booking" />
+
+        <!-- FCM Default Notification Icon -->
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_icon"
+            android:resource="@mipmap/ic_launcher" />
 
     </application>
 

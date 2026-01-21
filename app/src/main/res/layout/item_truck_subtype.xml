@@ -1,108 +1,109 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
+<!--
+    Truck Subtype Item - Simple layout
+    ===================================
+    No outer card - just image and quantity selector
+    Images already have all info (name, capacity) on them
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/subtypeCard"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:clickable="true"
-    android:focusable="true"
-    app:cardCornerRadius="12dp"
-    app:cardElevation="0dp"
-    app:cardBackgroundColor="@android:color/white">
+    android:orientation="horizontal"
+    android:paddingHorizontal="12dp"
+    android:paddingVertical="8dp"
+    android:gravity="center_vertical"
+    android:background="?attr/selectableItemBackground">
 
-    <!-- RelativeLayout to layer image behind content -->
-    <RelativeLayout
-        android:layout_width="match_parent"
-        android:layout_height="70dp">
+    <!-- Truck Image - Already has all info on it -->
+    <ImageView
+        android:id="@+id/subtypeIcon"
+        android:layout_width="100dp"
+        android:layout_height="70dp"
+        android:scaleType="fitCenter"
+        android:src="@drawable/ic_truck_open"
+        android:contentDescription="Truck type" />
 
-        <!-- Background truck image - BEHIND everything, opaque -->
-        <ImageView
-            android:id="@+id/subtypeIcon"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:scaleType="fitCenter"
-            android:alpha="0.7"
-            android:padding="0dp"
-            android:contentDescription="Truck Icon" />
+    <!-- Spacer -->
+    <View
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_weight="1" />
 
-        <!-- Main content wrapper - ON TOP of image -->
-        <LinearLayout
-            android:id="@+id/cardContent"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:orientation="vertical"
+    <!-- Hidden TextViews for adapter compatibility -->
+    <TextView
+        android:id="@+id/subtypeName"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:visibility="gone" />
+
+    <TextView
+        android:id="@+id/subtypeCapacity"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:visibility="gone" />
+
+    <TextView
+        android:id="@+id/subtypePrice"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:visibility="gone" />
+
+    <LinearLayout
+        android:id="@+id/cardContent"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:visibility="gone"
+        android:orientation="horizontal" />
+
+    <!-- Quantity Selector -->
+    <LinearLayout
+        android:id="@+id/quantitySelector"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:background="@drawable/bg_input_field"
+        android:paddingHorizontal="6dp"
+        android:paddingVertical="6dp">
+
+        <TextView
+            android:id="@+id/minusButton"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:background="@drawable/bg_round_button_blue"
+            android:text="−"
+            android:textSize="18sp"
+            android:textStyle="bold"
             android:gravity="center"
-            android:paddingHorizontal="6dp"
-            android:paddingTop="8dp"
-            android:paddingBottom="8dp"
-            android:background="@drawable/bg_subtype_card_unselected">
+            android:textColor="#1976D2"
+            android:clickable="true"
+            android:focusable="true" />
 
-            <!-- Truck name - bold text covering full area -->
-            <TextView
-                android:id="@+id/subtypeName"
-                android:text="17 Feet"
-                android:textSize="13sp"
-                android:textStyle="bold"
-                android:textColor="#1A237E"
-                android:gravity="center"
-                android:maxLines="2"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_gravity="center" />
+        <TextView
+            android:id="@+id/quantityText"
+            android:layout_width="40dp"
+            android:layout_height="wrap_content"
+            android:text="0"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:gravity="center"
+            android:textColor="#1A237E" />
 
-            <!-- Add/Remove controls (hidden by default, shown after card click) -->
-            <LinearLayout
-                android:id="@+id/quantityControls"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center"
-                android:layout_marginTop="4dp"
-                android:visibility="gone">
+        <TextView
+            android:id="@+id/plusButton"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:background="@drawable/bg_round_button_blue"
+            android:text="+"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:gravity="center"
+            android:textColor="#1976D2"
+            android:clickable="true"
+            android:focusable="true" />
 
-            <!-- Minus button -->
-            <TextView
-                android:id="@+id/minusButton"
-                android:layout_width="20dp"
-                android:layout_height="20dp"
-                android:background="@drawable/bg_round_button_blue"
-                android:text="−"
-                android:textSize="11sp"
-                android:textStyle="bold"
-                android:gravity="center"
-                android:textColor="#2196F3"
-                android:clickable="true"
-                android:focusable="true" />
+    </LinearLayout>
 
-            <!-- Quantity display -->
-            <TextView
-                android:id="@+id/quantityText"
-                android:layout_width="22dp"
-                android:layout_height="wrap_content"
-                android:text="1"
-                android:textSize="12sp"
-                android:textStyle="bold"
-                android:gravity="center"
-                android:textColor="#1A237E" />
-
-            <!-- Plus button -->
-            <TextView
-                android:id="@+id/plusButton"
-                android:layout_width="20dp"
-                android:layout_height="20dp"
-                android:background="@drawable/bg_round_button_blue"
-                android:text="+"
-                android:textSize="11sp"
-                android:textStyle="bold"
-                android:gravity="center"
-                android:textColor="#2196F3"
-                android:clickable="true"
-                android:focusable="true" />
-
-            </LinearLayout>
-
-        </LinearLayout>
-
-    </RelativeLayout>
-
-</androidx.cardview.widget.CardView>
+</LinearLayout>

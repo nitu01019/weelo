@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Ripple effect for card touch feedback
+    Used in: item_truck_subtype.xml
+    
+    Creates a subtle ripple animation when user taps on a card
+-->
+<ripple xmlns:android="http://schemas.android.com/apk/res/android"
+    android:color="#30000000">
+    
+    <item android:id="@android:id/mask">
+        <shape android:shape="rectangle">
+            <solid android:color="#FFFFFF" />
+            <corners android:radius="12dp" />
+        </shape>
+    </item>
+    
+    <item>
+        <shape android:shape="rectangle">
+            <solid android:color="#FFFFFF" />
+            <corners android:radius="12dp" />
+        </shape>
+    </item>
+    
+</ripple>

@@ -57,40 +57,49 @@ class LocationInputViewModel @Inject constructor(
         }
     }
 
+    /**
+     * OPTIMIZED for lightning-fast navigation:
+     * 1. Validate synchronously (no suspend, instant)
+     * 2. Navigate IMMEDIATELY after validation
+     * 3. Save recent locations in background (fire & forget)
+     */
     fun onContinueClicked(fromAddress: String, toAddress: String) {
-        viewModelScope.launch(exceptionHandler) {
-            _uiState.value = _uiState.value?.copy(isLoading = true)
-            
-            val fromLocation = LocationModel(address = fromAddress)
-            val toLocation = LocationModel(address = toAddress)
-            
-            val result = validateLocationsUseCase(fromLocation, toLocation)
-            
-            when (result) {
-                is Result.Success -> {
-                    if (result.data == true) {
-                        // Save to recent locations
-                        addRecentLocationUseCase(fromLocation)
-                        addRecentLocationUseCase(toLocation)
-                        
-                        _uiState.value = _uiState.value?.copy(isLoading = false)
-                        _navigationEvent.value = LocationNavigationEvent.NavigateToMap(fromLocation, toLocation)
-                    } else {
-                        _uiState.value = _uiState.value?.copy(
-                            isLoading = false,
-                            errorMessage = "Please enter valid locations"
-                        )
+        val fromLocation = LocationModel(address = fromAddress)
+        val toLocation = LocationModel(address = toAddress)
+        
+        // Validate synchronously - this is instant, no network calls
+        val result = validateLocationsUseCase(fromLocation, toLocation)
+        
+        when (result) {
+            is Result.Success -> {
+                if (result.data == true) {
+                    // Navigate IMMEDIATELY - don't wait for anything
+                    _navigationEvent.value = LocationNavigationEvent.NavigateToMap(fromLocation, toLocation)
+                    
+                    // Save to recent locations in background (fire & forget - non-blocking)
+                    viewModelScope.launch {
+                        try {
+                            addRecentLocationUseCase(fromLocation)
+                            addRecentLocationUseCase(toLocation)
+                        } catch (e: Exception) {
+                            Timber.e(e, "Failed to save recent locations")
+                        }
                     }
-                }
-                is Result.Error -> {
+                } else {
                     _uiState.value = _uiState.value?.copy(
                         isLoading = false,
-                        errorMessage = result.message ?: "Please enter valid locations"
+                        errorMessage = "Please enter valid locations"
                     )
                 }
-                is Result.Loading -> {
-                    _uiState.value = _uiState.value?.copy(isLoading = true)
-                }
+            }
+            is Result.Error -> {
+                _uiState.value = _uiState.value?.copy(
+                    isLoading = false,
+                    errorMessage = result.message ?: "Please enter valid locations"
+                )
+            }
+            is Result.Loading -> {
+                // Won't happen for synchronous validation
             }
         }
     }

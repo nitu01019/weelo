@@ -1,0 +1,209 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Confirm Pickup Location Activity - Rapido Style
+    ================================================
+    Shows map with pickup marker, allows user to adjust location
+    before starting the search for vehicles.
+-->
+<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#FFFFFF">
+
+    <!-- Map Container -->
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <!-- Google Map View - Using MapView for faster initialization -->
+        <com.google.android.gms.maps.MapView
+            android:id="@+id/mapView"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" />
+
+        <!-- Center Marker (Pickup Point Label) - Fixed in center -->
+        <LinearLayout
+            android:id="@+id/centerMarkerContainer"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:orientation="vertical"
+            android:gravity="center_horizontal">
+
+            <!-- Pickup Point Label -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Pickup Point"
+                android:textColor="#FFFFFF"
+                android:textSize="12sp"
+                android:textStyle="bold"
+                android:background="@drawable/bg_pickup_label"
+                android:paddingHorizontal="12dp"
+                android:paddingVertical="6dp" />
+
+            <!-- Green Marker Pin -->
+            <ImageView
+                android:layout_width="36dp"
+                android:layout_height="48dp"
+                android:src="@drawable/ic_location_pin"
+                app:tint="#4CAF50" />
+
+        </LinearLayout>
+
+        <!-- Back Button -->
+        <com.google.android.material.floatingactionbutton.FloatingActionButton
+            android:id="@+id/backButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_margin="16dp"
+            android:src="@drawable/ic_arrow_back"
+            app:fabSize="normal"
+            app:backgroundTint="#FFFFFF"
+            app:tint="#1A1A1A"
+            app:elevation="4dp" />
+
+        <!-- My Location Button -->
+        <com.google.android.material.floatingactionbutton.FloatingActionButton
+            android:id="@+id/myLocationButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="end|center_vertical"
+            android:layout_marginEnd="16dp"
+            android:layout_marginBottom="200dp"
+            android:src="@drawable/ic_location"
+            app:fabSize="mini"
+            app:backgroundTint="#FFFFFF"
+            app:tint="#3366CC"
+            app:elevation="4dp" />
+
+    </FrameLayout>
+
+    <!-- Bottom Sheet Card -->
+    <androidx.cardview.widget.CardView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom"
+        app:cardCornerRadius="24dp"
+        app:cardElevation="8dp"
+        app:cardBackgroundColor="#FFFFFF">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="20dp">
+
+            <!-- Drag Handle -->
+            <View
+                android:layout_width="40dp"
+                android:layout_height="4dp"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginBottom="16dp"
+                android:background="@drawable/bg_drag_handle" />
+
+            <!-- Header: Icon + Title -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
+
+                <!-- Location Pin Icon -->
+                <ImageView
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:src="@drawable/ic_location_pin"
+                    app:tint="#4CAF50" />
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:layout_marginStart="12dp"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Check your pickup point"
+                        android:textColor="#1A1A1A"
+                        android:textSize="18sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="2dp"
+                        android:text="Select a nearby point for easier pickup"
+                        android:textColor="#666666"
+                        android:textSize="13sp" />
+
+                </LinearLayout>
+
+            </LinearLayout>
+
+            <!-- Selected Address Card -->
+            <androidx.cardview.widget.CardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                app:cardCornerRadius="12dp"
+                app:cardElevation="0dp"
+                app:cardBackgroundColor="#F5F5F5"
+                app:strokeColor="#E0E0E0"
+                app:strokeWidth="1dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+
+                    <TextView
+                        android:id="@+id/pickupLocationName"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Location Name"
+                        android:textColor="#1A1A1A"
+                        android:textSize="16sp"
+                        android:textStyle="bold"
+                        android:maxLines="1"
+                        android:ellipsize="end" />
+
+                    <TextView
+                        android:id="@+id/pickupLocationAddress"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:text="Full address here"
+                        android:textColor="#666666"
+                        android:textSize="14sp"
+                        android:maxLines="2"
+                        android:ellipsize="end" />
+
+                </LinearLayout>
+
+            </androidx.cardview.widget.CardView>
+
+            <!-- Confirm Pickup Button -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/confirmPickupButton"
+                android:layout_width="match_parent"
+                android:layout_height="56dp"
+                android:layout_marginTop="20dp"
+                android:text="Confirm pickup"
+                android:textColor="#1A1A1A"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                app:backgroundTint="#FFCA28"
+                app:cornerRadius="28dp"
+                app:elevation="0dp" />
+
+        </LinearLayout>
+
+    </androidx.cardview.widget.CardView>
+
+</androidx.coordinatorlayout.widget.CoordinatorLayout>

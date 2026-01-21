@@ -15,6 +15,7 @@ import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import timber.log.Timber
 import java.util.concurrent.TimeUnit
+import javax.inject.Named
 import javax.inject.Singleton
 
 /**
@@ -51,6 +52,7 @@ object AppModule {
 
     @Provides
     @Singleton
+    @Named("weelo")
     fun provideRetrofit(okHttpClient: OkHttpClient, gson: Gson): Retrofit {
         return Retrofit.Builder()
             .baseUrl(Constants.BASE_URL)
@@ -61,6 +63,7 @@ object AppModule {
 
     @Provides
     @Singleton
+    @Named("googleMaps")
     fun provideGoogleMapsRetrofit(okHttpClient: OkHttpClient, gson: Gson): Retrofit {
         return Retrofit.Builder()
             .baseUrl("https://maps.googleapis.com/maps/api/")
@@ -71,11 +74,20 @@ object AppModule {
 
     @Provides
     @Singleton
-    fun provideGoogleMapsService(): com.weelo.logistics.data.remote.api.GoogleMapsService {
-        val okHttpClient = provideOkHttpClient()
-        val gson = provideGson()
-        val retrofit = provideGoogleMapsRetrofit(okHttpClient, gson)
+    fun provideGoogleMapsService(@Named("googleMaps") retrofit: Retrofit): com.weelo.logistics.data.remote.api.GoogleMapsService {
         return retrofit.create(com.weelo.logistics.data.remote.api.GoogleMapsService::class.java)
+    }
+
+    @Provides
+    @Singleton
+    fun provideWeeloApiService(@Named("weelo") retrofit: Retrofit): com.weelo.logistics.data.remote.api.WeeloApiService {
+        return retrofit.create(com.weelo.logistics.data.remote.api.WeeloApiService::class.java)
+    }
+
+    @Provides
+    @Singleton
+    fun provideTokenManager(@ApplicationContext context: Context): com.weelo.logistics.data.remote.TokenManager {
+        return com.weelo.logistics.data.remote.TokenManager(context)
     }
 
     @Provides

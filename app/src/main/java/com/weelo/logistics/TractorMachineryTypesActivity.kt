@@ -231,11 +231,16 @@ class TractorMachineryTypesActivity : AppCompatActivity() {
         val machineryCard = getMachineryCardById(machineryTypeId)
         
         val bottomSheet = BottomSheetDialog(this)
-        bottomSheet.behavior.isDraggable = true
-        bottomSheet.behavior.state = com.google.android.material.bottomsheet.BottomSheetBehavior.STATE_EXPANDED
         
         val view = layoutInflater.inflate(R.layout.bottom_sheet_machinery_subtypes, null)
         bottomSheet.setContentView(view)
+        
+        // Configure bottom sheet using helper for consistency and scalability
+        com.weelo.logistics.core.util.BottomSheetHelper.configureBottomSheet(
+            dialog = bottomSheet,
+            style = com.weelo.logistics.core.util.BottomSheetHelper.Style.FIXED_LARGE,
+            isDismissable = true
+        )
         
         view.findViewById<TextView>(R.id.bottomSheetTitle)?.text = config.displayName
         view.findViewById<ImageView>(R.id.closeButton)?.setOnClickListener {

@@ -1,6 +1,8 @@
 package com.weelo.logistics.data.models
 
 import android.os.Parcelable
+import com.weelo.logistics.data.remote.api.CoordinatesRequest
+import com.weelo.logistics.data.remote.api.LocationRequest
 import kotlinx.parcelize.Parcelize
 
 /**
@@ -21,4 +23,20 @@ data class Location(
     }
     
     fun isValid(): Boolean = address.isNotBlank()
+    
+    /**
+     * Convert Location to LocationRequest for API calls
+     */
+    fun toLocationRequest(): LocationRequest {
+        return LocationRequest(
+            coordinates = CoordinatesRequest(
+                latitude = latitude,
+                longitude = longitude
+            ),
+            address = address,
+            city = city.ifBlank { null },
+            state = state.ifBlank { null },
+            pincode = null
+        )
+    }
 }

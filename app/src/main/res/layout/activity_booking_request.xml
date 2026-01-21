@@ -1,0 +1,384 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.coordinatorlayout.widget.CoordinatorLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/background_white">
+
+    <!-- Top Bar -->
+    <com.google.android.material.appbar.AppBarLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@color/white">
+
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:paddingHorizontal="16dp">
+
+            <ImageButton
+                android:id="@+id/btnBack"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:src="@drawable/ic_back_arrow"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintBottom_toBottomOf="parent"/>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Booking Status"
+                android:textSize="18sp"
+                android:textStyle="bold"
+                android:textColor="@color/text_primary"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintBottom_toBottomOf="parent"/>
+
+            <com.google.android.material.chip.Chip
+                android:id="@+id/statusChip"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Finding Trucks"
+                android:textColor="@color/white"
+                app:chipBackgroundColor="@color/primary_blue"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintBottom_toBottomOf="parent"/>
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
+    </com.google.android.material.appbar.AppBarLayout>
+
+    <!-- Loading -->
+    <ProgressBar
+        android:id="@+id/progressBar"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:visibility="gone"/>
+
+    <!-- Error Layout -->
+    <LinearLayout
+        android:id="@+id/errorLayout"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:gravity="center"
+        android:padding="32dp"
+        android:visibility="gone"
+        app:layout_behavior="@string/appbar_scrolling_view_behavior">
+
+        <ImageView
+            android:layout_width="120dp"
+            android:layout_height="120dp"
+            android:src="@drawable/ic_error"/>
+
+        <TextView
+            android:id="@+id/tvErrorMessage"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="Something went wrong"
+            android:textSize="16sp"
+            android:textColor="@color/text_secondary"/>
+
+        <Button
+            android:id="@+id/btnRetry"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="Retry"/>
+    </LinearLayout>
+
+    <!-- Content -->
+    <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
+        android:id="@+id/swipeRefresh"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        app:layout_behavior="@string/appbar_scrolling_view_behavior">
+
+        <androidx.core.widget.NestedScrollView
+            android:id="@+id/contentLayout"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="16dp">
+
+                <!-- Animation -->
+                <com.airbnb.lottie.LottieAnimationView
+                    android:id="@+id/lottieAnimation"
+                    android:layout_width="150dp"
+                    android:layout_height="150dp"
+                    android:layout_gravity="center"
+                    app:lottie_autoPlay="true"
+                    app:lottie_loop="true"/>
+
+                <!-- Trucks Progress Card -->
+                <com.google.android.material.card.MaterialCardView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp"
+                    app:cardCornerRadius="12dp"
+                    app:cardElevation="2dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="16dp">
+
+                        <TextView
+                            android:id="@+id/tvTrucksStatus"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Broadcasting to transporters..."
+                            android:textSize="14sp"
+                            android:textColor="@color/primary_blue"/>
+
+                        <TextView
+                            android:id="@+id/tvTrucksProgress"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="8dp"
+                            android:text="0 / 5 trucks assigned"
+                            android:textSize="20sp"
+                            android:textStyle="bold"
+                            android:textColor="@color/text_primary"/>
+
+                        <com.google.android.material.progressindicator.LinearProgressIndicator
+                            android:id="@+id/progressTrucks"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="12dp"
+                            app:trackThickness="8dp"
+                            app:trackCornerRadius="4dp"/>
+
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+
+                <!-- Route Card -->
+                <com.google.android.material.card.MaterialCardView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp"
+                    app:cardCornerRadius="12dp"
+                    app:cardElevation="2dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="16dp">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Route"
+                            android:textSize="14sp"
+                            android:textColor="@color/text_secondary"/>
+
+                        <!-- Pickup -->
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="12dp"
+                            android:orientation="horizontal">
+
+                            <View
+                                android:layout_width="12dp"
+                                android:layout_height="12dp"
+                                android:layout_marginTop="4dp"
+                                android:background="@drawable/green_dot"/>
+
+                            <TextView
+                                android:id="@+id/tvPickupAddress"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:layout_marginStart="12dp"
+                                android:textSize="14sp"
+                                android:textColor="@color/text_primary"
+                                tools:text="Mumbai, Maharashtra"/>
+                        </LinearLayout>
+
+                        <!-- Dotted line -->
+                        <View
+                            android:layout_width="1dp"
+                            android:layout_height="20dp"
+                            android:layout_marginStart="5dp"
+                            android:background="@drawable/dotted_line"/>
+
+                        <!-- Drop -->
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal">
+
+                            <View
+                                android:layout_width="12dp"
+                                android:layout_height="12dp"
+                                android:layout_marginTop="4dp"
+                                android:background="@drawable/orange_dot"/>
+
+                            <TextView
+                                android:id="@+id/tvDropAddress"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:layout_marginStart="12dp"
+                                android:textSize="14sp"
+                                android:textColor="@color/text_primary"
+                                tools:text="Delhi, NCR"/>
+                        </LinearLayout>
+
+                        <TextView
+                            android:id="@+id/tvDistance"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="12dp"
+                            android:text="1400 km"
+                            android:textSize="14sp"
+                            android:textStyle="bold"
+                            android:textColor="@color/primary_blue"/>
+
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+
+                <!-- Vehicle & Pricing Card -->
+                <com.google.android.material.card.MaterialCardView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    app:cardCornerRadius="12dp"
+                    app:cardElevation="2dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="16dp">
+
+                        <TextView
+                            android:id="@+id/tvVehicleType"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:textSize="16sp"
+                            android:textStyle="bold"
+                            android:textColor="@color/text_primary"
+                            tools:text="Tipper 20-24T • 5 trucks"/>
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="8dp"
+                            android:orientation="horizontal">
+
+                            <TextView
+                                android:id="@+id/tvPricePerTruck"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:textSize="14sp"
+                                android:textColor="@color/text_secondary"
+                                tools:text="₹35,000/truck"/>
+
+                            <TextView
+                                android:id="@+id/tvTotalAmount"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:textSize="16sp"
+                                android:textStyle="bold"
+                                android:textColor="@color/success_green"
+                                tools:text="Total: ₹1,75,000"/>
+                        </LinearLayout>
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+
+                <!-- Assigned Trucks Section -->
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="24dp"
+                    android:text="Assigned Trucks"
+                    android:textSize="16sp"
+                    android:textStyle="bold"
+                    android:textColor="@color/text_primary"/>
+
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/rvAssignedTrucks"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:nestedScrollingEnabled="false"
+                    tools:listitem="@layout/item_assigned_truck"
+                    tools:itemCount="3"/>
+
+                <!-- Spacer for buttons -->
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="100dp"/>
+
+            </LinearLayout>
+        </androidx.core.widget.NestedScrollView>
+    </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
+
+    <!-- Bottom Buttons -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom"
+        android:background="@color/white"
+        android:elevation="8dp"
+        android:orientation="horizontal"
+        android:padding="16dp">
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnCancel"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Cancel"
+            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+            app:strokeColor="@color/error_red"
+            android:textColor="@color/error_red"/>
+
+        <View
+            android:layout_width="12dp"
+            android:layout_height="0dp"/>
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnTrackTrucks"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Track Trucks"
+            android:visibility="gone"
+            app:backgroundTint="@color/primary_blue"/>
+
+        <View
+            android:layout_width="12dp"
+            android:layout_height="0dp"/>
+
+        <!-- Try Again Button - Shown when booking expires or partially filled -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnTryAgain"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Try Again"
+            android:visibility="gone"
+            app:icon="@drawable/ic_search"
+            app:backgroundTint="@color/warning_orange"/>
+
+    </LinearLayout>
+
+</androidx.coordinatorlayout.widget.CoordinatorLayout>
