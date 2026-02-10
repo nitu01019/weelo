@@ -36,6 +36,12 @@ interface LocationRepository {
     suspend fun searchLocations(query: String): Result<List<LocationModel>>
     
     /**
+     * Delete a specific location from recent history
+     * SCALABILITY: Single record deletion, O(1) operation
+     */
+    suspend fun deleteLocation(locationId: String): Result<Unit>
+    
+    /**
      * Clear all recent locations
      */
     suspend fun clearRecentLocations(): Result<Unit>

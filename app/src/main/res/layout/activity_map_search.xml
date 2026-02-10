@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+=============================================================================
+MAP SEARCH ACTIVITY - RAPIDO STYLE (Change Location Page)
+=============================================================================
+LAYOUT (matching Rapido exactly):
+- Top bar: Back arrow + "Pickup" / "Drop" title
+- Search row: Green/Red dot + Search input + My Location button
+- Divider
+- Scrollable cached/recent locations list with search results
+
+SCALABILITY: Lightweight, no maps loaded
+EASY UNDERSTANDING: Simple search page with results
+MODULARITY: Separate from MapSelectionActivity
+CODING STANDARDS: Material Design
+=============================================================================
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="@android:color/white">
+
+    <!-- ============================================= -->
+    <!-- TOP BAR: Back Arrow + Title (Pickup / Drop) -->
+    <!-- ============================================= -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingVertical="14dp"
+        android:paddingHorizontal="12dp">
+
+        <ImageView
+            android:id="@+id/backButton"
+            android:layout_width="36dp"
+            android:layout_height="36dp"
+            android:padding="6dp"
+            android:src="@drawable/ic_arrow_back"
+            android:tint="#333333"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="Go back" />
+
+        <TextView
+            android:id="@+id/titleText"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:text="Pickup"
+            android:textColor="#1A1A1A"
+            android:textSize="20sp"
+            android:textStyle="bold"
+            tools:text="Pickup" />
+
+    </LinearLayout>
+
+    <!-- ============================================= -->
+    <!-- SEARCH ROW: Dot + Input + My Location -->
+    <!-- ============================================= -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingHorizontal="16dp"
+        android:paddingBottom="12dp">
+
+        <!-- Green/Red dot indicator -->
+        <View
+            android:id="@+id/dotIndicator"
+            android:layout_width="14dp"
+            android:layout_height="14dp"
+            android:background="@drawable/bg_green_dot" />
+
+        <!-- Search Input -->
+        <EditText
+            android:id="@+id/searchInput"
+            android:layout_width="0dp"
+            android:layout_height="48dp"
+            android:layout_weight="1"
+            android:layout_marginStart="10dp"
+            android:layout_marginEnd="8dp"
+            android:background="@drawable/bg_search_field"
+            android:hint="Search for a location..."
+            android:inputType="text"
+            android:paddingHorizontal="14dp"
+            android:textSize="15sp"
+            android:textColor="#1A1A1A"
+            android:textColorHint="#AAAAAA"
+            android:imeOptions="actionSearch"
+            android:singleLine="true" />
+
+        <!-- My Location Button (circle with GPS icon) -->
+        <ImageView
+            android:id="@+id/myLocationButton"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:padding="8dp"
+            android:src="@drawable/ic_my_location"
+            android:tint="#FF9800"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="Use my location" />
+
+    </LinearLayout>
+
+    <!-- Divider -->
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="#F0F0F0" />
+
+    <!-- ============================================= -->
+    <!-- RESULTS: Cached + Search Results (Scrollable) -->
+    <!-- ============================================= -->
+    <ScrollView
+        android:id="@+id/resultsScrollView"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:fillViewport="true">
+
+        <LinearLayout
+            android:id="@+id/resultsContainer"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingVertical="8dp" />
+
+    </ScrollView>
+
+</LinearLayout>

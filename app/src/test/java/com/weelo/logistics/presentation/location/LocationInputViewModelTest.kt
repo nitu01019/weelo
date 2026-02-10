@@ -51,10 +51,11 @@ class LocationInputViewModelTest {
             Result.Success(emptyList())
         )
 
+        // CODING STANDARDS: Pass constructor params in correct order
         viewModel = LocationInputViewModel(
+            validateLocationsUseCase,
             getRecentLocationsUseCase,
-            addRecentLocationUseCase,
-            validateLocationsUseCase
+            addRecentLocationUseCase
         )
     }
 
@@ -104,7 +105,8 @@ class LocationInputViewModelTest {
     }
 
     @Test
-    fun `loadRecentLocations populates ui state`() {
+    fun `recent locations are loaded on init`() {
+        // MODULARITY: Test that ViewModel loads recent locations automatically
         // Given
         val locations = listOf(
             LocationModel(address = "Jammu"),
@@ -112,12 +114,16 @@ class LocationInputViewModelTest {
         )
         every { getRecentLocationsUseCase() } returns flowOf(Result.Success(locations))
 
-        // When
-        viewModel.loadRecentLocations()
+        // When - create new ViewModel (triggers init block)
+        val newViewModel = LocationInputViewModel(
+            validateLocationsUseCase,
+            getRecentLocationsUseCase,
+            addRecentLocationUseCase
+        )
         testDispatcher.scheduler.advanceUntilIdle()
 
         // Then
-        val uiState = viewModel.uiState.value
+        val uiState = newViewModel.uiState.value
         assertEquals(2, uiState?.recentLocations?.size)
     }
 }

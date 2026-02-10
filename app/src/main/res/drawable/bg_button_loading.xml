@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Rapido-style bright yellow button - LOADING state -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android">
+    <solid android:color="#FFDE00"/>
+    <corners android:radius="28dp"/>
+</shape>

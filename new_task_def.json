@@ -1,0 +1,120 @@
+{
+  "containerDefinitions": [
+    {
+      "name": "weelo-backend",
+      "image": "318774499084.dkr.ecr.ap-south-1.amazonaws.com/weelo-backend:latest",
+      "cpu": 0,
+      "portMappings": [
+        {
+          "containerPort": 3000,
+          "hostPort": 3000,
+          "protocol": "tcp",
+          "name": "weelo-port",
+          "appProtocol": "http"
+        }
+      ],
+      "essential": true,
+      "environment": [
+        {
+          "name": "JWT_REFRESH_SECRET",
+          "value": "1a633e28cafd0c3b2539af21e38a0cd830eeaab8edaafa0f6ea3947e9c97e32c"
+        },
+        {
+          "name": "AWS_LOCATION_ENABLED",
+          "value": "true"
+        },
+        {
+          "name": "AWS_REGION",
+          "value": "ap-south-1"
+        },
+        {
+          "name": "MSG91_AUTH_KEY",
+          "value": ""
+        },
+        {
+          "name": "PORT",
+          "value": "3000"
+        },
+        {
+          "name": "AWS_LOCATION_ROUTE_CALCULATOR",
+          "value": "weelo-routes"
+        },
+        {
+          "name": "MSG91_SENDER_ID",
+          "value": ""
+        },
+        {
+          "name": "DATABASE_URL",
+          "value": "postgresql://weelo_admin:N1it2is4h@weelodb.cdqoiou8wm0y.ap-south-1.rds.amazonaws.com:5432/weelo"
+        },
+        {
+          "name": "MSG91_TEMPLATE_ID",
+          "value": ""
+        },
+        {
+          "name": "JWT_SECRET",
+          "value": "e17e9eef7418a915e626ccfbdb12de32faf47b66638def1a4b607afb28298918"
+        },
+        {
+          "name": "SMS_PROVIDER",
+          "value": "aws-sns"
+        },
+        {
+          "name": "REDIS_ENABLED",
+          "value": "true"
+        },
+        {
+          "name": "AWS_SNS_REGION",
+          "value": "ap-south-1"
+        },
+        {
+          "name": "NODE_ENV",
+          "value": "production"
+        },
+        {
+          "name": "REDIS_URL",
+          "value": "rediss://weeloredis-zt8pfs.serverless.aps1.cache.amazonaws.com:6379"
+        },
+        {
+          "name": "AWS_LOCATION_PLACE_INDEX",
+          "value": "weelo-places"
+        },
+        {
+          "name": "GOOGLE_MAPS_API_KEY",
+          "value": "AIzaSyA-tS_joFEm5OnsZBxtRY6LA_xf1VSjczQ"
+        }
+      ],
+      "environmentFiles": [],
+      "mountPoints": [],
+      "volumesFrom": [],
+      "ulimits": [],
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "weelobackendtask",
+          "awslogs-create-group": "true",
+          "awslogs-region": "ap-south-1",
+          "awslogs-stream-prefix": "ecs"
+        },
+        "secretOptions": []
+      },
+      "systemControls": []
+    }
+  ],
+  "family": "weelobackendtask",
+  "taskRoleArn": "arn:aws:iam::318774499084:role/weelo-backend-task-role",
+  "executionRoleArn": "arn:aws:iam::318774499084:role/ecsTaskExecutionRole",
+  "networkMode": "awsvpc",
+  "volumes": [],
+  "placementConstraints": [],
+  "runtimePlatform": {
+    "cpuArchitecture": "X86_64",
+    "operatingSystemFamily": "LINUX"
+  },
+  "requiresCompatibilities": [
+    "FARGATE"
+  ],
+  "cpu": "512",
+  "memory": "1024",
+  "enableFaultInjection": false
+}

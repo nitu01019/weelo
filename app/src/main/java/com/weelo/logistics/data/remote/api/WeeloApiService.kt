@@ -60,11 +60,20 @@ interface WeeloApiService {
 
     /**
      * Create new booking (broadcasts to transporters)
+     * 
+     * SCALABILITY:
+     * - Idempotency key prevents duplicate bookings
+     * - Backend rejects duplicate keys within 24 hours
+     * 
+     * EASY UNDERSTANDING:
+     * - Pass unique UUID as X-Idempotency-Key header
+     * - Same key = same booking (no duplicate)
      */
     @POST("bookings")
     suspend fun createBooking(
-        @Header("Authorization") token: String,
-        @Body request: CreateBookingRequest
+        @Header("Authorization") authorization: String,
+        @Body request: CreateBookingRequest,
+        @Header("X-Idempotency-Key") idempotencyKey: String
     ): Response<CreateBookingResponse>
 
     /**
@@ -119,7 +128,7 @@ interface WeeloApiService {
      * - 2 requests go to transporters with Open trucks
      * - 3 requests go to transporters with Container trucks
      */
-    @POST("bookings/orders")
+    @POST("orders")
     suspend fun createOrder(
         @Header("Authorization") token: String,
         @Body request: CreateOrderRequest
@@ -128,7 +137,7 @@ interface WeeloApiService {
     /**
      * Get customer's orders with pagination
      */
-    @GET("bookings/orders")
+    @GET("orders")
     suspend fun getMyOrders(
         @Header("Authorization") token: String,
         @Query("page") page: Int = 1,
@@ -138,11 +147,88 @@ interface WeeloApiService {
     /**
      * Get order details with all truck requests
      */
-    @GET("bookings/orders/{orderId}")
+    @GET("orders/{orderId}")
     suspend fun getOrderById(
         @Header("Authorization") token: String,
         @Path("orderId") orderId: String
     ): Response<OrderDetailResponse>
+    
+    /**
+     * Cancel active order
+     * 
+     * SCALABILITY: Backend deletes from Redis + DB, notifies transporters
+     * EASY UNDERSTANDING: Customer can cancel search before driver accepts
+     * MODULARITY: Works with existing cancelOrder service
+     */
+    @DELETE("orders/{orderId}/cancel")
+    suspend fun cancelOrder(
+        @Header("Authorization") token: String,
+        @Path("orderId") orderId: String
+    ): Response<CancelOrderResponse>
+    
+    /**
+     * Get order status and remaining time
+     * 
+     * SCALABILITY: Used when app resumes to check if order still active
+     * EASY UNDERSTANDING: Backend returns exact remaining seconds
+     * MODULARITY: Backend is source of truth for timer
+     */
+    @GET("orders/{orderId}/status")
+    suspend fun getOrderStatus(
+        @Header("Authorization") token: String,
+        @Path("orderId") orderId: String
+    ): Response<OrderStatusResponse>
+
+    // ============================================================
+    // CUSTOM BOOKING (Long-term contracts - weeks/months)
+    // ============================================================
+
+    /**
+     * Submit custom booking request
+     * 
+     * SCALABILITY:
+     * - Idempotency key prevents duplicate submissions
+     * - Rate limited: 10 req/min per user
+     * - Admin notified asynchronously via queue
+     * 
+     * EASY UNDERSTANDING:
+     * - Pass unique UUID as X-Idempotency-Key header
+     * - Same key = same request (no duplicate)
+     */
+    @POST("custom-booking")
+    suspend fun submitCustomBooking(
+        @Header("Authorization") token: String,
+        @Body request: CustomBookingRequest,
+        @Header("X-Idempotency-Key") idempotencyKey: String
+    ): Response<CustomBookingResponse>
+
+    /**
+     * Get customer's custom booking requests with pagination
+     */
+    @GET("custom-booking")
+    suspend fun getMyCustomBookings(
+        @Header("Authorization") token: String,
+        @Query("page") page: Int = 1,
+        @Query("limit") limit: Int = 10
+    ): Response<CustomBookingsListResponse>
+
+    /**
+     * Get single custom booking request details
+     */
+    @GET("custom-booking/{requestId}")
+    suspend fun getCustomBookingById(
+        @Header("Authorization") token: String,
+        @Path("requestId") requestId: String
+    ): Response<CustomBookingDetailResponse>
+
+    /**
+     * Cancel a pending custom booking request
+     */
+    @POST("custom-booking/{requestId}/cancel")
+    suspend fun cancelCustomBooking(
+        @Header("Authorization") token: String,
+        @Path("requestId") requestId: String
+    ): Response<CustomBookingCancelResponse>
 
     // ============================================================
     // TRACKING
@@ -202,8 +288,9 @@ interface WeeloApiService {
 
     /**
      * Update customer profile
+     * Backend route: PUT /api/v1/profile/customer
      */
-    @PUT("profile")
+    @PUT("profile/customer")
     suspend fun updateProfile(
         @Header("Authorization") token: String,
         @Body request: UpdateProfileRequest
@@ -216,6 +303,58 @@ interface WeeloApiService {
     suspend fun getProfileStatus(
         @Header("Authorization") token: String
     ): Response<ProfileStatusResponse>
+
+    // ============================================================
+    // GEOCODING (AWS Location Service via Backend)
+    // ============================================================
+
+    /**
+     * Search for places by text query
+     * Uses AWS Location Service Place Index
+     * @see POST /api/v1/geocoding/search
+     */
+    @POST("geocoding/search")
+    suspend fun searchPlaces(
+        @Body request: PlaceSearchRequest
+    ): Response<PlaceSearchResponse>
+
+    /**
+     * Reverse geocode: coordinates to address
+     * Uses AWS Location Service
+     * @see POST /api/v1/geocoding/reverse
+     */
+    @POST("geocoding/reverse")
+    suspend fun reverseGeocode(
+        @Body request: ReverseGeocodeRequest
+    ): Response<ReverseGeocodeResponse>
+
+    /**
+     * Calculate route between two points
+     * Uses AWS Location Service Route Calculator
+     * Falls back to Haversine for routes > 400km
+     * @see POST /api/v1/geocoding/route
+     */
+    @POST("geocoding/route")
+    suspend fun calculateRoute(
+        @Body request: RouteCalculationRequest
+    ): Response<RouteCalculationResponse>
+
+    /**
+     * Calculate multi-waypoint route (pickup → stops → drop)
+     * Returns road-following polyline for map display
+     * @see POST /api/v1/geocoding/route-multi
+     */
+    @POST("geocoding/route-multi")
+    suspend fun calculateRouteMulti(
+        @Body request: MultiPointRouteRequest
+    ): Response<MultiPointRouteResponse>
+
+    /**
+     * Check AWS Location Service status
+     * @see GET /api/v1/geocoding/status
+     */
+    @GET("geocoding/status")
+    suspend fun getGeocodingStatus(): Response<GeocodingStatusResponse>
 }
 
 // ============================================================
@@ -295,7 +434,9 @@ data class UserData(
     val phone: String,
     val role: String,
     val name: String? = null,
-    val email: String? = null
+    val email: String? = null,
+    val createdAt: String? = null,
+    val updatedAt: String? = null
 )
 
 data class TokensData(
@@ -581,20 +722,183 @@ data class ApiError(
 
 /**
  * Request to create an order with multiple truck types
+ * 
+ * ROUTE POINTS (Intermediate Stops):
+ * - If routePoints is provided, backend uses it for the full route
+ * - If null, backend builds route from pickup + drop (backward compatible)
+ * - Route: PICKUP → STOP → STOP → DROP (max 2 intermediate stops)
+ * - Route is IMMUTABLE after order creation
  */
 data class CreateOrderRequest(
-    val pickup: LocationRequest,
-    val drop: LocationRequest,
+    // NEW: Route points with intermediate stops (preferred)
+    val routePoints: List<RoutePointRequest>? = null,
+    
+    // Legacy pickup/drop (backward compatible, used if routePoints is null)
+    val pickup: OrderLocationRequest,
+    val drop: OrderLocationRequest,
+    
     val distanceKm: Int,
-    val trucks: List<TruckSelectionRequest>,
+    val vehicleRequirements: List<VehicleRequirementRequest>,  // Backend expects this name
     val goodsType: String? = null,
-    val weight: String? = null,
-    val notes: String? = null,
+    val cargoWeightKg: Int? = null,
     val scheduledAt: String? = null
 )
 
 /**
- * Individual truck selection within an order
+ * Location format for order creation - FLAT structure (no nested coordinates)
+ * Backend schema: { latitude: number, longitude: number, address: string, city?: string, state?: string }
+ */
+data class OrderLocationRequest(
+    val latitude: Double,
+    val longitude: Double,
+    val address: String,
+    val city: String? = null,
+    val state: String? = null
+)
+
+// ============================================================
+// NEW: Cancel & Status Response Models
+// ============================================================
+
+/**
+ * Response when cancelling an order
+ * 
+ * EASY UNDERSTANDING: Shows how many drivers were notified about cancellation
+ */
+data class CancelOrderResponse(
+    val success: Boolean,
+    val message: String,
+    val data: CancelOrderData? = null
+)
+
+data class CancelOrderData(
+    val message: String,
+    val transportersNotified: Int
+)
+
+/**
+ * Order status with remaining time
+ * 
+ * SCALABILITY: Backend calculates remaining time from database
+ * EASY UNDERSTANDING: UI just displays this value, doesn't calculate
+ */
+data class OrderStatusResponse(
+    val success: Boolean,
+    val data: OrderStatusData? = null
+)
+
+data class OrderStatusData(
+    val orderId: String,
+    val status: String,
+    val remainingSeconds: Int,
+    val isActive: Boolean,
+    val expiresAt: String
+)
+
+/**
+ * Route Point for intermediate stops
+ * 
+ * IMPORTANT: Stops are defined BEFORE booking only!
+ * - Type: PICKUP (first), STOP (intermediate), DROP (last)
+ * - Max 4 points: 1 pickup + 2 stops + 1 drop
+ * - Route is IMMUTABLE after order creation
+ */
+data class RoutePointRequest(
+    val type: String,           // "PICKUP", "STOP", or "DROP"
+    val latitude: Double,
+    val longitude: Double,
+    val address: String,
+    val city: String? = null,
+    val state: String? = null
+)
+
+// =============================================================================
+// ROUTE BREAKDOWN - ETA per leg (Response models)
+// =============================================================================
+
+/**
+ * Single leg of a route (segment between two consecutive points)
+ * 
+ * EXAMPLE:
+ * Leg 0: Delhi → Jaipur
+ *   distanceKm: 270
+ *   durationMinutes: 405 (6.75 hours)
+ *   durationFormatted: "6 hrs 45 mins"
+ */
+data class RouteLegResponse(
+    val fromIndex: Int,
+    val toIndex: Int,
+    val fromType: String,
+    val toType: String,
+    val fromAddress: String,
+    val toAddress: String,
+    val fromCity: String? = null,
+    val toCity: String? = null,
+    val distanceKm: Int,
+    val durationMinutes: Int,
+    val durationFormatted: String,
+    val etaMinutes: Int                     // Cumulative ETA from trip start
+) {
+    /**
+     * Get leg display string
+     */
+    val displayString: String
+        get() {
+            val from = fromCity ?: fromAddress.split(",").firstOrNull() ?: "Start"
+            val to = toCity ?: toAddress.split(",").firstOrNull() ?: "End"
+            return "$from → $to • $distanceKm km • $durationFormatted"
+        }
+}
+
+/**
+ * Complete route breakdown with all legs and totals
+ * 
+ * USE IN UI:
+ * - Show each leg with distance and ETA
+ * - Highlight current leg based on driver progress
+ * - Show total trip summary
+ */
+data class RouteBreakdownResponse(
+    val legs: List<RouteLegResponse> = emptyList(),
+    val totalDistanceKm: Int = 0,
+    val totalDurationMinutes: Int = 0,
+    val totalDurationFormatted: String = "",
+    val totalStops: Int = 0,
+    val estimatedArrival: String? = null
+) {
+    /**
+     * Get summary string (e.g., "910 km • 22 hrs 45 mins • 2 stops")
+     */
+    val summaryString: String
+        get() {
+            val stopsText = when (totalStops) {
+                0 -> "Direct"
+                1 -> "1 stop"
+                else -> "$totalStops stops"
+            }
+            return "$totalDistanceKm km • $totalDurationFormatted • $stopsText"
+        }
+    
+    /**
+     * Check if breakdown has data
+     */
+    val hasData: Boolean
+        get() = legs.isNotEmpty()
+}
+
+/**
+ * Vehicle requirement within an order
+ * Backend schema: { vehicleType, vehicleSubtype, quantity, pricePerTruck }
+ */
+data class VehicleRequirementRequest(
+    val vehicleType: String,
+    val vehicleSubtype: String,
+    val quantity: Int,
+    val pricePerTruck: Int
+)
+
+/**
+ * @deprecated Use VehicleRequirementRequest instead
  */
 data class TruckSelectionRequest(
     val vehicleType: String,
@@ -638,6 +942,7 @@ data class OrderData(
     val status: String,
     val scheduledAt: String? = null,
     val expiresAt: String,
+    val expiresIn: Int? = null,  // NEW: Duration in seconds from backend (for timer)
     val createdAt: String,
     val updatedAt: String
 )
@@ -738,4 +1043,208 @@ data class OrderSummary(
     val trucksFilled: Int,
     val trucksSearching: Int,
     val trucksExpired: Int
+)
+
+// ============================================================
+// GEOCODING REQUEST/RESPONSE DTOs
+// ============================================================
+
+data class PlaceSearchRequest(
+    val query: String,
+    val biasLat: Double? = null,
+    val biasLng: Double? = null,
+    val maxResults: Int = 5
+)
+
+data class PlaceSearchResponse(
+    val success: Boolean,
+    val data: List<PlaceResult>? = null,
+    val error: ApiError? = null
+)
+
+data class PlaceResult(
+    val placeId: String,
+    val label: String,
+    val address: String? = null,
+    val city: String? = null,
+    val latitude: Double,
+    val longitude: Double
+)
+
+data class ReverseGeocodeRequest(
+    val latitude: Double,
+    val longitude: Double
+)
+
+data class ReverseGeocodeResponse(
+    val success: Boolean,
+    val data: ReverseGeocodeData? = null,
+    val error: ApiError? = null
+)
+
+data class ReverseGeocodeData(
+    val latitude: Double,
+    val longitude: Double,
+    val address: String,
+    val city: String? = null,
+    val state: String? = null,
+    val country: String? = null,
+    val postalCode: String? = null
+)
+
+data class RouteCalculationRequest(
+    val from: RouteCoordinates,
+    val to: RouteCoordinates,
+    val truckMode: Boolean = true,
+    val includePolyline: Boolean = false  // Request route geometry for map
+)
+
+data class RouteCoordinates(
+    val latitude: Double,
+    val longitude: Double
+)
+
+data class RouteCalculationResponse(
+    val success: Boolean,
+    val data: RouteCalculationData? = null,
+    val error: ApiError? = null
+)
+
+data class RouteCalculationData(
+    val distanceKm: Int,
+    val durationMinutes: Int,
+    val durationFormatted: String,
+    val source: String,  // "aws" or "haversine"
+    val polyline: List<List<Double>>? = null  // Route geometry [[lat, lng], ...]
+)
+
+data class GeocodingStatusResponse(
+    val success: Boolean,
+    val data: GeocodingStatusData? = null,
+    val error: ApiError? = null
+)
+
+data class GeocodingStatusData(
+    val available: Boolean,
+    val service: String
+)
+
+// ============================================================
+// MULTI-POINT ROUTE DATA CLASSES
+// ============================================================
+
+data class MultiPointRouteRequest(
+    val points: List<RoutePoint>,
+    val truckMode: Boolean = true,
+    val includePolyline: Boolean = true
+)
+
+data class RoutePoint(
+    val lat: Double,
+    val lng: Double,
+    val label: String? = null
+)
+
+data class MultiPointRouteResponse(
+    val success: Boolean,
+    val data: MultiPointRouteData? = null,
+    val error: ApiError? = null
+)
+
+data class MultiPointRouteData(
+    val distanceKm: Int,
+    val durationMinutes: Int,
+    val durationFormatted: String,
+    val source: String,  // "aws" or "haversine"
+    val polyline: List<List<Double>>? = null,  // Route geometry [[lat, lng], ...]
+    val legs: List<RouteLegData>? = null
+)
+
+data class RouteLegData(
+    val distanceKm: Int,
+    val durationMinutes: Int
+)
+
+// ============================================================
+// CUSTOM BOOKING DATA CLASSES (Long-term contracts)
+// ============================================================
+
+/**
+ * Request to submit custom booking for long-term contracts
+ * 
+ * SCALABILITY:
+ * - Vehicle requirements support multiple truck types
+ * - Backend validates and queues for admin review
+ */
+data class CustomBookingRequest(
+    val pickupCity: String,
+    val pickupState: String? = null,
+    val dropCity: String,
+    val dropState: String? = null,
+    val vehicleRequirements: List<CustomVehicleRequirement>,
+    val startDate: String,           // ISO date: "2026-02-10"
+    val endDate: String,             // ISO date: "2026-03-10"
+    val isFlexible: Boolean = false, // Flexible on dates
+    val goodsType: String? = null,
+    val estimatedWeight: String? = null,
+    val specialRequests: String? = null,
+    val companyName: String? = null,
+    val customerEmail: String? = null
+)
+
+data class CustomVehicleRequirement(
+    val type: String,          // "open", "container", "flatbed"
+    val subtype: String,       // "17ft", "20ft", "32ft"
+    val quantity: Int
+)
+
+data class CustomBookingResponse(
+    val success: Boolean,
+    val message: String? = null,
+    val data: CustomBookingData? = null,
+    val error: ApiError? = null
+)
+
+data class CustomBookingData(
+    val requestId: String,
+    val status: String
+)
+
+data class CustomBookingsListResponse(
+    val success: Boolean,
+    val data: CustomBookingsListData? = null,
+    val error: ApiError? = null
+)
+
+data class CustomBookingsListData(
+    val requests: List<CustomBookingItem>,
+    val total: Int,
+    val hasMore: Boolean
+)
+
+data class CustomBookingItem(
+    val id: String,
+    val pickupCity: String,
+    val dropCity: String,
+    val vehicleRequirements: List<CustomVehicleRequirement>,
+    val startDate: String,
+    val endDate: String,
+    val status: String,
+    val createdAt: String
+)
+
+data class CustomBookingDetailResponse(
+    val success: Boolean,
+    val data: CustomBookingDetailData? = null,
+    val error: ApiError? = null
+)
+
+data class CustomBookingDetailData(
+    val request: CustomBookingItem
+)
+
+data class CustomBookingCancelResponse(
+    val success: Boolean,
+    val message: String? = null,
+    val error: ApiError? = null
 )

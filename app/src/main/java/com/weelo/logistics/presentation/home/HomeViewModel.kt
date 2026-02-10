@@ -43,7 +43,7 @@ class HomeViewModel @Inject constructor(
                         is Result.Success -> {
                             _uiState.value = _uiState.value?.copy(
                                 isLoading = false,
-                                vehicleCategories = result.data ?: emptyList()
+                                vehicleCategories = result.data
                             )
                         }
                         is Result.Error -> {

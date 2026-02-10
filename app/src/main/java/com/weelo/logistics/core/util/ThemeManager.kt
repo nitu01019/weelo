@@ -93,12 +93,8 @@ object ThemeManager {
     }
 
     private fun getSavedThemeMode(): ThemeMode {
-        val value = prefs.getString(KEY_THEME_MODE, ThemeMode.SYSTEM.name)
-        return try {
-            ThemeMode.valueOf(value ?: ThemeMode.SYSTEM.name)
-        } catch (e: Exception) {
-            ThemeMode.SYSTEM
-        }
+        // ALWAYS USE LIGHT MODE - No dark theme needed
+        return ThemeMode.LIGHT
     }
 
     private fun saveThemeMode(mode: ThemeMode) {

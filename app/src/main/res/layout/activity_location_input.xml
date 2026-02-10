@@ -6,13 +6,13 @@
     android:orientation="vertical"
     android:background="#F8F9FA">
 
-    <!-- Header -->
+    <!-- Header - Rapido Style -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
-        android:paddingHorizontal="16dp"
-        android:paddingVertical="12dp"
+        android:paddingHorizontal="12dp"
+        android:paddingVertical="14dp"
         android:gravity="center_vertical"
         android:background="@color/white">
 
@@ -20,105 +20,167 @@
             android:id="@+id/backButton"
             android:layout_width="40dp"
             android:layout_height="40dp"
-            android:src="@android:drawable/ic_menu_revert"
+            android:src="@drawable/ic_arrow_back"
             android:padding="8dp"
             android:background="?android:attr/selectableItemBackgroundBorderless"
             android:contentDescription="Back" />
 
         <TextView
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="Enter Locations"
-            android:textSize="20sp"
-            android:textStyle="bold"
-            android:textColor="#1A1A1A"
-            android:layout_marginStart="8dp" />
-
-        <TextView
+            android:id="@+id/headerTitle"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="For me ▼"
-            android:textSize="14sp"
-            android:textColor="#666666"
-            android:paddingHorizontal="16dp"
+            android:text="Pickup"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:textColor="#1A1A1A"
+            android:layout_marginStart="4dp"
+            android:layout_marginEnd="12dp" />
+
+        <!-- Instant/Custom Toggle - Small Chips -->
+        <LinearLayout
+            android:id="@+id/bookingModeToggle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginEnd="8dp"
+            android:background="@drawable/bg_toggle_container"
+            android:padding="3dp">
+
+            <!-- Instant Button - RAPIDO STYLE -->
+            <TextView
+                android:id="@+id/instantButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Instant"
+                android:textSize="14sp"
+                android:textStyle="bold"
+                android:fontFamily="sans-serif-medium"
+                android:textColor="#FFFFFF"
+                android:background="@drawable/bg_toggle_instant_selected"
+                android:paddingHorizontal="16dp"
+                android:paddingVertical="6dp"
+                android:clickable="true"
+                android:focusable="true"
+                android:foreground="?android:attr/selectableItemBackground" />
+
+            <!-- Custom Button - RAPIDO STYLE -->
+            <TextView
+                android:id="@+id/customButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Custom"
+                android:textSize="14sp"
+                android:textStyle="normal"
+                android:fontFamily="sans-serif"
+                android:textColor="#666666"
+                android:background="@drawable/bg_toggle_unselected"
+                android:paddingHorizontal="16dp"
+                android:paddingVertical="6dp"
+                android:layout_marginStart="4dp"
+                android:clickable="true"
+                android:focusable="true"
+                android:foreground="?android:attr/selectableItemBackground" />
+
+        </LinearLayout>
+
+        <!-- For me dropdown button -->
+        <LinearLayout
+            android:id="@+id/forMeButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:paddingHorizontal="14dp"
             android:paddingVertical="8dp"
             android:background="@drawable/button_outlined"
             android:clickable="true"
-            android:focusable="true" />
+            android:focusable="true">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="For me"
+                android:textSize="14sp"
+                android:textColor="#333333" />
+
+            <ImageView
+                android:layout_width="16dp"
+                android:layout_height="16dp"
+                android:layout_marginStart="4dp"
+                android:src="@drawable/ic_dropdown_arrow"
+                android:contentDescription="Dropdown" />
+
+        </LinearLayout>
 
     </LinearLayout>
 
-    <!-- Scrollable Content -->
-    <ScrollView
+    <!-- Location Input Section - FIXED (doesn't scroll) -->
+    <LinearLayout
+        android:id="@+id/locationInputSection"
         android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1"
-        android:fillViewport="true">
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:background="@color/white"
+        android:paddingHorizontal="16dp"
+        android:paddingVertical="12dp">
 
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:padding="12dp">
-
-            <!-- Location Input Card -->
-            <androidx.cardview.widget.CardView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="16dp"
-                app:cardCornerRadius="16dp"
-                app:cardElevation="3dp"
-                app:cardBackgroundColor="@color/white">
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:padding="12dp">
-
-                    <!-- From Location -->
+                    <!-- From Location - Rapido Style -->
                     <LinearLayout
                         android:id="@+id/fromLocationContainer"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:orientation="horizontal"
                         android:gravity="center_vertical"
-                        android:paddingVertical="12dp"
+                        android:paddingVertical="8dp"
                         android:clickable="true"
                         android:focusable="true"
                         android:background="?android:attr/selectableItemBackground">
 
-                        <!-- Green Dot -->
+                        <!-- Green Dot - Smaller -->
                         <View
-                            android:layout_width="12dp"
-                            android:layout_height="12dp"
+                            android:layout_width="8dp"
+                            android:layout_height="8dp"
                             android:background="@drawable/green_dot"
-                            android:layout_marginEnd="16dp" />
+                            android:layout_marginEnd="12dp" />
 
-                        <!-- From Input -->
+                        <!-- From Input - Minimal Style -->
                         <AutoCompleteTextView
                             android:id="@+id/fromLocationInput"
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
-                            android:hint="Your Current Location"
-                            android:textSize="16sp"
-                            android:textColor="#1A1A1A"
+                            android:hint="Pickup location"
+                            android:textSize="15sp"
+                            android:textColor="#000000"
+                            android:textColorHint="#888888"
                             android:background="@null"
                             android:maxLines="1"
                             android:ellipsize="end"
                             android:inputType="text"
-                            android:completionThreshold="1" />
+                            android:completionThreshold="1"
+                            android:dropDownHeight="0dp"
+                            android:minHeight="40dp" />
+
+                        <!-- Clear Button (X) -->
+                        <ImageView
+                            android:id="@+id/fromClearButton"
+                            android:layout_width="24dp"
+                            android:layout_height="24dp"
+                            android:src="@drawable/ic_close"
+                            android:tint="#888888"
+                            android:padding="4dp"
+                            android:visibility="gone"
+                            android:background="?android:attr/selectableItemBackgroundBorderless"
+                            android:contentDescription="Clear pickup location" />
 
                     </LinearLayout>
 
-                    <!-- Dotted Line -->
+                    <!-- Dotted Line - Smaller -->
                     <View
                         android:layout_width="2dp"
-                        android:layout_height="24dp"
+                        android:layout_height="20dp"
                         android:background="@drawable/dotted_line"
-                        android:layout_marginStart="5dp"
+                        android:layout_marginStart="4dp"
                         android:layout_marginVertical="0dp" />
 
                     <!-- Intermediate Stops Container (dynamically added) -->
@@ -130,65 +192,107 @@
                         <!-- Intermediate stops will be added here dynamically -->
                     </LinearLayout>
 
-                    <!-- Dotted Line (before drop) -->
+                    <!-- Dotted Line (before drop) - Smaller -->
                     <View
                         android:id="@+id/bottomDottedLine"
                         android:layout_width="2dp"
-                        android:layout_height="24dp"
+                        android:layout_height="20dp"
                         android:background="@drawable/dotted_line"
-                        android:layout_marginStart="5dp"
+                        android:layout_marginStart="4dp"
                         android:layout_marginVertical="0dp"
                         android:visibility="gone" />
 
-                    <!-- To Location -->
+                    <!-- To Location - Rapido Style -->
                     <LinearLayout
                         android:id="@+id/toLocationContainer"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:orientation="horizontal"
                         android:gravity="center_vertical"
-                        android:paddingVertical="12dp"
+                        android:paddingVertical="8dp"
                         android:clickable="true"
                         android:focusable="true"
                         android:background="?android:attr/selectableItemBackground">
 
-                        <!-- Orange Dot -->
+                        <!-- Orange Dot - Smaller -->
                         <View
-                            android:layout_width="12dp"
-                            android:layout_height="12dp"
+                            android:layout_width="8dp"
+                            android:layout_height="8dp"
                             android:background="@drawable/orange_dot"
-                            android:layout_marginEnd="16dp" />
+                            android:layout_marginEnd="12dp" />
 
-                        <!-- To Input -->
+                        <!-- To Input - Minimal Style -->
                         <AutoCompleteTextView
                             android:id="@+id/toLocationInput"
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
                             android:hint="Drop location"
-                            android:textSize="16sp"
-                            android:textColor="#1A1A1A"
-                            android:textColorHint="#9E9E9E"
+                            android:textSize="15sp"
+                            android:textColor="#000000"
+                            android:textColorHint="#888888"
                             android:background="@null"
                             android:maxLines="1"
                             android:ellipsize="end"
                             android:inputType="text"
-                            android:completionThreshold="1" />
+                            android:completionThreshold="1"
+                            android:dropDownHeight="0dp"
+                            android:minHeight="40dp" />
+
+                        <!-- Clear Button (X) -->
+                        <ImageView
+                            android:id="@+id/toClearButton"
+                            android:layout_width="24dp"
+                            android:layout_height="24dp"
+                            android:src="@drawable/ic_close"
+                            android:tint="#888888"
+                            android:padding="4dp"
+                            android:visibility="gone"
+                            android:background="?android:attr/selectableItemBackgroundBorderless"
+                            android:contentDescription="Clear drop location" />
 
                     </LinearLayout>
 
-                </LinearLayout>
+    </LinearLayout>
 
-            </androidx.cardview.widget.CardView>
+    <!-- Warning Banner - Shows when location detection fails -->
+    <LinearLayout
+        android:id="@+id/locationWarningBanner"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:background="#FFF3E0"
+        android:padding="10dp"
+        android:gravity="center_vertical"
+        android:visibility="gone">
 
-            <!-- Action Buttons -->
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:layout_marginTop="8dp"
-                android:layout_marginBottom="12dp"
-                android:gravity="center">
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="⚠️"
+            android:textSize="16sp"
+            android:layout_marginEnd="8dp" />
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Cannot find your location"
+            android:textSize="13sp"
+            android:textColor="#E65100"
+            android:textStyle="bold" />
+
+    </LinearLayout>
+
+    <!-- Action Buttons - FIXED (doesn't scroll) -->
+    <LinearLayout
+        android:id="@+id/actionButtonsRow"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:padding="12dp"
+        android:background="@color/white"
+        android:gravity="center">
 
                 <androidx.appcompat.widget.AppCompatButton
                     android:id="@+id/selectOnMapButton"
@@ -228,20 +332,118 @@
 
             </LinearLayout>
 
-            <!-- Recent Locations Container (dynamically populated) -->
+    <!-- SCROLLABLE SECTION - Recent Locations + Search Results (fills remaining space) -->
+    <!-- SCALABILITY: Only this section scrolls, input fields stay fixed -->
+    <!-- EASY UNDERSTANDING: Three states - Recent, Skeleton, Results -->
+    <!-- MODULARITY: Each state is independent FrameLayout child -->
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:background="#F8F9FA">
+
+        <!-- Recent Locations Container (Programmatic - Guaranteed Clicks) -->
+        <ScrollView
+            android:id="@+id/recentLocationsScrollView"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="@color/white"
+            android:fillViewport="false"
+            android:visibility="visible">
+
             <LinearLayout
-                android:id="@+id/recentJammu"
+                android:id="@+id/recentLocationsContainer"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:paddingBottom="80dp" />
+
+        </ScrollView>
+
+        <!-- Skeleton Loading Container (Shows during API calls - Rapido style) -->
+        <com.facebook.shimmer.ShimmerFrameLayout
+            android:id="@+id/skeletonContainer"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:visibility="gone"
+            android:background="@color/white">
+
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical">
-                
-                <!-- Recent locations will be added here dynamically -->
-                
+
+                <!-- 5 skeleton items for smooth loading effect -->
+                <include layout="@layout/skeleton_location_item" />
+                <include layout="@layout/skeleton_location_item" />
+                <include layout="@layout/skeleton_location_item" />
+                <include layout="@layout/skeleton_location_item" />
+                <include layout="@layout/skeleton_location_item" />
+
             </LinearLayout>
 
-        </LinearLayout>
+        </com.facebook.shimmer.ShimmerFrameLayout>
 
-    </ScrollView>
+        <!-- Search Results RecyclerView (Shows when typing) -->
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/searchResultsRecyclerView"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="@color/white"
+            android:visibility="gone"
+            android:paddingBottom="80dp"
+            android:clipToPadding="false"
+            android:nestedScrollingEnabled="true" />
+
+        <!-- Empty State Container (Shows when search fails) -->
+        <!-- CRITICAL: visibility="gone" to prevent blocking touches on views below -->
+        <ScrollView
+            android:id="@+id/emptyStateScrollView"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:fillViewport="true"
+            android:visibility="gone">
+
+            <LinearLayout
+                android:id="@+id/emptyStateContainer"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:gravity="center_horizontal"
+                android:paddingTop="48dp"
+                android:paddingBottom="48dp">
+
+                <!-- Sad Magnifying Glass Illustration -->
+                <ImageView
+                    android:id="@+id/emptyStateImage"
+                    android:layout_width="140dp"
+                    android:layout_height="140dp"
+                    android:src="@drawable/ic_empty_search"
+                    android:contentDescription="Could not get address"
+                    android:alpha="0.6" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="24dp"
+                    android:text="Could not get address"
+                    android:textSize="18sp"
+                    android:textStyle="bold"
+                    android:textColor="#1A1A1A" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:text="Please try searching for alternate locations"
+                    android:textSize="14sp"
+                    android:textColor="#666666"
+                    android:gravity="center" />
+
+            </LinearLayout>
+        </ScrollView>
+
+    </FrameLayout>
 
     <!-- Continue Button -->
     <LinearLayout

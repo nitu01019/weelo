@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Rapido-style toggle button - Custom mode selected (Blue gradient) -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <gradient
+        android:angle="135"
+        android:startColor="#2196F3"
+        android:endColor="#42A5F5"
+        android:type="linear" />
+    <corners android:radius="20dp" />
+</shape>

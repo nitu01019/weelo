@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <!-- ALWAYS LIGHT THEME - No dark mode support -->
     <style name="Theme.Weelo" parent="Theme.MaterialComponents.Light.NoActionBar">
         <item name="colorPrimary">@color/weelo_orange</item>
         <item name="colorPrimaryVariant">@color/weelo_orange</item>
@@ -35,12 +36,13 @@
         <item name="android:textStyle">bold</item>
     </style>
 
-    <!-- Splash Screen Theme - INSTANT load with circle -->
+    <!-- Splash Screen Theme - INSTANT load with image -->
     <style name="Theme.Weelo.Splash" parent="Theme.MaterialComponents.Light.NoActionBar">
-        <!-- Full splash with circle shows INSTANTLY -->
-        <item name="android:windowBackground">@drawable/splash_window_background</item>
-        <item name="android:statusBarColor">@color/splashBackground</item>
-        <item name="android:navigationBarColor">@color/splashBackground</item>
+        <!-- Splash 1 (WEELO logo) shows INSTANTLY as window background -->
+        <!-- Uses splash_logo.png - golden yellow background with WEELO logo -->
+        <item name="android:windowBackground">@drawable/splash_logo</item>
+        <item name="android:statusBarColor">@color/splash_gold</item>
+        <item name="android:navigationBarColor">@color/splash_gold</item>
         <item name="android:windowLightStatusBar">false</item>
     </style>
     

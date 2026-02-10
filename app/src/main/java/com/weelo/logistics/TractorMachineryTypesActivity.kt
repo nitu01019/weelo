@@ -232,7 +232,8 @@ class TractorMachineryTypesActivity : AppCompatActivity() {
         
         val bottomSheet = BottomSheetDialog(this)
         
-        val view = layoutInflater.inflate(R.layout.bottom_sheet_machinery_subtypes, null)
+        val view = layoutInflater.inflate(R.layout.bottom_sheet_machinery_subtypes, 
+            findViewById(android.R.id.content), false)
         bottomSheet.setContentView(view)
         
         // Configure bottom sheet using helper for consistency and scalability
@@ -256,7 +257,8 @@ class TractorMachineryTypesActivity : AppCompatActivity() {
             gridLayout.rowCount = (config.subtypes.size + config.gridColumns - 1) / config.gridColumns
             
             config.subtypes.forEach { subtype ->
-                val card = layoutInflater.inflate(R.layout.item_machinery_subtype, null)
+                val card = layoutInflater.inflate(R.layout.item_machinery_subtype, 
+                    gridLayout, false)
                 card.findViewById<TextView>(R.id.subtypeName)?.text = subtype
                 
                 val params = GridLayout.LayoutParams().apply {
@@ -392,6 +394,7 @@ class TractorMachineryTypesActivity : AppCompatActivity() {
     /**
      * Navigate to pricing screen with selected machinery
      */
+    @Suppress("UNUSED_PARAMETER") // machineryId reserved for future pricing integration
     private fun navigateToPricing(machineryId: String) {
         Toast.makeText(
             this,

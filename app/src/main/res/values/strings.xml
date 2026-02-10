@@ -2,6 +2,20 @@
 <resources>
     <string name="app_name">Weelo</string>
     
+    <!-- Custom Booking Activity -->
+    <string name="select_truck_options">Select %1$s Options</string>
+    <string name="select_date">Select Date</string>
+    <string name="end_date_after_start">End date must be after start date</string>
+    <string name="total_trucks">Total: %1$d truck(s)</string>
+    <string name="custom_booking_success">Request submitted! Our team will contact you soon.</string>
+    <string name="custom_booking_error">Failed to submit request. Please try again.</string>
+    
+    <!-- Plurals for truck count -->
+    <plurals name="truck_count">
+        <item quantity="one">%d truck</item>
+        <item quantity="other">%d trucks</item>
+    </plurals>
+    
     <!-- Home Screen -->
     <string name="search_placeholder">Enter from location</string>
     <string name="nearby_vehicles">Services Available</string>
@@ -52,6 +66,10 @@
     <string name="from">From</string>
     <string name="to">To</string>
     <string name="distance">Distance</string>
+    <string name="recent_location_icon_desc">Recent location</string>
+    <string name="favorite_icon_empty">🤍</string>
+    <string name="favorite_icon_filled">❤️</string>
+    <string name="remove_item">✕</string>
     <string name="included_features">Included Features</string>
     <string name="price_breakdown">Price Breakdown</string>
     <string name="base_fare">Base Fare</string>

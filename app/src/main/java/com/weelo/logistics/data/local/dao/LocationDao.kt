@@ -13,7 +13,12 @@ interface LocationDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertLocation(location: LocationEntity)
     
-    @Query("SELECT * FROM locations ORDER BY timestamp DESC LIMIT :limit")
+    /**
+     * Get recent locations with priority sorting
+     * SCALABILITY: Favorites first, then by recency - SQLite handles sorting efficiently
+     * EASY UNDERSTANDING: isFavorite DESC puts favorites (1) before non-favorites (0)
+     */
+    @Query("SELECT * FROM locations ORDER BY isFavorite DESC, timestamp DESC LIMIT :limit")
     fun getRecentLocations(limit: Int = 10): Flow<List<LocationEntity>>
     
     @Query("SELECT * FROM locations WHERE isFavorite = 1 ORDER BY timestamp DESC")

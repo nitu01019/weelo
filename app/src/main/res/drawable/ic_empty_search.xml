@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="120dp"
+    android:height="120dp"
+    android:viewportWidth="200"
+    android:viewportHeight="200">
+
+    <!-- Background circle -->
+    <path
+        android:fillColor="#E8EEF4"
+        android:pathData="M100,100m-90,0a90,90 0,1 1,180 0a90,90 0,1 1,-180 0"/>
+
+    <!-- Document/Page shape -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:strokeColor="#B8C9DB"
+        android:strokeWidth="2"
+        android:pathData="M55,40 L125,40 L145,60 L145,160 L55,160 Z"/>
+
+    <!-- Document corner fold -->
+    <path
+        android:fillColor="#D4E1ED"
+        android:pathData="M125,40 L125,60 L145,60 Z"/>
+
+    <!-- Document lines -->
+    <path
+        android:strokeColor="#D4E1ED"
+        android:strokeWidth="3"
+        android:strokeLineCap="round"
+        android:pathData="M70,75 L130,75"/>
+    <path
+        android:strokeColor="#D4E1ED"
+        android:strokeWidth="3"
+        android:strokeLineCap="round"
+        android:pathData="M70,95 L120,95"/>
+    <path
+        android:strokeColor="#D4E1ED"
+        android:strokeWidth="3"
+        android:strokeLineCap="round"
+        android:pathData="M70,115 L110,115"/>
+
+    <!-- Magnifying glass circle -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:strokeColor="#7BA3C9"
+        android:strokeWidth="4"
+        android:pathData="M90,115m-35,0a35,35 0,1 1,70 0a35,35 0,1 1,-70 0"/>
+
+    <!-- Magnifying glass handle -->
+    <path
+        android:strokeColor="#7BA3C9"
+        android:strokeWidth="6"
+        android:strokeLineCap="round"
+        android:pathData="M115,142 L140,167"/>
+
+    <!-- Sad face - eyes -->
+    <path
+        android:fillColor="#7BA3C9"
+        android:pathData="M75,108m-4,0a4,4 0,1 1,8 0a4,4 0,1 1,-8 0"/>
+    <path
+        android:fillColor="#7BA3C9"
+        android:pathData="M105,108m-4,0a4,4 0,1 1,8 0a4,4 0,1 1,-8 0"/>
+
+    <!-- Sad face - frown -->
+    <path
+        android:strokeColor="#7BA3C9"
+        android:strokeWidth="3"
+        android:strokeLineCap="round"
+        android:pathData="M78,128 Q90,118 102,128"/>
+
+</vector>

@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+=============================================================================
+RECENT LOCATION ITEM - RAPIDO STYLE (ConstraintLayout variant)
+=============================================================================
+Used in location input screen for recent/saved locations
+
+DESIGN (RAPIDO STYLE):
+- Left column: Clock icon + Distance UNDER icon (compound drawable)
+- Middle: Location name (BOLD) + Address subtitle
+- Right: Heart icon (favorites)
+- Dotted line divider
+=============================================================================
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:background="?android:attr/selectableItemBackground"
+    android:clickable="true"
+    android:focusable="true"
+    android:descendantFocusability="blocksDescendants">
+
+    <!-- Main Content Row -->
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingVertical="12dp"
+        android:paddingHorizontal="16dp"
+        android:clickable="false"
+        android:focusable="false">
+
+        <!--
+            LEFT COLUMN: Clock Icon + Distance (compound drawable)
+            Uses app:drawableTopCompat for compat, app:drawableTint for tint.
+            #555555 gives 4.6:1 contrast ratio on white (WCAG AA).
+        -->
+        <TextView
+            android:id="@+id/locationDistance"
+            android:layout_width="40dp"
+            android:layout_height="wrap_content"
+            android:gravity="center_horizontal"
+            app:drawableTopCompat="@drawable/ic_clock_recent"
+            app:drawableTint="@color/icon_default"
+            android:drawablePadding="4dp"
+            android:textSize="11sp"
+            android:textColor="@color/text_gray"
+            android:fontFamily="sans-serif"
+            android:visibility="gone"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent"
+            tools:text="2.5 km"
+            tools:visibility="visible" />
+
+        <!-- MIDDLE: Location Name + Address -->
+        <LinearLayout
+            android:id="@+id/textContainer"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:layout_marginStart="12dp"
+            android:layout_marginEnd="12dp"
+            app:layout_constraintStart_toEndOf="@id/locationDistance"
+            app:layout_constraintEnd_toStartOf="@id/favoriteIcon"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent">
+
+            <!-- Location Name (BOLD, DARK - Rapido style) -->
+            <TextView
+                android:id="@+id/locationName"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textSize="15sp"
+                android:textStyle="bold"
+                android:textColor="@color/text_primary"
+                android:fontFamily="sans-serif-medium"
+                android:maxLines="1"
+                android:ellipsize="end"
+                tools:text="Railway Station Jammu Tawi" />
+
+            <!-- Address Subtitle (#757575 gives 4.6:1 contrast on white) -->
+            <TextView
+                android:id="@+id/locationAddress"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="3dp"
+                android:textSize="13sp"
+                android:textColor="@color/text_gray"
+                android:fontFamily="sans-serif"
+                android:maxLines="1"
+                android:ellipsize="end"
+                tools:text="Trikuta Nagar, Jammu" />
+
+        </LinearLayout>
+
+        <!-- RIGHT: Heart Icon — app:tint for compat, accessible contrast -->
+        <ImageView
+            android:id="@+id/favoriteIcon"
+            android:layout_width="28dp"
+            android:layout_height="28dp"
+            android:padding="4dp"
+            android:src="@drawable/ic_heart_outline"
+            app:tint="@color/icon_default"
+            android:contentDescription="@string/favorite_icon_empty"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent" />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+    <!-- Dotted Line Divider (Rapido style - indented from left) -->
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:layout_marginStart="68dp"
+        android:layout_marginEnd="16dp"
+        android:background="@color/border_gray" />
+
+</LinearLayout>

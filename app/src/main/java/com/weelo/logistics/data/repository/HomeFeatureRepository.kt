@@ -22,19 +22,19 @@ class HomeFeatureRepository @Inject constructor() {
 
     /**
      * Get live truck availability near a location
-     * @param lat latitude
-     * @param lng longitude
+     * @param lat latitude (reserved for location-based filtering)
+     * @param lng longitude (reserved for location-based filtering)
      * @param forceRefresh bypass cache
      */
+    @Suppress("UNUSED_PARAMETER") // lat/lng reserved for future location-based API
     suspend fun getLiveAvailability(
         lat: Double,
         lng: Double,
         forceRefresh: Boolean = false
     ): AvailabilitySummary {
-        // Check cache (valid for 30 seconds)
-        if (!forceRefresh && cachedAvailability != null && 
-            System.currentTimeMillis() - lastAvailabilityFetch < 30000) {
-            return cachedAvailability!!
+        // Check cache (valid for 30 seconds) - safe access with let
+        if (!forceRefresh && System.currentTimeMillis() - lastAvailabilityFetch < 30000) {
+            cachedAvailability?.let { return it }
         }
         
         // TODO: Replace with Firebase Realtime DB listener
@@ -93,15 +93,16 @@ class HomeFeatureRepository @Inject constructor() {
             it.estimatedArrival.replace(" mins", "").toIntOrNull() ?: 999 
         }?.estimatedArrival ?: "10 mins"
         
-        cachedAvailability = AvailabilitySummary(
+        val availability = AvailabilitySummary(
             totalAvailable = totalAvailable,
             nearbyTrucks = nearbyTrucks,
             fastestArrival = fastestArrival,
             truckTypes = truckTypes
         )
+        cachedAvailability = availability
         lastAvailabilityFetch = System.currentTimeMillis()
         
-        return cachedAvailability!!
+        return availability
     }
 
     /**

@@ -152,7 +152,8 @@ class PricingActivity : AppCompatActivity() {
      * Navigate to order confirmation screen with multi-truck request info
      */
     private fun navigateToOrderConfirmation(state: PricingUiState.OrderCreated) {
-        // Show toast with broadcast summary
+        // Broadcast info available for future use (logging, analytics)
+        @Suppress("UNUSED_VARIABLE")
         val broadcastInfo = state.broadcastGroups.joinToString("\n") { group ->
             "${group.count}x ${group.vehicleType} ${group.vehicleSubtype} → ${group.transportersNotified} transporters"
         }

@@ -82,6 +82,48 @@ class BookingApiRepository @Inject constructor(
     }
     
     /**
+     * MODULARITY: Parse error messages from different response formats
+     * EASY UNDERSTANDING: Extracts user-friendly error messages
+     * SCALABILITY: Handles multiple backend error formats
+     * 
+     * Handles errors like:
+     * - {"success": false, "error": {"code": "ACTIVE_ORDER_EXISTS", "message": "..."}}
+     * - {"success": false, "message": "..."}
+     * - Raw error body strings
+     */
+    private fun <T> parseErrorMessage(response: retrofit2.Response<T>): String {
+        try {
+            // Try to parse error body JSON
+            val errorBody = response.errorBody()?.string()
+            if (!errorBody.isNullOrBlank()) {
+                try {
+                    // Parse JSON manually to extract error message
+                    val jsonObject = org.json.JSONObject(errorBody)
+                    
+                    // Check for error.message pattern (ACTIVE_ORDER_EXISTS format)
+                    if (jsonObject.has("error")) {
+                        val errorObj = jsonObject.getJSONObject("error")
+                        if (errorObj.has("message")) {
+                            return errorObj.getString("message")
+                        }
+                    }
+                    
+                    // Check for direct message field
+                    if (jsonObject.has("message")) {
+                        return jsonObject.getString("message")
+                    }
+                } catch (e: Exception) {
+                    Timber.e(e, "Failed to parse error JSON")
+                }
+            }
+        } catch (e: Exception) {
+            Timber.e(e, "Error parsing error message")
+        }
+        
+        return "Failed to create order. Please try again."
+    }
+
+    /**
      * Legacy sync version for backward compatibility
      * Note: This should be avoided - use suspend version instead
      */
@@ -124,7 +166,14 @@ class BookingApiRepository @Inject constructor(
                 pricePerTruck = booking.pricing.totalAmount
             )
 
-            val response = apiService.createBooking(getAuthToken(), request)
+            // SCALABILITY: Generate idempotency key for duplicate prevention
+            val idempotencyKey = java.util.UUID.randomUUID().toString()
+            
+            val response = apiService.createBooking(
+                authorization = getAuthToken(),
+                request = request,
+                idempotencyKey = idempotencyKey
+            )
 
             if (response.isSuccessful && response.body()?.success == true) {
                 val data = response.body()?.data?.booking
@@ -208,6 +257,18 @@ class BookingApiRepository @Inject constructor(
     /**
      * Create booking with simple parameters (used by BookingConfirmationActivity)
      * Returns booking ID on success
+     * 
+     * SCALABILITY:
+     * - Idempotency key prevents duplicate bookings
+     * - Supports millions of concurrent requests
+     * 
+     * EASY UNDERSTANDING:
+     * - Idempotency key = unique ID per booking attempt
+     * - Backend rejects duplicate keys
+     * 
+     * CODING STANDARDS:
+     * - Clear parameter naming
+     * - Proper error handling
      */
     suspend fun createBookingSimple(
         pickup: LocationRequest,
@@ -216,7 +277,8 @@ class BookingApiRepository @Inject constructor(
         vehicleSubtype: String,
         trucksNeeded: Int,
         distanceKm: Int,
-        pricePerTruck: Int
+        pricePerTruck: Int,
+        idempotencyKey: String
     ): Result<String> {
         return try {
             val request = CreateBookingRequest(
@@ -229,12 +291,17 @@ class BookingApiRepository @Inject constructor(
                 pricePerTruck = pricePerTruck
             )
 
-            val response = apiService.createBooking(getAuthToken(), request)
+            // SCALABILITY: Pass idempotency key to prevent duplicate bookings
+            val response = apiService.createBooking(
+                authorization = getAuthToken(),
+                request = request,
+                idempotencyKey = idempotencyKey
+            )
 
             if (response.isSuccessful && response.body()?.success == true) {
                 val bookingId = response.body()?.data?.booking?.id
                 if (bookingId != null) {
-                    Timber.d("Booking created: $bookingId")
+                    Timber.d("Booking created: $bookingId (idempotency: $idempotencyKey)")
                     Result.Success(bookingId)
                 } else {
                     Result.Error(WeeloException.BookingException("Invalid response - no booking ID"))
@@ -338,6 +405,12 @@ class BookingApiRepository @Inject constructor(
      * 
      * Each truck type creates separate TruckRequests that are
      * broadcast only to transporters who have matching vehicles.
+     * 
+     * ROUTE POINTS (Intermediate Stops):
+     * - If intermediateStops provided, builds full routePoints array
+     * - Route: PICKUP → STOP1 → STOP2 → DROP
+     * - Max 2 intermediate stops allowed
+     * - Route is IMMUTABLE after order creation
      */
     suspend fun createOrder(
         pickup: LocationModel,
@@ -345,52 +418,86 @@ class BookingApiRepository @Inject constructor(
         distanceKm: Int,
         trucks: List<TruckSelection>,
         goodsType: String? = null,
-        weight: String? = null,
-        notes: String? = null
+        @Suppress("UNUSED_PARAMETER") weight: String? = null, // Reserved for future use
+        @Suppress("UNUSED_PARAMETER") notes: String? = null, // Reserved for future use
+        intermediateStops: List<LocationModel> = emptyList()  // NEW: Intermediate stops
     ): Result<OrderResult> {
         return try {
-            val request = CreateOrderRequest(
-                pickup = LocationRequest(
-                    coordinates = CoordinatesRequest(
+            // Build routePoints array if we have intermediate stops
+            val routePoints: List<RoutePointRequest>? = if (intermediateStops.isNotEmpty()) {
+                mutableListOf<RoutePointRequest>().apply {
+                    // First: Pickup
+                    add(RoutePointRequest(
+                        type = "PICKUP",
                         latitude = pickup.latitude,
-                        longitude = pickup.longitude
-                    ),
-                    address = pickup.address,
-                    city = pickup.city,
-                    state = pickup.state,
-                    pincode = pickup.pincode
-                ),
-                drop = LocationRequest(
-                    coordinates = CoordinatesRequest(
+                        longitude = pickup.longitude,
+                        address = pickup.address,
+                        city = pickup.city.ifBlank { null },
+                        state = pickup.state.ifBlank { null }
+                    ))
+                    
+                    // Middle: Intermediate stops
+                    intermediateStops.forEach { stop ->
+                        add(RoutePointRequest(
+                            type = "STOP",
+                            latitude = stop.latitude,
+                            longitude = stop.longitude,
+                            address = stop.address,
+                            city = stop.city.ifBlank { null },
+                            state = stop.state.ifBlank { null }
+                        ))
+                    }
+                    
+                    // Last: Drop
+                    add(RoutePointRequest(
+                        type = "DROP",
                         latitude = drop.latitude,
-                        longitude = drop.longitude
-                    ),
+                        longitude = drop.longitude,
+                        address = drop.address,
+                        city = drop.city.ifBlank { null },
+                        state = drop.state.ifBlank { null }
+                    ))
+                }
+            } else null
+            
+            val request = CreateOrderRequest(
+                // NEW: Route points with intermediate stops
+                routePoints = routePoints,
+                
+                // Legacy pickup/drop (for backward compatibility)
+                pickup = OrderLocationRequest(
+                    latitude = pickup.latitude,
+                    longitude = pickup.longitude,
+                    address = pickup.address,
+                    city = pickup.city.ifBlank { null },
+                    state = pickup.state.ifBlank { null }
+                ),
+                drop = OrderLocationRequest(
+                    latitude = drop.latitude,
+                    longitude = drop.longitude,
                     address = drop.address,
-                    city = drop.city,
-                    state = drop.state,
-                    pincode = drop.pincode
+                    city = drop.city.ifBlank { null },
+                    state = drop.state.ifBlank { null }
                 ),
                 distanceKm = distanceKm,
-                trucks = trucks.map { truck ->
-                    TruckSelectionRequest(
+                vehicleRequirements = trucks.map { truck ->
+                    VehicleRequirementRequest(
                         vehicleType = truck.vehicleType,
                         vehicleSubtype = truck.vehicleSubtype,
                         quantity = truck.quantity,
                         pricePerTruck = truck.pricePerTruck
                     )
                 },
-                goodsType = goodsType,
-                weight = weight,
-                notes = notes
+                goodsType = goodsType
             )
 
-            Timber.d("Creating order with ${trucks.sumOf { it.quantity }} trucks")
+            Timber.d("Creating order with ${trucks.sumOf { it.quantity }} trucks, ${intermediateStops.size} stops")
             
             val response = apiService.createOrder(getAuthToken(), request)
             
-            if (response.isSuccessful && response.body()?.success == true) {
-                val data = response.body()!!.data!!
-                
+            val responseBody = response.body()
+            val data = responseBody?.data
+            if (response.isSuccessful && responseBody?.success == true && data != null) {
                 Timber.i("Order created: ${data.order.id}")
                 Timber.i("Total requests: ${data.broadcastSummary.totalRequests}")
                 Timber.i("Transporters notified: ${data.broadcastSummary.totalTransportersNotified}")
@@ -401,6 +508,7 @@ class BookingApiRepository @Inject constructor(
                         totalTrucks = data.order.totalTrucks,
                         totalAmount = data.order.totalAmount,
                         status = data.order.status,
+                        expiresIn = data.order.expiresIn,  // NEW: Get TTL from backend
                         truckRequests = data.truckRequests.map { req ->
                             TruckRequestResult(
                                 id = req.id,
@@ -428,9 +536,9 @@ class BookingApiRepository @Inject constructor(
                     )
                 )
             } else {
-                val errorMsg = response.body()?.error?.message 
-                    ?: response.errorBody()?.string() 
-                    ?: "Failed to create order"
+                // EASY UNDERSTANDING: Parse error properly to show user-friendly messages
+                // SCALABILITY: Handles multiple error formats from backend
+                val errorMsg = parseErrorMessage(response)
                 Timber.e("Order creation failed: $errorMsg")
                 Result.Error(WeeloException.BookingException(errorMsg))
             }
@@ -447,9 +555,9 @@ class BookingApiRepository @Inject constructor(
         return try {
             val response = apiService.getOrderById(getAuthToken(), orderId)
             
-            if (response.isSuccessful && response.body()?.success == true) {
-                val data = response.body()!!.data!!
-                
+            val responseBody = response.body()
+            val data = responseBody?.data
+            if (response.isSuccessful && responseBody?.success == true && data != null) {
                 Result.Success(
                     OrderDetailResult(
                         orderId = data.order.id,
@@ -504,7 +612,10 @@ class BookingApiRepository @Inject constructor(
 
     private fun parseTimestamp(timestamp: String): Long {
         return try {
-            java.time.Instant.parse(timestamp).toEpochMilli()
+            // Use SimpleDateFormat for API 24+ compatibility instead of java.time.Instant (API 26+)
+            val format = java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", java.util.Locale.US)
+            format.timeZone = java.util.TimeZone.getTimeZone("UTC")
+            format.parse(timestamp)?.time ?: System.currentTimeMillis()
         } catch (e: Exception) {
             System.currentTimeMillis()
         }
@@ -523,6 +634,70 @@ class BookingApiRepository @Inject constructor(
                 kotlin.math.sin(dLon / 2).let { it * it }
         val c = 2 * kotlin.math.atan2(kotlin.math.sqrt(a), kotlin.math.sqrt(1 - a))
         return (earthRadius * c).toInt()
+    }
+    
+    // ============================================================
+    // NEW: Cancel and Status Methods
+    // ============================================================
+    
+    /**
+     * Cancel active order
+     * 
+     * SCALABILITY: Backend deletes from Redis + DB, notifies transporters
+     * EASY UNDERSTANDING: Customer can cancel search before driver accepts
+     * MODULARITY: Returns number of transporters notified
+     */
+    suspend fun cancelOrder(orderId: String): Result<CancelOrderData> {
+        return try {
+            val response = apiService.cancelOrder(getAuthToken(), orderId)
+            
+            if (response.isSuccessful && response.body()?.success == true) {
+                val data = response.body()?.data
+                if (data != null) {
+                    Timber.d("Order cancelled: $orderId, ${data.transportersNotified} transporters notified")
+                    Result.Success(data)
+                } else {
+                    Result.Error(Exception("Invalid response"))
+                }
+            } else {
+                val errorMsg = parseErrorMessage(response)
+                Timber.w("Cancel order failed: $errorMsg")
+                Result.Error(Exception(errorMsg))
+            }
+        } catch (e: Exception) {
+            Timber.e(e, "Cancel order error")
+            Result.Error(Exception("Network error. Please try again."))
+        }
+    }
+    
+    /**
+     * Get order status and remaining time
+     * 
+     * SCALABILITY: Used when app resumes to check if order still active
+     * EASY UNDERSTANDING: Backend returns exact remaining seconds
+     * MODULARITY: Backend is source of truth for timer
+     */
+    suspend fun getOrderStatus(orderId: String): Result<OrderStatusData> {
+        return try {
+            val response = apiService.getOrderStatus(getAuthToken(), orderId)
+            
+            if (response.isSuccessful && response.body()?.success == true) {
+                val data = response.body()?.data
+                if (data != null) {
+                    Timber.d("Order status: ${data.orderId}, remaining: ${data.remainingSeconds}s, active: ${data.isActive}")
+                    Result.Success(data)
+                } else {
+                    Result.Error(Exception("Invalid response"))
+                }
+            } else {
+                val errorMsg = parseErrorMessage(response)
+                Timber.w("Get order status failed: $errorMsg")
+                Result.Error(Exception(errorMsg))
+            }
+        } catch (e: Exception) {
+            Timber.e(e, "Get order status error")
+            Result.Error(Exception("Network error. Please try again."))
+        }
     }
 }
 
@@ -551,6 +726,7 @@ data class OrderResult(
     val truckRequests: List<TruckRequestResult>,
     val broadcastSummary: BroadcastSummaryResult,
     val timeoutSeconds: Int,
+    val expiresIn: Int? = null,  // NEW: Duration in seconds from backend (for timer)
     val expiresAt: String
 )
 

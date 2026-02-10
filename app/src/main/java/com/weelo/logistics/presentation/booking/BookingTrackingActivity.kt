@@ -25,6 +25,7 @@ import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.weelo.logistics.R
 import com.weelo.logistics.core.util.TransitionHelper
 import com.weelo.logistics.databinding.ActivityBookingTrackingBinding
+import com.weelo.logistics.utils.MarkerAnimationHelper
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
@@ -35,11 +36,20 @@ import timber.log.Timber
  * Booking Tracking Activity
  * 
  * Shows real-time tracking of trucks for a booking with:
- * - Live map with driver location
+ * - Live map with driver location (SMOOTH ANIMATION using MarkerAnimationHelper)
  * - Driver info and contact
  * - Route visualization
  * - ETA updates
  * - Trip sharing and SOS options
+ * 
+ * HOW LIVE TRACKING WORKS (Ola/Uber Style):
+ * ─────────────────────────────────────────
+ * 1. Backend sends driver location every 5 seconds via WebSocket
+ * 2. We use MarkerAnimationHelper to INTERPOLATE between points
+ * 3. Marker moves SMOOTHLY over 5 seconds (not jumpy!)
+ * 4. User sees "live" tracking - it's actually clever animation
+ * 
+ * THE SECRET: Backend sends points. Frontend creates motion.
  */
 @AndroidEntryPoint
 class BookingTrackingActivity : AppCompatActivity(), OnMapReadyCallback {
@@ -261,11 +271,12 @@ class BookingTrackingActivity : AppCompatActivity(), OnMapReadyCallback {
             dropLatLng?.let { drop ->
                 val driverLat = pickup.latitude + (drop.latitude - pickup.latitude) * 0.3
                 val driverLng = pickup.longitude + (drop.longitude - pickup.longitude) * 0.3
-                currentDriverLatLng = LatLng(driverLat, driverLng)
+                val driverLatLng = LatLng(driverLat, driverLng)
+                currentDriverLatLng = driverLatLng
 
                 driverMarker = googleMap?.addMarker(
                     MarkerOptions()
-                        .position(currentDriverLatLng!!)
+                        .position(driverLatLng)
                         .title("Driver")
                         .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_ORANGE))
                 )
@@ -274,45 +285,119 @@ class BookingTrackingActivity : AppCompatActivity(), OnMapReadyCallback {
     }
 
     private fun startLocationUpdates() {
-        // Simulate real-time driver location updates
+        // =================================================================
+        // REAL-TIME LOCATION UPDATES
+        // =================================================================
+        // In production, this would connect to WebSocket and receive
+        // location updates from backend. For demo, we simulate it.
+        // 
+        // WHEN YOU INTEGRATE WITH REAL BACKEND:
+        // 1. Connect to Socket.IO
+        // 2. Listen for "location_updated" event
+        // 3. Call updateDriverLocation(newLat, newLng, speed, bearing)
+        // =================================================================
         lifecycleScope.launch {
             while (isActive) {
-                delay(5000) // Update every 5 seconds
+                delay(5000) // Backend sends update every 5 seconds
                 simulateDriverMovement()
             }
         }
     }
 
+    /**
+     * UPDATE DRIVER LOCATION - The Key Function
+     * 
+     * Call this when you receive location from backend (WebSocket/API).
+     * It will SMOOTHLY animate the marker to the new position.
+     * 
+     * @param newLat New latitude from backend
+     * @param newLng New longitude from backend  
+     * @param speed Driver's speed in m/s (for optimal animation duration)
+     * @param bearing Direction driver is facing (0-360 degrees)
+     */
+    private fun updateDriverLocation(
+        newLat: Double, 
+        newLng: Double, 
+        speed: Float = 10f,
+        bearing: Float? = null
+    ) {
+        val newPosition = LatLng(newLat, newLng)
+        val marker = driverMarker ?: return
+        
+        // Calculate distance for optimal animation duration
+        val distance = MarkerAnimationHelper.calculateDistance(
+            marker.position, 
+            newPosition
+        )
+        
+        // Calculate animation duration based on speed
+        // Faster driver = shorter animation (feels more real)
+        val duration = MarkerAnimationHelper.calculateOptimalDuration(
+            speedMetersPerSec = speed,
+            distanceMeters = distance,
+            updateIntervalMs = 5000L
+        )
+        
+        // Calculate bearing if not provided (direction of travel)
+        val newBearing = bearing ?: MarkerAnimationHelper.calculateBearing(
+            marker.position,
+            newPosition
+        )
+        
+        // SMOOTH ANIMATION - The Magic!
+        // Instead of: marker.position = newPosition (JUMPY!)
+        // We do: animate smoothly over 5 seconds (SMOOTH!)
+        runOnUiThread {
+            MarkerAnimationHelper.animateMarkerWithRotation(
+                marker = marker,
+                toPosition = newPosition,
+                toBearing = newBearing,
+                duration = duration
+            ) {
+                // Animation complete - update our tracking variable
+                currentDriverLatLng = newPosition
+            }
+            
+            // Update ETA
+            pickupLatLng?.let { target ->
+                val distanceToTarget = MarkerAnimationHelper.calculateDistance(newPosition, target)
+                val etaMinutes = (distanceToTarget / 500).toInt().coerceAtLeast(1)
+                binding.tvEta.text = "ETA: $etaMinutes mins"
+            }
+        }
+        
+        Timber.d("📍 Driver location updated: ($newLat, $newLng) speed=$speed bearing=$newBearing")
+    }
+
+    /**
+     * Simulate driver movement (for demo/testing)
+     * In production, replace this with real WebSocket data
+     */
     private fun simulateDriverMovement() {
-        // Simulate driver moving towards pickup/drop
         currentDriverLatLng?.let { current ->
             pickupLatLng?.let { target ->
+                // Simulate movement towards target (10% closer each update)
                 val newLat = current.latitude + (target.latitude - current.latitude) * 0.1
                 val newLng = current.longitude + (target.longitude - current.longitude) * 0.1
-                currentDriverLatLng = LatLng(newLat, newLng)
-
-                // Update marker on UI thread
-                runOnUiThread {
-                    driverMarker?.position = currentDriverLatLng!!
-
-                    // Update ETA (simulated)
-                    val distance = calculateDistance(currentDriverLatLng!!, target)
-                    val etaMinutes = (distance / 500).toInt().coerceAtLeast(1) // Assume 500m per minute
-                    binding.tvEta.text = "ETA: $etaMinutes mins"
-                }
+                
+                // Simulated speed (random between 5-15 m/s)
+                val simulatedSpeed = (5..15).random().toFloat()
+                
+                // Update with smooth animation
+                updateDriverLocation(
+                    newLat = newLat,
+                    newLng = newLng,
+                    speed = simulatedSpeed
+                )
             }
         }
     }
 
+    /**
+     * Calculate distance between two points (using helper for consistency)
+     */
     private fun calculateDistance(from: LatLng, to: LatLng): Double {
-        val earthRadius = 6371000.0 // meters
-        val dLat = Math.toRadians(to.latitude - from.latitude)
-        val dLng = Math.toRadians(to.longitude - from.longitude)
-        val a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-                Math.cos(Math.toRadians(from.latitude)) * Math.cos(Math.toRadians(to.latitude)) *
-                Math.sin(dLng / 2) * Math.sin(dLng / 2)
-        val c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
-        return earthRadius * c
+        return MarkerAnimationHelper.calculateDistance(from, to).toDouble()
     }
 
     private fun callDriver() {
@@ -385,5 +470,11 @@ class BookingTrackingActivity : AppCompatActivity(), OnMapReadyCallback {
 
     private fun hideLoading() {
         binding.loadingOverlay.visibility = View.GONE
+    }
+    
+    override fun onDestroy() {
+        super.onDestroy()
+        // Cancel any running marker animations to prevent memory leaks
+        MarkerAnimationHelper.cancelAllAnimations()
     }
 }

@@ -17,7 +17,6 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.Weelo"
-        android:extractNativeLibs="true"
         android:networkSecurityConfig="@xml/network_security_config"
         android:hardwareAccelerated="true"
         android:largeHeap="true"
@@ -61,17 +60,26 @@
         <activity
             android:name=".LocationInputActivity"
             android:exported="false"
-            android:screenOrientation="portrait" />
+            android:screenOrientation="portrait"
+            android:windowSoftInputMode="adjustResize" />
 
         <!-- Map Booking Activity -->
         <activity
             android:name=".MapBookingActivity"
             android:exported="false"
-            android:screenOrientation="portrait" />
+            android:hardwareAccelerated="true"
+            android:screenOrientation="portrait"
+            android:windowSoftInputMode="adjustResize" />
 
         <!-- Truck Types Activity -->
         <activity
             android:name=".TruckTypesActivity"
+            android:exported="false"
+            android:screenOrientation="portrait" />
+
+        <!-- Custom Booking Activity (Long-term contracts) -->
+        <activity
+            android:name=".CustomBookingActivity"
             android:exported="false"
             android:screenOrientation="portrait" />
 
@@ -86,6 +94,14 @@
             android:name=".MapSelectionActivity"
             android:exported="false"
             android:screenOrientation="portrait" />
+
+        <!-- Map Search Activity: Rapido-style "Change" location page -->
+        <activity
+            android:name=".MapSearchActivity"
+            android:exported="false"
+            android:screenOrientation="portrait"
+            android:windowSoftInputMode="adjustResize"
+            android:theme="@style/Theme.Weelo" />
 
         <!-- Driver Dashboard Activity -->
         <activity

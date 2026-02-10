@@ -120,6 +120,7 @@ class OfflineHandler private constructor(private val context: Context) {
         )
     }
 
+    @Suppress("UNUSED_PARAMETER") // connectionType reserved for future use
     private fun updateNetworkState(
         state: NetworkState, 
         connectionType: ConnectionType = ConnectionType.UNKNOWN
@@ -181,6 +182,7 @@ class OfflineHandler private constructor(private val context: Context) {
      * Execute action with offline handling
      * Returns cached result if offline
      */
+    @Suppress("UNUSED_PARAMETER") // cacheKey reserved for future caching implementation
     inline fun <T> executeWithOfflineSupport(
         cacheKey: String? = null,
         cachedValue: T? = null,

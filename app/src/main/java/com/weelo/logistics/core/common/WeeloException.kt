@@ -1,57 +1,70 @@
 package com.weelo.logistics.core.common
 
 /**
- * Custom exception hierarchy for Weelo app
- * 
- * Provides type-safe error handling throughout the application.
- * Each exception type has specific meaning and can be handled differently.
+ * Sealed class for all Weelo app exceptions
+ * Provides type-safe error handling across the app
  */
 sealed class WeeloException(message: String) : Exception(message) {
     
-    /**
-     * Network-related errors (no connection, timeout, etc.)
-     */
-    class NetworkException(message: String = "Network error occurred") : WeeloException(message)
+    // Network related exceptions
+    data class NetworkError(val errorMessage: String) : WeeloException(errorMessage)
+    data class Timeout(val errorMessage: String) : WeeloException(errorMessage)
     
-    /**
-     * Authentication/Authorization errors
-     * - Invalid credentials
-     * - Session expired
-     * - Token refresh failed
-     */
-    class AuthException(message: String = "Authentication failed") : WeeloException(message)
+    // HTTP status code exceptions
+    data class Unauthorized(val errorMessage: String) : WeeloException(errorMessage)
+    data class Forbidden(val errorMessage: String) : WeeloException(errorMessage)
+    data class NotFound(val errorMessage: String) : WeeloException(errorMessage)
+    data class ValidationError(val errorMessage: String) : WeeloException(errorMessage)
+    data class RateLimited(val errorMessage: String) : WeeloException(errorMessage)
+    data class ServerError(val errorMessage: String) : WeeloException(errorMessage)
+    data class ServiceUnavailable(val errorMessage: String) : WeeloException(errorMessage)
+    data class ApiError(val errorMessage: String, val code: Int) : WeeloException(errorMessage)
     
-    /**
-     * Location-related errors
-     * - Invalid location
-     * - Location not found
-     * - GPS errors
-     */
-    class LocationException(message: String = "Location error") : WeeloException(message)
+    // Generic exceptions
+    data class Unknown(val errorMessage: String) : WeeloException(errorMessage)
+    data class UnknownException(val errorMessage: String) : WeeloException(errorMessage)
     
-    /**
-     * Vehicle/Booking related errors
-     * - Vehicle not available
-     * - Booking failed
-     * - Invalid vehicle selection
-     */
-    class BookingException(message: String = "Booking error") : WeeloException(message)
+    // Location/Geocoding exceptions
+    data class LocationException(val errorMessage: String) : WeeloException(errorMessage)
+    data class NetworkException(val errorMessage: String) : WeeloException(errorMessage)
     
-    /**
-     * Validation errors
-     * - Invalid input
-     * - Missing required fields
-     * - Format errors
-     */
-    class ValidationException(message: String = "Validation error") : WeeloException(message)
+    // Business logic exceptions
+    data class ValidationException(val errorMessage: String) : WeeloException(errorMessage)
+    data class BookingException(val errorMessage: String) : WeeloException(errorMessage)
+    data class AuthException(val errorMessage: String) : WeeloException(errorMessage)
+    data class OtpException(val errorMessage: String) : WeeloException(errorMessage)
     
-    /**
-     * Server errors (5xx responses)
-     */
-    class ServerException(message: String = "Server error") : WeeloException(message)
+    // Additional properties for specific exception types
+    val requiresReAuth: Boolean
+        get() = this is Unauthorized || this is Forbidden
     
-    /**
-     * Unknown or unexpected errors
-     */
-    class UnknownException(message: String = "An unexpected error occurred") : WeeloException(message)
+    val isRecoverable: Boolean
+        get() = when (this) {
+            is NetworkError, is Timeout, is RateLimited, is ServerError, is ServiceUnavailable -> true
+            else -> false
+        }
+    
+    // Get user-friendly message
+    fun getUserMessage(): String {
+        return when (this) {
+            is NetworkError -> errorMessage
+            is Timeout -> errorMessage
+            is Unauthorized -> errorMessage
+            is Forbidden -> errorMessage
+            is NotFound -> errorMessage
+            is ValidationError -> errorMessage
+            is RateLimited -> errorMessage
+            is ServerError -> errorMessage
+            is ServiceUnavailable -> errorMessage
+            is ApiError -> errorMessage
+            is Unknown -> errorMessage
+            is UnknownException -> errorMessage
+            is LocationException -> errorMessage
+            is NetworkException -> errorMessage
+            is ValidationException -> errorMessage
+            is BookingException -> errorMessage
+            is AuthException -> errorMessage
+            is OtpException -> errorMessage
+        }
+    }
 }

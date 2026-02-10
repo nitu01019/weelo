@@ -1,17 +1,23 @@
 package com.weelo.logistics.core.base
 
+import android.app.Activity
+import android.content.Intent
 import android.os.Bundle
 import android.view.View
 import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
+import androidx.activity.result.ActivityResultLauncher
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import com.google.android.material.snackbar.Snackbar
+import com.weelo.logistics.core.common.WeeloException
+import com.weelo.logistics.core.util.NavigationManager
 import com.weelo.logistics.core.util.TransitionHelper
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
+import timber.log.Timber
 
 /**
  * =============================================================================
@@ -20,7 +26,8 @@ import kotlinx.coroutines.launch
  * 
  * Provides:
  * - Smooth right-to-left navigation transitions
- * - Common error handling
+ * - Debounce-protected navigation
+ * - Common error handling with WeeloException support
  * - Loading state management
  * - Lifecycle-aware flow collection
  * - Memory leak prevention
@@ -30,6 +37,11 @@ import kotlinx.coroutines.launch
  * =============================================================================
  */
 abstract class BaseActivity : AppCompatActivity() {
+    
+    // Navigation manager for debounce-protected navigation
+    protected val navigationManager: NavigationManager by lazy { 
+        NavigationManager.getInstance() 
+    }
     
     /**
      * Override to disable smooth back navigation for specific screens
@@ -92,7 +104,82 @@ abstract class BaseActivity : AppCompatActivity() {
     protected fun applyEnterTransition() {
         TransitionHelper.slideInFromRight(this)
     }
+    
+    // =========================================================================
+    // DEBOUNCE-PROTECTED NAVIGATION
+    // =========================================================================
+    
+    /**
+     * Navigate to activity with debounce protection
+     * Prevents rapid double-clicks from opening multiple screens
+     */
+    protected inline fun <reified T : Activity> navigateTo(
+        transition: NavigationManager.TransitionType = NavigationManager.TransitionType.SLIDE_RIGHT,
+        flags: Int? = null,
+        finishCurrent: Boolean = false,
+        extras: Bundle.() -> Unit = {}
+    ) {
+        navigationManager.navigateTo<T>(
+            context = this,
+            transition = transition,
+            flags = flags,
+            finishCurrent = finishCurrent,
+            extras = extras
+        )
+    }
+    
+    /**
+     * Navigate with intent and debounce protection
+     */
+    protected fun navigateTo(
+        intent: Intent,
+        transition: NavigationManager.TransitionType = NavigationManager.TransitionType.SLIDE_RIGHT,
+        finishCurrent: Boolean = false
+    ) {
+        navigationManager.navigateTo(
+            context = this,
+            intent = intent,
+            transition = transition,
+            finishCurrent = finishCurrent
+        )
+    }
+    
+    /**
+     * Navigate for result with debounce protection
+     */
+    protected fun navigateForResult(
+        launcher: ActivityResultLauncher<Intent>,
+        intent: Intent,
+        transition: NavigationManager.TransitionType = NavigationManager.TransitionType.SLIDE_RIGHT
+    ) {
+        navigationManager.navigateForResult(launcher, intent, this, transition)
+    }
+    
+    /**
+     * Navigate and clear entire back stack
+     */
+    protected inline fun <reified T : Activity> navigateAndClearStack(
+        transition: NavigationManager.TransitionType = NavigationManager.TransitionType.FADE,
+        extras: Bundle.() -> Unit = {}
+    ) {
+        navigationManager.navigateAndClearStack<T>(
+            context = this,
+            transition = transition,
+            extras = extras
+        )
+    }
+    
+    /**
+     * Go back with debounce protection
+     */
+    protected fun goBack(transition: NavigationManager.TransitionType = NavigationManager.TransitionType.SLIDE_BACK) {
+        navigationManager.goBack(this, transition)
+    }
 
+    // =========================================================================
+    // LOADING STATE
+    // =========================================================================
+    
     /**
      * Show loading indicator
      * Override to customize loading UI
@@ -108,6 +195,10 @@ abstract class BaseActivity : AppCompatActivity() {
         // Default implementation - can be overridden
     }
 
+    // =========================================================================
+    // ERROR HANDLING
+    // =========================================================================
+    
     /**
      * Show error message with proper handling
      */
@@ -130,24 +221,71 @@ abstract class BaseActivity : AppCompatActivity() {
 
     /**
      * Handle errors with proper logging and user feedback
+     * Supports WeeloException hierarchy for better error handling
      */
-    protected fun handleError(throwable: Throwable, fallbackMessage: String = "An error occurred") {
-        // Log error for debugging (in production, send to crash analytics)
-        throwable.printStackTrace()
+    protected open fun handleError(throwable: Throwable, fallbackMessage: String = "An error occurred") {
+        // Log error for debugging
+        Timber.e(throwable, "Error in ${this::class.simpleName}")
         
-        // Show user-friendly message
-        val message = when (throwable) {
-            is java.net.UnknownHostException -> "No internet connection"
-            is java.net.SocketTimeoutException -> "Connection timeout. Please try again"
-            is IllegalStateException -> "Invalid operation. Please try again"
-            else -> throwable.message ?: fallbackMessage
-        }
-        
-        showError(message, "Retry") {
-            // Override in child class if retry logic needed
+        // Handle WeeloException types
+        when (throwable) {
+            is WeeloException -> handleWeeloException(throwable)
+            
+            is java.net.UnknownHostException -> 
+                showError("No internet connection", "Retry") { onRetry() }
+            
+            is java.net.SocketTimeoutException -> 
+                showError("Connection timeout. Please try again", "Retry") { onRetry() }
+            
+            is IllegalStateException -> 
+                showError("Invalid operation. Please try again")
+            
+            else -> showError(throwable.message ?: fallbackMessage, "Retry") { onRetry() }
         }
     }
+    
+    /**
+     * Handle WeeloException with specific actions
+     */
+    protected open fun handleWeeloException(exception: WeeloException) {
+        val message = exception.getUserMessage()
+        
+        when {
+            exception.requiresReAuth -> {
+                showError(message, "Login") {
+                    onAuthRequired()
+                }
+            }
+            exception.isRecoverable -> {
+                showError(message, "Retry") {
+                    onRetry()
+                }
+            }
+            else -> showError(message)
+        }
+    }
+    
+    /**
+     * Called when retry is requested
+     * Override in child class to implement retry logic
+     */
+    protected open fun onRetry() {
+        // Override in child class
+    }
+    
+    /**
+     * Called when re-authentication is required
+     * Override to navigate to login
+     */
+    protected open fun onAuthRequired() {
+        // Override in child class to navigate to login
+        // Example: navigateAndClearStack<LoginActivity>()
+    }
 
+    // =========================================================================
+    // FLOW COLLECTION
+    // =========================================================================
+    
     /**
      * Collect flow with lifecycle awareness to prevent memory leaks
      * This ensures flows are only collected when the activity is in STARTED state

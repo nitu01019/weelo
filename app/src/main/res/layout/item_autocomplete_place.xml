@@ -1,29 +1,107 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+=============================================================================
+SEARCH RESULT ITEM - RAPIDO STYLE (Distance Below Icon)
+=============================================================================
+SCALABILITY: Simple LinearLayout - no nested clickables, guaranteed clicks
+EASY UNDERSTANDING: Distance shown BELOW icon (left column) - Rapido style
+MODULARITY: Works with WeeloPlacesRecyclerAdapter
+CODING STANDARDS: Follows Android best practices
+=============================================================================
+-->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="horizontal"
-    android:padding="16dp"
     android:gravity="center_vertical"
+    android:paddingVertical="12dp"
+    android:paddingHorizontal="16dp"
     android:background="?android:attr/selectableItemBackground">
 
-    <!-- Location Icon -->
-    <ImageView
-        android:layout_width="24dp"
-        android:layout_height="24dp"
-        android:src="@drawable/ic_location"
-        android:tint="@color/text_secondary"
-        android:layout_marginEnd="16dp" />
+    <!-- LEFT COLUMN: Icon + Distance Below (RAPIDO STYLE) -->
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:gravity="center_horizontal"
+        android:minWidth="48dp">
 
-    <!-- Place Text -->
-    <TextView
-        android:id="@android:id/text1"
+        <!-- Location Icon -->
+        <ImageView
+            android:id="@+id/iconLocation"
+            android:layout_width="22dp"
+            android:layout_height="22dp"
+            android:src="@drawable/ic_location"
+            android:tint="#666666"
+            android:contentDescription="Location" />
+
+        <!-- Distance BELOW Icon (RAPIDO STYLE) -->
+        <TextView
+            android:id="@+id/placeDistance"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:textSize="10sp"
+            android:textColor="#888888"
+            android:gravity="center"
+            android:visibility="gone"
+            tools:text="2.5 km"
+            tools:visibility="visible" />
+
+    </LinearLayout>
+
+    <!-- MIDDLE: Name + Address -->
+    <LinearLayout
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_weight="1"
-        android:textSize="16sp"
-        android:textColor="@color/black"
-        android:maxLines="2"
-        android:ellipsize="end" />
+        android:orientation="vertical"
+        android:layout_marginStart="12dp"
+        android:layout_marginEnd="10dp">
+
+        <!-- Place Name (Bold, Dark) -->
+        <TextView
+            android:id="@+id/placeName"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textSize="15sp"
+            android:textStyle="bold"
+            android:textColor="#1A1A1A"
+            android:maxLines="1"
+            android:ellipsize="end"
+            tools:text="Brookfield Mall" />
+
+        <!-- Address (Slightly darker gray) -->
+        <TextView
+            android:id="@+id/placeAddress"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="3dp"
+            android:textSize="13sp"
+            android:textColor="#555555"
+            android:maxLines="1"
+            android:ellipsize="end"
+            tools:text="New Chandigarh, Punjab, India" />
+
+    </LinearLayout>
+
+    <!-- RIGHT: Favorite Heart -->
+    <ImageView
+        android:id="@+id/iconFavorite"
+        android:layout_width="28dp"
+        android:layout_height="28dp"
+        android:padding="2dp"
+        android:src="@drawable/ic_heart_outline"
+        android:tint="#CCCCCC"
+        android:background="?android:attr/selectableItemBackgroundBorderless"
+        android:contentDescription="Add to favorites" />
+
+    <!-- Hidden separator (kept for adapter compatibility) -->
+    <TextView
+        android:id="@+id/separator"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:visibility="gone" />
 
 </LinearLayout>

@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 
+    SPLASH SCREEN - LANDSCAPE LAYOUT
+    Shows vehicles illustration centered for landscape orientation
+-->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/splash_vehicles_bg">
+
+    <!-- Splash 2: Vehicles illustration - centered, fits landscape -->
+    <ImageView
+        android:id="@+id/ivSplashVehicles"
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+        android:layout_gravity="center"
+        android:adjustViewBounds="true"
+        android:src="@drawable/splash_vehicles"
+        android:scaleType="fitCenter"
+        android:contentDescription="Weelo Vehicles"
+        android:paddingVertical="24dp"/>
+
+</FrameLayout>

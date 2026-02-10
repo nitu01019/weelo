@@ -61,6 +61,7 @@ class TruckBottomSheetHelper(
     /**
      * Add a subtype card to a GridLayout
      */
+    @Suppress("UNUSED_PARAMETER")
     fun addSubtypeCardToGrid(
         gridLayout: GridLayout,
         subtype: String,
@@ -70,7 +71,7 @@ class TruckBottomSheetHelper(
         parentView: View,
         onSelectionChanged: () -> Unit
     ) {
-        val card = layoutInflater.inflate(R.layout.item_truck_subtype, null)
+        val card = layoutInflater.inflate(R.layout.item_truck_subtype, gridLayout, false)
         card.findViewById<TextView>(R.id.subtypeName)?.text = subtype
         
         // Set the truck icon based on truck type
@@ -105,6 +106,7 @@ class TruckBottomSheetHelper(
     /**
      * Setup click handlers for subtype card
      */
+    @Suppress("UNUSED_PARAMETER")
     private fun setupSubtypeCardClickHandlers(
         card: View,
         subtype: String,

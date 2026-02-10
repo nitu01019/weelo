@@ -40,23 +40,24 @@ class TextToSpeechManager(context: Context) {
                 textToSpeech?.setOnUtteranceProgressListener(object : UtteranceProgressListener() {
                     override fun onStart(utteranceId: String?) {
                         // Speech started
-                        android.util.Log.d("TTS", "Speech started: $utteranceId")
+                        timber.log.Timber.d("Speech started: $utteranceId")
                     }
                     
                     override fun onDone(utteranceId: String?) {
                         // Speech completed
-                        android.util.Log.d("TTS", "Speech completed: $utteranceId")
+                        timber.log.Timber.d("Speech completed: $utteranceId")
                         onSpeechCompleteListener?.invoke()
                     }
                     
+                    @Deprecated("Deprecated in API level 21", ReplaceWith("onError(utteranceId, errorCode)"))
                     override fun onError(utteranceId: String?) {
                         // Error occurred
-                        android.util.Log.e("TTS", "Speech error: $utteranceId")
+                        timber.log.Timber.e("Speech error: $utteranceId")
                         onSpeechCompleteListener?.invoke()
                     }
                 })
             } else {
-                android.util.Log.e("TTS", "TTS initialization failed")
+                timber.log.Timber.e("TTS initialization failed")
             }
         }
     }
@@ -67,10 +68,10 @@ class TextToSpeechManager(context: Context) {
      * @param onComplete Callback when speech is finished
      */
     fun speak(text: String, onComplete: (() -> Unit)? = null) {
-        android.util.Log.d("TTS", "Attempting to speak: $text, initialized: $isInitialized")
+        timber.log.Timber.d("Attempting to speak: $text, initialized: $isInitialized")
         
         if (!isInitialized) {
-            android.util.Log.e("TTS", "TTS not initialized, cannot speak")
+            timber.log.Timber.e("TTS not initialized, cannot speak")
             onComplete?.invoke()
             return
         }
@@ -83,7 +84,7 @@ class TextToSpeechManager(context: Context) {
         }
         
         val result = textToSpeech?.speak(text, TextToSpeech.QUEUE_FLUSH, params, utteranceId)
-        android.util.Log.d("TTS", "Speak result: $result")
+        timber.log.Timber.d("Speak result: $result")
     }
     
     /**

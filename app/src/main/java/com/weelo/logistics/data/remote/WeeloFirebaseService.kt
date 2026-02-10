@@ -222,7 +222,7 @@ class WeeloFirebaseService : FirebaseMessagingService() {
         
         // Add extra info for driver notifications
         if (notification.type == TYPE_DRIVER_ASSIGNED || notification.type == TYPE_DRIVER_ARRIVING) {
-            notification.driverName?.let { driverName ->
+            notification.driverName?.let { _ ->
                 val bigText = buildString {
                     append(notification.body)
                     notification.vehicleNumber?.let { append("\nVehicle: $it") }

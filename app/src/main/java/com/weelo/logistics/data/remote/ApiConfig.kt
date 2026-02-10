@@ -1,6 +1,7 @@
 package com.weelo.logistics.data.remote
 
 import com.weelo.logistics.BuildConfig
+import timber.log.Timber
 
 /**
  * =============================================================================
@@ -54,13 +55,12 @@ object ApiConfig {
      * For development: EMULATOR or DEVICE
      * For testing: STAGING
      * For release: PRODUCTION (auto-selected for release builds)
+     * 
+     * NOTE: Now using PRODUCTION for both debug and release
+     * to test with AWS backend. Change back to DEVICE for local testing.
      */
     private val currentEnvironment: Environment
-        get() = if (BuildConfig.DEBUG) {
-            Environment.DEVICE  // <-- Change to EMULATOR if using emulator
-        } else {
-            Environment.PRODUCTION
-        }
+        get() = Environment.PRODUCTION  // Use AWS backend
     
     /**
      * YOUR LAPTOP'S WIFI IP ADDRESS
@@ -91,18 +91,22 @@ object ApiConfig {
     private val EMULATOR_BASE = "http://$EMULATOR_HOST:$PORT$API_PATH"
     private val DEVICE_BASE = "http://$DEVICE_IP:$PORT$API_PATH"
     
-    // Production URLs (HTTPS - AWS/Cloud)
-    // Update these when migrating to AWS
+    // Production URLs (AWS/Cloud)
+    // Update these when migrating to custom domain
     private const val STAGING_HOST = "staging-api.weelologistics.com"
-    private const val PRODUCTION_HOST = "api.weelologistics.com"
+    private const val PRODUCTION_HOST = "weelo-alb-380596483.ap-south-1.elb.amazonaws.com"
     private const val STAGING_BASE = "https://$STAGING_HOST$API_PATH"
-    private const val PRODUCTION_BASE = "https://$PRODUCTION_HOST$API_PATH"
+    // TODO: CRITICAL — Change to HTTPS when SSL certificate is configured on ALB
+    // Currently HTTP because ALB does not have SSL configured yet.
+    // Must switch to HTTPS before public production launch.
+    private const val PRODUCTION_BASE = "http://$PRODUCTION_HOST$API_PATH"
     
     // WebSocket URLs (for Socket.IO real-time communication)
     private val WS_EMULATOR = "http://$EMULATOR_HOST:$PORT"
     private val WS_DEVICE = "http://$DEVICE_IP:$PORT"
     private const val WS_STAGING = "wss://$STAGING_HOST"
-    private const val WS_PRODUCTION = "wss://$PRODUCTION_HOST"
+    // TODO: CRITICAL — Change to WSS when SSL certificate is configured on ALB
+    private const val WS_PRODUCTION = "ws://$PRODUCTION_HOST"
     
     // =========================================================================
     // ACTIVE URLS (Auto-selected based on currentEnvironment)
@@ -147,7 +151,7 @@ object ApiConfig {
      * Log current configuration (call at app startup for debugging)
      */
     fun logConfiguration() {
-        android.util.Log.i("WeeloAPI", """
+        Timber.i("""
             |╔══════════════════════════════════════════════════════════════╗
             |║  WEELO CUSTOMER APP - API CONFIGURATION                      ║
             |╠══════════════════════════════════════════════════════════════╣
@@ -182,7 +186,7 @@ object ApiConfig {
         // =====================================================================
         const val AUTH_SEND_OTP = "auth/send-otp"
         const val AUTH_VERIFY_OTP = "auth/verify-otp"
-        const val AUTH_REFRESH_TOKEN = "auth/refresh-token"
+        const val AUTH_REFRESH_TOKEN = "auth/refresh"
         const val AUTH_LOGOUT = "auth/logout"
         
         // =====================================================================

@@ -55,6 +55,38 @@ object DataModule {
     fun provideVehicleDao(database: WeeloDatabase): VehicleDao {
         return database.vehicleDao()
     }
+    
+    @Provides
+    @Singleton
+    fun providePendingOperationDao(database: WeeloDatabase): com.weelo.logistics.data.local.dao.PendingOperationDao {
+        return database.pendingOperationDao()
+    }
+    
+    @Provides
+    @Singleton
+    fun provideCachedBookingDao(database: WeeloDatabase): com.weelo.logistics.data.local.dao.CachedBookingDao {
+        return database.cachedBookingDao()
+    }
+    
+    @Provides
+    @Singleton
+    fun provideSyncManager(
+        pendingOperationDao: com.weelo.logistics.data.local.dao.PendingOperationDao,
+        cachedBookingDao: com.weelo.logistics.data.local.dao.CachedBookingDao,
+        apiService: WeeloApiService,
+        tokenManager: com.weelo.logistics.data.remote.TokenManager,
+        networkMonitor: com.weelo.logistics.core.util.NetworkMonitor,
+        resilientExecutor: com.weelo.logistics.core.network.ResilientApiExecutor
+    ): com.weelo.logistics.data.sync.SyncManager {
+        return com.weelo.logistics.data.sync.SyncManager(
+            pendingOperationDao,
+            cachedBookingDao,
+            apiService,
+            tokenManager,
+            networkMonitor,
+            resilientExecutor
+        )
+    }
 
     @Provides
     @Singleton

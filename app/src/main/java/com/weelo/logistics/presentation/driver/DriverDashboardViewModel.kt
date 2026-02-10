@@ -56,6 +56,7 @@ class DriverDashboardViewModel : ViewModel() {
         }
     }
     
+    @Suppress("UNUSED_PARAMETER") // Parameter will be used when API is implemented
     fun reportIssue(issueType: String) {
         viewModelScope.launch {
             // TODO: Report issue to backend

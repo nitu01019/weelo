@@ -13,6 +13,7 @@
     <color name="primary">#FFD54F</color>
     <color name="weelo_orange">#FFD54F</color>
     <color name="weelo_orange_light">#FFF9E5</color>
+    <color name="selected_card_bg">#FFF3E0</color>
     <color name="truck_background">#FFE8E0</color>
     <color name="tractor_background">#E0F8E8</color>
     <color name="tempo_background">#E0F0FF</color>
@@ -23,6 +24,8 @@
     <color name="text_primary">#000000</color>
     <color name="text_secondary">#666666</color>
     <color name="text_hint">#999999</color>
+    <!-- Accessible icon tint: 4.6:1 contrast ratio on white background (WCAG AA) -->
+    <color name="icon_default">#555555</color>
     <color name="green_dot">#34C759</color>
     <color name="red_dot">#FF5252</color>
     <color name="green_check">#4CAF50</color>
@@ -47,9 +50,6 @@
     <color name="divider_color">#E0E0E0</color>
     
     <!-- Splash Screen Colors (Like Rapido) -->
-    <color name="splashBackground">#3D2400</color>
-    <color name="splashCircleOrange">#FF6D00</color>
-    <color name="splashCircleYellow">#FF9800</color>
     
     <!-- UI State Colors -->
     <color name="error">#E53935</color>
@@ -65,4 +65,9 @@
     <color name="dark_text_secondary">#B3B3B3</color>
     <color name="dark_divider">#333333</color>
     <color name="weelo_orange_dark">#E6BC45</color>
+    <!-- Splash 1: Golden yellow matching splash_logo.png background -->
+    <color name="splash_gold">#F5B800</color>
+    <!-- Splash 2: EXACT color sampled from splash_vehicles.jpg corners using Python/PIL -->
+    <!-- RGB(240, 238, 252) - very light lavender -->
+    <color name="splash_vehicles_bg">#F0EEFC</color>
 </resources>

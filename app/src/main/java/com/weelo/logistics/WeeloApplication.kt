@@ -4,30 +4,40 @@ import android.app.Application
 import android.util.Log
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.multidex.MultiDexApplication
+import com.google.firebase.crashlytics.FirebaseCrashlytics
+import com.weelo.logistics.core.security.SecurityManager
 import com.weelo.logistics.core.util.OfflineHandler
 import com.weelo.logistics.core.util.ThemeManager
 import dagger.hilt.android.HiltAndroidApp
 import timber.log.Timber
+import javax.inject.Inject
 
 /**
  * Application class for Weelo
  * Entry point for dependency injection and app-level initialization
  * 
  * INITIALIZATION ORDER:
- * 1. Timber logging
- * 2. Theme manager (dark/light mode)
- * 3. Offline handler (network monitoring)
- * 4. Google Places API
- * 5. Google Maps pre-initialization
+ * 1. Timber logging (with Crashlytics in release)
+ * 2. Security checks (root detection)
+ * 3. Theme manager (dark/light mode)
+ * 4. Offline handler (network monitoring)
+ * 5. Google Places API
+ * 6. Google Maps pre-initialization
  */
 @HiltAndroidApp
 class WeeloApplication : MultiDexApplication() {
 
+    @Inject
+    lateinit var securityManager: SecurityManager
+
     override fun onCreate() {
         super.onCreate()
         
-        // Initialize Timber for logging
+        // Initialize Timber for logging (with Crashlytics in production)
         initializeLogging()
+        
+        // Initialize Security (root detection, app integrity)
+        initializeSecurity()
         
         // Initialize Theme Manager (dark mode support)
         initializeTheme()
@@ -48,17 +58,50 @@ class WeeloApplication : MultiDexApplication() {
         if (BuildConfig.DEBUG) {
             Timber.plant(Timber.DebugTree())
         } else {
-            Timber.plant(ReleaseTree())
+            // Release: Log to Crashlytics (errors/warnings only)
+            Timber.plant(CrashlyticsTree())
+        }
+    }
+    
+    private fun initializeSecurity() {
+        try {
+            // Run security checks asynchronously to not block startup
+            securityManager.logSecurityStatus()
+            
+            // Set Crashlytics user properties (no PII)
+            val status = securityManager.getSecurityStatus()
+            FirebaseCrashlytics.getInstance().apply {
+                setCustomKey("is_rooted", status.isRooted)
+                setCustomKey("has_security_concerns", status.hasSecurityConcerns())
+            }
+            
+            Timber.d("Security checks completed")
+        } catch (e: Exception) {
+            Timber.e(e, "Failed to initialize security")
         }
     }
     
     private fun initializeTheme() {
         try {
+            // =====================================================
+            // CRITICAL: Force LIGHT mode BEFORE ThemeManager
+            // =====================================================
+            // This runs BEFORE any Activity window is drawn.
+            // Prevents splash screen (and all screens) from dimming
+            // in the evening when system switches to dark mode.
+            //
+            // SCALABILITY: One-time call at app level, affects all activities
+            // EASY UNDERSTANDING: App ALWAYS uses light theme - no dark mode
+            // =====================================================
+            AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO)
+            
             ThemeManager.initialize(this)
             ThemeManager.applyTheme()
-            Timber.d("Theme manager initialized")
+            Timber.d("Theme manager initialized - forced LIGHT mode")
         } catch (e: Exception) {
             Timber.e(e, "Failed to initialize theme manager")
+            // Fallback: Ensure light mode even if ThemeManager fails
+            AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO)
         }
     }
     
@@ -92,14 +135,16 @@ class WeeloApplication : MultiDexApplication() {
     
     /**
      * Custom Timber tree for production
-     * Logs only warnings and errors to crash reporting
+     * Logs errors and warnings to Firebase Crashlytics
      */
-    private class ReleaseTree : Timber.Tree() {
+    private class CrashlyticsTree : Timber.Tree() {
         override fun log(priority: Int, tag: String?, message: String, t: Throwable?) {
-            if (priority == android.util.Log.ERROR || priority == android.util.Log.WARN) {
-                // Send to Crashlytics or other crash reporting service
-                // Example: FirebaseCrashlytics.getInstance().recordException(t ?: Exception(message))
+            if (priority == Log.ERROR || priority == Log.WARN) {
+                val crashlytics = FirebaseCrashlytics.getInstance()
+                crashlytics.log("${tag ?: "Weelo"}: $message")
+                t?.let { crashlytics.recordException(it) }
             }
         }
     }
 }
+

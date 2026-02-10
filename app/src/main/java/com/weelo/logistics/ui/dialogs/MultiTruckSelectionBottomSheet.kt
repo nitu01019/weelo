@@ -293,6 +293,7 @@ class MultiTruckSelectionBottomSheet : BottomSheetDialogFragment() {
         }
     }
 
+    @Suppress("UNUSED_PARAMETER")
     private fun calculateBasePrice(truckTypeId: String, subtypeId: String, distanceKm: Int): Int {
         // Base pricing logic - can be replaced with API call
         val baseRate = when (truckTypeId.lowercase()) {

@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+=============================================================================
+SKELETON LOADING - Location Item (Rapido-style)
+=============================================================================
+
+SCALABILITY: Better UX than loading spinners - shows UI structure while loading
+EASY UNDERSTANDING: Skeleton matches actual item_autocomplete_place.xml layout
+MODULARITY: Reusable skeleton component for location lists
+CODING STANDARDS: Uses existing skeleton_rectangle/circle drawables
+
+=============================================================================
+-->
+<com.facebook.shimmer.ShimmerFrameLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    app:shimmer_auto_start="true"
+    app:shimmer_duration="800"
+    app:shimmer_base_alpha="0.9"
+    app:shimmer_highlight_alpha="1.0">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <!-- Main Content Row (matches item_autocomplete_place.xml structure) -->
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingVertical="12dp"
+            android:paddingHorizontal="16dp">
+
+            <!-- LEFT COLUMN: Icon skeleton + Distance skeleton -->
+            <LinearLayout
+                android:id="@+id/iconContainerSkeleton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:gravity="center_horizontal"
+                android:minWidth="40dp"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintBottom_toBottomOf="parent">
+
+                <!-- Icon Skeleton (Circle) -->
+                <View
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:background="@drawable/skeleton_circle" />
+
+                <!-- Distance Skeleton (Small rectangle) -->
+                <View
+                    android:layout_width="32dp"
+                    android:layout_height="12dp"
+                    android:layout_marginTop="4dp"
+                    android:background="@drawable/skeleton_rectangle" />
+
+            </LinearLayout>
+
+            <!-- MIDDLE: Name + Address skeletons -->
+            <LinearLayout
+                android:id="@+id/textContainerSkeleton"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:layout_marginStart="12dp"
+                android:layout_marginEnd="12dp"
+                app:layout_constraintStart_toEndOf="@id/iconContainerSkeleton"
+                app:layout_constraintEnd_toStartOf="@id/heartSkeleton"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintBottom_toBottomOf="parent">
+
+                <!-- Name Skeleton (Larger rectangle) -->
+                <View
+                    android:layout_width="180dp"
+                    android:layout_height="16dp"
+                    android:background="@drawable/skeleton_rectangle" />
+
+                <!-- Address Skeleton (Smaller rectangle) -->
+                <View
+                    android:layout_width="140dp"
+                    android:layout_height="14dp"
+                    android:layout_marginTop="6dp"
+                    android:background="@drawable/skeleton_rectangle" />
+
+            </LinearLayout>
+
+            <!-- RIGHT: Heart skeleton (Circle) -->
+            <View
+                android:id="@+id/heartSkeleton"
+                android:layout_width="20dp"
+                android:layout_height="20dp"
+                android:background="@drawable/skeleton_circle"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintBottom_toBottomOf="parent" />
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
+
+        <!-- Divider Line (matches real item) -->
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:layout_marginStart="68dp"
+            android:layout_marginEnd="16dp"
+            android:background="#F0F0F0" />
+
+    </LinearLayout>
+
+</com.facebook.shimmer.ShimmerFrameLayout>

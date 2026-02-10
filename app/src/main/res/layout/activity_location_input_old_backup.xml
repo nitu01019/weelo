@@ -1,0 +1,413 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="#F8F9FA">
+
+    <!-- Header - Rapido Style -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:paddingHorizontal="12dp"
+        android:paddingVertical="14dp"
+        android:gravity="center_vertical"
+        android:background="@color/white">
+
+        <ImageView
+            android:id="@+id/backButton"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:src="@drawable/ic_arrow_back"
+            android:padding="8dp"
+            android:background="?android:attr/selectableItemBackgroundBorderless"
+            android:contentDescription="Back" />
+
+        <TextView
+            android:id="@+id/headerTitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Pickup"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:textColor="#1A1A1A"
+            android:layout_marginStart="4dp"
+            android:layout_marginEnd="12dp" />
+
+        <!-- Instant/Custom Toggle - Small Chips -->
+        <LinearLayout
+            android:id="@+id/bookingModeToggle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginEnd="12dp"
+            android:background="@drawable/button_outlined"
+            android:padding="2dp">
+
+            <!-- Instant Chip -->
+            <TextView
+                android:id="@+id/instantButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Instant"
+                android:textSize="12sp"
+                android:textStyle="bold"
+                android:textColor="#FFFFFF"
+                android:background="#FF6B35"
+                android:paddingHorizontal="12dp"
+                android:paddingVertical="4dp"
+                android:clickable="true"
+                android:focusable="true" />
+
+            <!-- Custom Chip -->
+            <TextView
+                android:id="@+id/customButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Custom"
+                android:textSize="12sp"
+                android:textColor="#666666"
+                android:background="#F0F0F0"
+                android:paddingHorizontal="12dp"
+                android:paddingVertical="4dp"
+                android:clickable="true"
+                android:focusable="true" />
+
+        </LinearLayout>
+
+        <!-- For me dropdown button -->
+        <LinearLayout
+            android:id="@+id/forMeButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:paddingHorizontal="14dp"
+            android:paddingVertical="8dp"
+            android:background="@drawable/button_outlined"
+            android:clickable="true"
+            android:focusable="true">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="For me"
+                android:textSize="14sp"
+                android:textColor="#333333" />
+
+            <ImageView
+                android:layout_width="16dp"
+                android:layout_height="16dp"
+                android:layout_marginStart="4dp"
+                android:src="@drawable/ic_dropdown_arrow"
+                android:contentDescription="Dropdown" />
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+    <!-- Location Input Section - FIXED (doesn't scroll) -->
+    <LinearLayout
+        android:id="@+id/locationInputSection"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:background="@color/white"
+        android:paddingHorizontal="16dp"
+        android:paddingVertical="12dp">
+
+                    <!-- From Location - Rapido Style -->
+                    <LinearLayout
+                        android:id="@+id/fromLocationContainer"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:paddingVertical="8dp"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:background="?android:attr/selectableItemBackground">
+
+                        <!-- Green Dot - Smaller -->
+                        <View
+                            android:layout_width="8dp"
+                            android:layout_height="8dp"
+                            android:background="@drawable/green_dot"
+                            android:layout_marginEnd="12dp" />
+
+                        <!-- From Input - Minimal Style -->
+                        <AutoCompleteTextView
+                            android:id="@+id/fromLocationInput"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:hint="Pickup location"
+                            android:textSize="14sp"
+                            android:textColor="#000000"
+                            android:textColorHint="#333333"
+                            android:background="@null"
+                            android:maxLines="1"
+                            android:ellipsize="end"
+                            android:inputType="text"
+                            android:completionThreshold="1" />
+
+                    </LinearLayout>
+
+                    <!-- Dotted Line - Smaller -->
+                    <View
+                        android:layout_width="2dp"
+                        android:layout_height="20dp"
+                        android:background="@drawable/dotted_line"
+                        android:layout_marginStart="4dp"
+                        android:layout_marginVertical="0dp" />
+
+                    <!-- Intermediate Stops Container (dynamically added) -->
+                    <LinearLayout
+                        android:id="@+id/intermediateStopsContainer"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical">
+                        <!-- Intermediate stops will be added here dynamically -->
+                    </LinearLayout>
+
+                    <!-- Dotted Line (before drop) - Smaller -->
+                    <View
+                        android:id="@+id/bottomDottedLine"
+                        android:layout_width="2dp"
+                        android:layout_height="20dp"
+                        android:background="@drawable/dotted_line"
+                        android:layout_marginStart="4dp"
+                        android:layout_marginVertical="0dp"
+                        android:visibility="gone" />
+
+                    <!-- To Location - Rapido Style -->
+                    <LinearLayout
+                        android:id="@+id/toLocationContainer"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:paddingVertical="8dp"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:background="?android:attr/selectableItemBackground">
+
+                        <!-- Orange Dot - Smaller -->
+                        <View
+                            android:layout_width="8dp"
+                            android:layout_height="8dp"
+                            android:background="@drawable/orange_dot"
+                            android:layout_marginEnd="12dp" />
+
+                        <!-- To Input - Minimal Style -->
+                        <AutoCompleteTextView
+                            android:id="@+id/toLocationInput"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:hint="Drop location"
+                            android:textSize="14sp"
+                            android:textColor="#000000"
+                            android:textColorHint="#333333"
+                            android:background="@null"
+                            android:maxLines="1"
+                            android:ellipsize="end"
+                            android:inputType="text"
+                            android:completionThreshold="1" />
+
+                    </LinearLayout>
+
+    </LinearLayout>
+
+    <!-- Warning Banner - Shows when location detection fails -->
+    <LinearLayout
+        android:id="@+id/locationWarningBanner"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:background="#FFF3E0"
+        android:padding="10dp"
+        android:gravity="center_vertical"
+        android:visibility="gone">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="⚠️"
+            android:textSize="16sp"
+            android:layout_marginEnd="8dp" />
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Cannot find your location"
+            android:textSize="13sp"
+            android:textColor="#E65100"
+            android:textStyle="bold" />
+
+    </LinearLayout>
+
+    <!-- Action Buttons - FIXED (doesn't scroll) -->
+    <LinearLayout
+        android:id="@+id/actionButtonsRow"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:padding="12dp"
+        android:background="@color/white"
+        android:gravity="center">
+
+                <androidx.appcompat.widget.AppCompatButton
+                    android:id="@+id/selectOnMapButton"
+                    android:layout_width="0dp"
+                    android:layout_height="44dp"
+                    android:layout_weight="1"
+                    android:text="Select on map"
+                    android:drawableStart="@drawable/ic_location"
+                    android:drawableTint="#000000"
+                    android:drawablePadding="6dp"
+                    android:textSize="14sp"
+                    android:textColor="#000000"
+                    android:textAllCaps="false"
+                    android:background="@drawable/button_white_rounded"
+                    android:layout_marginEnd="6dp"
+                    android:gravity="center"
+                    android:paddingStart="12dp"
+                    android:paddingEnd="12dp" />
+
+                <androidx.appcompat.widget.AppCompatButton
+                    android:id="@+id/addStopsButton"
+                    android:layout_width="0dp"
+                    android:layout_height="44dp"
+                    android:layout_weight="1"
+                    android:text="Add stops"
+                    android:drawableStart="@drawable/ic_add"
+                    android:drawableTint="#000000"
+                    android:drawablePadding="6dp"
+                    android:textSize="14sp"
+                    android:textColor="#000000"
+                    android:textAllCaps="false"
+                    android:background="@drawable/button_white_rounded"
+                    android:layout_marginStart="6dp"
+                    android:gravity="center"
+                    android:paddingStart="12dp"
+                    android:paddingEnd="12dp" />
+
+            </LinearLayout>
+
+    <!-- SCROLLABLE SECTION - Recent Locations + Search Results (fills remaining space) -->
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:background="#F8F9FA">
+
+        <!-- Recent Locations Scroll Container (Default State) -->
+        <ScrollView
+            android:id="@+id/recentLocationsScrollView"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:fillViewport="false"
+            android:paddingBottom="80dp"
+            android:clipToPadding="false">
+
+            <LinearLayout
+                android:id="@+id/recentJammu"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:paddingHorizontal="12dp"
+                android:paddingTop="8dp">
+                
+                <!-- Recent locations will be added here dynamically -->
+                
+            </LinearLayout>
+        </ScrollView>
+
+        <!-- Search Results RecyclerView (Shows when typing) -->
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/searchResultsRecyclerView"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="@color/white"
+            android:visibility="gone"
+            android:paddingBottom="80dp"
+            android:clipToPadding="false"
+            android:nestedScrollingEnabled="true" />
+
+        <!-- Empty State Container (Shows when search fails) -->
+        <ScrollView
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:fillViewport="true">
+
+            <LinearLayout
+                android:id="@+id/emptyStateContainer"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:gravity="center_horizontal"
+                android:paddingTop="48dp"
+                android:paddingBottom="48dp"
+                android:visibility="gone">
+
+                <!-- Sad Magnifying Glass Illustration -->
+                <ImageView
+                    android:id="@+id/emptyStateImage"
+                    android:layout_width="140dp"
+                    android:layout_height="140dp"
+                    android:src="@drawable/ic_empty_search"
+                    android:contentDescription="Could not get address"
+                    android:alpha="0.6" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="24dp"
+                    android:text="Could not get address"
+                    android:textSize="18sp"
+                    android:textStyle="bold"
+                    android:textColor="#1A1A1A" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:text="Please try searching for alternate locations"
+                    android:textSize="14sp"
+                    android:textColor="#666666"
+                    android:gravity="center" />
+
+            </LinearLayout>
+        </ScrollView>
+
+    </FrameLayout>
+
+    <!-- Continue Button -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="12dp"
+        android:background="@color/white"
+        android:elevation="4dp">
+
+        <androidx.appcompat.widget.AppCompatButton
+            android:id="@+id/continueButton"
+            android:layout_width="match_parent"
+            android:layout_height="50dp"
+            android:text="Continue"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:textColor="@color/white"
+            android:textAllCaps="false"
+            android:background="@drawable/button_gradient_orange_yellow_selector"
+            android:clickable="true"
+            android:focusable="true"
+            style="@style/Widget.AppCompat.Button" />
+
+    </LinearLayout>
+
+</LinearLayout>

@@ -1,109 +1,167 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+=============================================================================
+MAP SELECTION ACTIVITY - RAPIDO STYLE
+=============================================================================
+LAYOUT (matching Rapido exactly):
+- Full screen map (no top bar)
+- Back arrow floating bottom-left
+- Bottom card:
+  - "Select your location" + "Change" button (right)
+  - Green/Red dot + Address (auto-updates)
+  - "Select Pickup" / "Select Drop" yellow button
+
+SCALABILITY: Lightweight layout, map takes full screen
+EASY UNDERSTANDING: Clean minimal UI like Rapido
+MODULARITY: Reusable for both FROM and TO
+CODING STANDARDS: Material Design
+=============================================================================
+-->
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:background="@color/white">
 
-    <!-- Map Fragment -->
-    <fragment
+    <!-- Map Fragment (Full Screen - no top bar) -->
+    <androidx.fragment.app.FragmentContainerView
         android:id="@+id/mapFragment"
         android:name="com.google.android.gms.maps.SupportMapFragment"
         android:layout_width="match_parent"
         android:layout_height="match_parent" />
 
     <!-- Center Pin (Fixed in center of screen) -->
+    <!-- NOTE: src set programmatically - green for pickup, red for drop -->
     <ImageView
         android:id="@+id/centerPin"
-        android:layout_width="48dp"
-        android:layout_height="48dp"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
         android:layout_centerInParent="true"
-        android:src="@drawable/ic_location_pin"
-        android:layout_marginBottom="24dp" />
+        android:layout_marginBottom="20dp"
+        android:contentDescription="Location pin"
+        tools:src="@drawable/ic_pin_pickup" />
 
-    <!-- Top Bar -->
-    <LinearLayout
-        android:id="@+id/topBar"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_alignParentTop="true"
-        android:background="@android:color/white"
-        android:elevation="4dp"
-        android:orientation="vertical"
-        android:padding="16dp">
-
-        <RelativeLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content">
-
-            <!-- Back Button -->
-            <ImageView
-                android:id="@+id/backButton"
-                android:layout_width="32dp"
-                android:layout_height="32dp"
-                android:layout_alignParentStart="true"
-                android:layout_centerVertical="true"
-                android:background="?attr/selectableItemBackgroundBorderless"
-                android:padding="4dp"
-                android:src="@drawable/ic_apps"
-                android:rotation="180" />
-
-            <!-- Title -->
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_centerInParent="true"
-                android:text="Select Location"
-                android:textColor="@color/black"
-                android:textSize="18sp"
-                android:textStyle="bold" />
-
-        </RelativeLayout>
-
-    </LinearLayout>
-
-    <!-- Bottom Card with Address and Confirm Button -->
+    <!-- Back Arrow (Floating, bottom-left - Rapido style) -->
     <androidx.cardview.widget.CardView
+        android:id="@+id/backButtonCard"
+        android:layout_width="44dp"
+        android:layout_height="44dp"
+        android:layout_above="@id/bottomCard"
+        android:layout_alignParentStart="true"
+        android:layout_marginStart="16dp"
+        android:layout_marginBottom="16dp"
+        app:cardCornerRadius="22dp"
+        app:cardElevation="4dp"
+        app:cardBackgroundColor="@android:color/white">
+
+        <ImageView
+            android:id="@+id/backButton"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:padding="10dp"
+            android:src="@drawable/ic_arrow_back"
+            android:tint="#333333"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="Go back" />
+
+    </androidx.cardview.widget.CardView>
+
+    <!-- ============================================= -->
+    <!-- BOTTOM CARD (Rapido Style) -->
+    <!-- ============================================= -->
+    <androidx.cardview.widget.CardView
+        android:id="@+id/bottomCard"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_alignParentBottom="true"
-        android:layout_margin="16dp"
-        app:cardCornerRadius="16dp"
-        app:cardElevation="8dp">
+        app:cardCornerRadius="20dp"
+        app:cardElevation="12dp"
+        app:cardBackgroundColor="@android:color/white"
+        android:layout_marginBottom="0dp">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:padding="20dp">
+            android:paddingHorizontal="20dp"
+            android:paddingTop="20dp"
+            android:paddingBottom="24dp">
 
-            <!-- Instruction Text -->
-            <TextView
+            <!-- Row 1: "Select your location" + "Change" button -->
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Move map to select location"
-                android:textColor="@color/text_secondary"
-                android:textSize="14sp"
-                android:layout_marginBottom="8dp" />
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
 
-            <!-- Selected Address -->
-            <TextView
-                android:id="@+id/addressText"
+                <!-- Title -->
+                <TextView
+                    android:id="@+id/titleText"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Select your location"
+                    android:textColor="#1A1A1A"
+                    android:textSize="18sp"
+                    android:textStyle="bold" />
+
+                <!-- Change Button (outlined, Rapido style) -->
+                <TextView
+                    android:id="@+id/changeButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="36dp"
+                    android:gravity="center"
+                    android:text="Change"
+                    android:textColor="#333333"
+                    android:textSize="14sp"
+                    android:paddingHorizontal="16dp"
+                    android:background="@drawable/button_outlined"
+                    android:clickable="true"
+                    android:focusable="true" />
+
+            </LinearLayout>
+
+            <!-- Row 2: Green/Red dot + Address -->
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Drag map to select location"
-                android:textColor="@color/black"
-                android:textSize="16sp"
-                android:textStyle="bold"
-                android:layout_marginBottom="16dp"
-                android:minHeight="48dp" />
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginTop="16dp"
+                android:background="@drawable/bg_input_field"
+                android:padding="14dp">
 
-            <!-- Confirm Button -->
+                <!-- Pin indicator (green for pickup, red for drop) -->
+                <View
+                    android:id="@+id/pinIndicator"
+                    android:layout_width="12dp"
+                    android:layout_height="12dp"
+                    android:background="@drawable/bg_green_dot" />
+
+                <!-- Selected Address -->
+                <TextView
+                    android:id="@+id/addressText"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:layout_marginStart="12dp"
+                    android:text="Finding your location..."
+                    android:textColor="#1A1A1A"
+                    android:textSize="14sp"
+                    android:maxLines="2"
+                    android:ellipsize="end" />
+
+            </LinearLayout>
+
+            <!-- Row 3: Select Pickup / Select Drop Button (Yellow, Rapido style) -->
             <androidx.appcompat.widget.AppCompatButton
                 android:id="@+id/confirmButton"
                 android:layout_width="match_parent"
-                android:layout_height="56dp"
+                android:layout_height="52dp"
+                android:layout_marginTop="16dp"
                 android:background="@drawable/button_gradient_orange_yellow_selector"
-                android:text="Confirm Location"
+                android:text="Select Pickup"
                 android:textColor="@android:color/white"
                 android:textSize="16sp"
                 android:textStyle="bold"

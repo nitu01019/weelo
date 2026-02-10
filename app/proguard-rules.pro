@@ -196,3 +196,23 @@
 # Security: Don't keep class names that could reveal app structure
 -repackageclasses 'w'
 -allowaccessmodification
+
+# ============================================================
+# SECURITY LIBRARIES
+# ============================================================
+
+# RootBeer - Root Detection
+-keep class com.scottyab.rootbeer.** { *; }
+-dontwarn com.scottyab.rootbeer.**
+
+# Google Play Integrity
+-keep class com.google.android.play.core.integrity.** { *; }
+-dontwarn com.google.android.play.core.integrity.**
+
+# Firebase Crashlytics
+-keep class com.google.firebase.crashlytics.** { *; }
+-dontwarn com.google.firebase.crashlytics.**
+
+# Keep our security classes
+-keep class com.weelo.logistics.core.security.** { *; }
+

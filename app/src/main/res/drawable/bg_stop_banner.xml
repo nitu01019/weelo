@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+=============================================================================
+STOP BANNER BACKGROUND - Rapido Style
+=============================================================================
+White rounded rectangle with orange accent border
+Used by marker_stop_banner.xml for map InfoWindows
+=============================================================================
+-->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    
+    <!-- White background -->
+    <solid android:color="#FFFFFF" />
+    
+    <!-- Rounded corners -->
+    <corners android:radius="8dp" />
+    
+    <!-- Orange accent border (matches Weelo brand) -->
+    <stroke 
+        android:width="1.5dp" 
+        android:color="#FF5722" />
+    
+</shape>

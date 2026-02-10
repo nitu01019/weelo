@@ -167,11 +167,23 @@ class BookingConfirmationActivity : AppCompatActivity() {
         binding.tvEstimatedPrice.text = "₹ $estimatedPrice"
     }
 
+    /**
+     * Show loading state
+     * 
+     * SCALABILITY: Disables button to prevent duplicate requests
+     * EASY UNDERSTANDING: Clear visual feedback during booking creation
+     */
     private fun showLoading() {
         binding.loadingOverlay.visibility = View.VISIBLE
+        // SCALABILITY: Disable button to prevent multiple taps
         binding.btnBookNow.isEnabled = false
     }
 
+    /**
+     * Hide loading state
+     * 
+     * MODULARITY: Re-enables button after request completes
+     */
     private fun hideLoading() {
         binding.loadingOverlay.visibility = View.GONE
         binding.btnBookNow.isEnabled = true

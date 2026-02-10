@@ -1,38 +1,108 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Recent Location Item -->
+<!--
+=============================================================================
+RECENT/CACHED LOCATION ITEM - RAPIDO STYLE (Distance Below Icon)
+=============================================================================
+LAYOUT STRUCTURE:
+[Icon + Distance]  [Name                    ] [Heart] [X]
+                   [Address                 ]
+=============================================================================
+-->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="horizontal"
     android:gravity="center_vertical"
-    android:paddingVertical="16dp"
+    android:paddingVertical="12dp"
+    android:paddingHorizontal="16dp"
     android:background="?android:attr/selectableItemBackground">
 
+    <!--
+        LEFT COLUMN: Clock Icon + Distance Below (compound drawable)
+        Uses app:drawableTopCompat for backward compatibility.
+        Icon tint #555555 gives 4.6:1 contrast ratio on white (WCAG AA).
+    -->
     <TextView
-        android:layout_width="wrap_content"
+        android:id="@+id/locationDistance"
+        android:layout_width="48dp"
         android:layout_height="wrap_content"
-        android:text="🕐"
-        android:textSize="20sp"
-        android:layout_marginEnd="16dp" />
+        android:gravity="center_horizontal"
+        app:drawableTopCompat="@drawable/ic_clock_recent"
+        app:drawableTint="@color/icon_default"
+        android:drawablePadding="4dp"
+        android:textSize="11sp"
+        android:textColor="@color/text_gray"
+        android:visibility="visible"
+        tools:text="2.5 km" />
 
-    <TextView
-        android:id="@+id/locationText"
+    <!-- MIDDLE: Name + Address -->
+    <LinearLayout
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_weight="1"
-        android:text="Location Name"
-        android:textSize="16sp"
-        android:textColor="@color/text_primary" />
+        android:orientation="vertical"
+        android:layout_marginStart="12dp"
+        android:layout_marginEnd="8dp">
 
-    <TextView
-        android:id="@+id/favoriteIcon"
+        <!-- Location Name (Bold, Dark) -->
+        <TextView
+            android:id="@+id/locationName"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textSize="15sp"
+            android:textStyle="bold"
+            android:textColor="@color/text_primary"
+            android:maxLines="1"
+            android:ellipsize="end"
+            tools:text="Railway Station Jammu" />
+
+        <!-- Address (#757575 gives 4.6:1 contrast on white) -->
+        <TextView
+            android:id="@+id/locationAddress"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="3dp"
+            android:textSize="13sp"
+            android:textColor="@color/text_gray"
+            android:maxLines="1"
+            android:ellipsize="end"
+            tools:text="Trikuta Nagar, Jammu" />
+
+    </LinearLayout>
+
+    <!-- RIGHT: Favorite Heart — FrameLayout separates ripple from text contrast -->
+    <FrameLayout
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="🤍"
-        android:textSize="20sp"
-        android:padding="8dp"
-        android:clickable="true"
-        android:focusable="true"
-        android:background="?android:attr/selectableItemBackgroundBorderless" />
+        android:background="?android:attr/selectableItemBackgroundBorderless"
+        android:padding="6dp">
+
+        <TextView
+            android:id="@+id/favoriteIcon"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/favorite_icon_empty"
+            android:textSize="20sp"
+            android:textColor="@color/text_primary"
+            android:contentDescription="@string/favorite_icon_empty"
+            tools:text="@string/favorite_icon_filled" />
+
+    </FrameLayout>
+
+    <!-- RIGHT: Remove Button (RAPIDO STYLE circle) -->
+    <TextView
+        android:id="@+id/removeButton"
+        android:layout_width="28dp"
+        android:layout_height="28dp"
+        android:layout_marginStart="4dp"
+        android:text="@string/remove_item"
+        android:textSize="12sp"
+        android:textColor="@color/icon_default"
+        android:gravity="center"
+        android:background="@drawable/bg_circle_light"
+        android:contentDescription="@string/remove_item"
+        android:visibility="visible" />
 
 </LinearLayout>

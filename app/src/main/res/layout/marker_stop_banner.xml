@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+=============================================================================
+STOP BANNER - Custom InfoWindow for Map Markers (Rapido Style)
+=============================================================================
+SCALABILITY: Lightweight layout, reused by InfoWindowAdapter
+EASY UNDERSTANDING: Shows "Stop 1", "Stop 2" labels clearly on map
+MODULARITY: Separate layout file, can be reused for pickup/drop banners
+CODING STANDARDS: Follows Android InfoWindow best practices
+=============================================================================
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:background="@drawable/bg_stop_banner"
+    android:paddingHorizontal="12dp"
+    android:paddingVertical="8dp"
+    android:gravity="center">
+
+    <!-- Stop Label: "Stop 1", "Stop 2", etc. -->
+    <TextView
+        android:id="@+id/stopLabel"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textSize="13sp"
+        android:textStyle="bold"
+        android:textColor="#FF5722"
+        tools:text="Stop 1" />
+
+    <!-- Stop Address (optional, shown if available) -->
+    <TextView
+        android:id="@+id/stopAddress"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="2dp"
+        android:textSize="10sp"
+        android:textColor="#666666"
+        android:maxWidth="120dp"
+        android:ellipsize="end"
+        android:maxLines="1"
+        android:visibility="gone"
+        tools:text="Railway Station"
+        tools:visibility="visible" />
+
+</LinearLayout>

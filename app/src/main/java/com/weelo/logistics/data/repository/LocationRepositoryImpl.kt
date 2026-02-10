@@ -87,6 +87,17 @@ class LocationRepositoryImpl @Inject constructor(
         }
     }
 
+    override suspend fun deleteLocation(locationId: String): Result<Unit> {
+        return try {
+            locationDao.deleteLocation(locationId)
+            Timber.d("Deleted location: $locationId")
+            Result.Success(Unit)
+        } catch (e: Exception) {
+            Timber.e(e, "Failed to delete location: $locationId")
+            Result.Error(WeeloException.UnknownException("Failed to delete location"))
+        }
+    }
+
     override suspend fun clearRecentLocations(): Result<Unit> {
         return try {
             locationDao.clearAllLocations()

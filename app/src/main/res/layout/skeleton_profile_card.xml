@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+=============================================================================
+SKELETON LOADING - Profile Card (Rapido-style)
+=============================================================================
+
+SCALABILITY: Better UX than loading spinners
+EASY UNDERSTANDING: Shows UI structure while loading
+MODULARITY: Reusable skeleton component
+
+=============================================================================
+-->
+<com.facebook.shimmer.ShimmerFrameLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/shimmerLayout"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginBottom="8dp"
+    app:shimmer_auto_start="true"
+    app:shimmer_duration="1000">
+
+    <com.google.android.material.card.MaterialCardView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        app:cardElevation="2dp"
+        app:cardCornerRadius="12dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="16dp">
+
+            <!-- Profile Row Skeleton -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
+
+                <!-- Avatar Skeleton -->
+                <View
+                    android:layout_width="56dp"
+                    android:layout_height="56dp"
+                    android:background="@drawable/skeleton_circle" />
+
+                <!-- Text Skeleton -->
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical"
+                    android:layout_marginStart="16dp">
+
+                    <!-- Name Skeleton -->
+                    <View
+                        android:layout_width="120dp"
+                        android:layout_height="20dp"
+                        android:background="@drawable/skeleton_rectangle" />
+
+                    <!-- Phone Skeleton -->
+                    <View
+                        android:layout_width="100dp"
+                        android:layout_height="16dp"
+                        android:layout_marginTop="8dp"
+                        android:background="@drawable/skeleton_rectangle" />
+
+                </LinearLayout>
+
+            </LinearLayout>
+
+            <!-- Divider -->
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:background="#E5E7EB"
+                android:layout_marginTop="16dp"
+                android:layout_marginBottom="12dp" />
+
+            <!-- Rating Row Skeleton -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:paddingVertical="4dp">
+
+                <!-- Star placeholder -->
+                <View
+                    android:layout_width="32dp"
+                    android:layout_height="32dp"
+                    android:background="@drawable/skeleton_circle" />
+
+                <!-- Rating text skeleton -->
+                <View
+                    android:layout_width="140dp"
+                    android:layout_height="18dp"
+                    android:layout_marginStart="12dp"
+                    android:background="@drawable/skeleton_rectangle" />
+
+            </LinearLayout>
+
+        </LinearLayout>
+
+    </com.google.android.material.card.MaterialCardView>
+
+</com.facebook.shimmer.ShimmerFrameLayout>

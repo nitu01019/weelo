@@ -15,6 +15,18 @@ import com.weelo.logistics.core.util.visible
 import timber.log.Timber
 
 /**
+ * Data class to store intermediate stop with address AND coordinates
+ * CRITICAL: We need coordinates for accurate routing, not just address text
+ */
+data class StopLocation(
+    val address: String,
+    val latitude: Double = 0.0,
+    val longitude: Double = 0.0
+) {
+    fun isValid(): Boolean = latitude != 0.0 && longitude != 0.0
+}
+
+/**
  * Manager for intermediate stops functionality
  * 
  * MODULARITY: Extracts stop management from Activity
@@ -31,25 +43,31 @@ class IntermediateStopsManager(
     private val maxStops: Int = DEFAULT_MAX_STOPS
 ) {
 
-    private val stops = mutableListOf<String>()
-    private var onStopsChangedListener: ((List<String>) -> Unit)? = null
+    // Changed: Store StopLocation with coordinates, not just strings
+    private val stops = mutableListOf<StopLocation>()
+    private var onStopsChangedListener: ((List<StopLocation>) -> Unit)? = null
 
     /**
      * Set listener for stops changes
      */
-    fun setOnStopsChangedListener(listener: (List<String>) -> Unit) {
+    fun setOnStopsChangedListener(listener: (List<StopLocation>) -> Unit) {
         onStopsChangedListener = listener
     }
 
     /**
-     * Get current stops list
+     * Get current stops list (with coordinates)
      */
-    fun getStops(): List<String> = stops.toList()
+    fun getStops(): List<StopLocation> = stops.toList()
+    
+    /**
+     * Get stops as address strings (for backward compatibility)
+     */
+    fun getStopAddresses(): List<String> = stops.map { it.address }
 
     /**
-     * Get valid (non-empty) stops
+     * Get valid stops with coordinates
      */
-    fun getValidStops(): List<String> = stops.filter { it.isNotBlank() }
+    fun getValidStops(): List<StopLocation> = stops.filter { it.address.isNotBlank() }
 
     /**
      * Check if can add more stops
@@ -72,7 +90,8 @@ class IntermediateStopsManager(
             return false
         }
 
-        stops.add("")
+        // Add empty StopLocation (coordinates will be filled when user selects a place)
+        stops.add(StopLocation(""))
         bottomDottedLine.visible()
 
         val stopView = createStopView(stops.size)
@@ -104,13 +123,15 @@ class IntermediateStopsManager(
     }
 
     /**
-     * Restore stops from saved state
+     * Restore stops from saved state (address only - legacy)
+     * Note: Coordinates will need to be fetched when the stop is edited
      */
     fun restoreStops(savedStops: Array<String>?) {
         if (savedStops.isNullOrEmpty()) return
 
         savedStops.forEach { stopName ->
-            stops.add(stopName)
+            // Create StopLocation with address only (no coordinates yet)
+            stops.add(StopLocation(stopName, 0.0, 0.0))
             val stopView = createStopView(stops.size)
             container.addView(stopView)
             
@@ -150,18 +171,24 @@ class IntermediateStopsManager(
         // Set stop number
         stopNumberView?.text = stopNumber.toString()
 
-        // Setup autocomplete
+        // Setup autocomplete - CRITICAL: Save coordinates, not just address
         stopInput?.let { input ->
-            placesHelper.setupAutocomplete(input) { address ->
-                updateStopAddress(stopNumber - 1, address)
+            placesHelper.setupAutocomplete(input) { address, lat, lng ->
+                // Save complete location data (address + coordinates)
+                updateStopLocation(stopNumber - 1, address, lat, lng)
             }
 
-            // Handle text changes
+            // Handle text changes (only for manual edits without coordinates)
             input.addTextChangedListener(object : TextWatcher {
                 override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
                 override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
                 override fun afterTextChanged(s: Editable?) {
-                    updateStopAddress(stopNumber - 1, s?.toString() ?: "")
+                    // Only update address text, keep existing coordinates
+                    val index = stopNumber - 1
+                    if (index >= 0 && index < stops.size) {
+                        val currentStop = stops[index]
+                        updateStopLocation(index, s?.toString() ?: "", currentStop.latitude, currentStop.longitude)
+                    }
                 }
             })
         }
@@ -178,11 +205,12 @@ class IntermediateStopsManager(
     }
 
     /**
-     * Update stop address at index
+     * Update stop with complete location data (address + coordinates)
+     * CRITICAL: Stores lat/lng for accurate routing
      */
-    private fun updateStopAddress(index: Int, address: String) {
+    private fun updateStopLocation(index: Int, address: String, lat: Double, lng: Double) {
         if (index >= 0 && index < stops.size) {
-            stops[index] = address
+            stops[index] = StopLocation(address, lat, lng)
             notifyStopsChanged()
         }
     }

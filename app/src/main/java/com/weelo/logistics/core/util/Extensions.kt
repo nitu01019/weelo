@@ -105,6 +105,18 @@ inline fun <reified T : Parcelable> Intent.getParcelableExtraCompat(key: String)
     }
 }
 
+// Intent Parcelable Array extension for API compatibility
+@Suppress("UNCHECKED_CAST")
+inline fun <reified T : Parcelable> Intent.getParcelableArrayExtraCompat(key: String): Array<T>? {
+    return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+        getParcelableArrayExtra(key, T::class.java)
+    } else {
+        @Suppress("DEPRECATION")
+        val parcelables = getParcelableArrayExtra(key) ?: return null
+        parcelables.filterIsInstance<T>().toTypedArray()
+    }
+}
+
 // Intent ArrayList Parcelable extension for API compatibility
 inline fun <reified T : Parcelable> Intent.getParcelableArrayListExtraCompat(key: String): ArrayList<T>? {
     return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {

@@ -45,7 +45,11 @@ object TruckPricingHelper {
     /**
      * Calculate base price for a truck type and distance
      * Fallback pricing when backend is unavailable
+     * @param truckTypeId The truck type identifier
+     * @param subtypeId Reserved for future subtype-specific pricing (currently unused)
+     * @param distanceKm Distance in kilometers
      */
+    @Suppress("UNUSED_PARAMETER")
     fun calculateBasePrice(truckTypeId: String, subtypeId: String, distanceKm: Int): Int {
         val baseRates = mapOf(
             "open" to 2000,

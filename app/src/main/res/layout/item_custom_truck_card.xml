@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/truckCard"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_margin="4dp"
+    app:cardCornerRadius="12dp"
+    app:cardElevation="2dp"
+    android:clickable="true"
+    android:focusable="true"
+    android:foreground="?attr/selectableItemBackground">
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:gravity="center"
+            android:padding="12dp">
+
+            <!-- Icon Container (matches Instant booking style) -->
+            <!-- SCALABILITY: CardView hardware-accelerated, no overdraw -->
+            <androidx.cardview.widget.CardView
+                android:layout_width="72dp"
+                android:layout_height="72dp"
+                app:cardCornerRadius="12dp"
+                app:cardElevation="0dp"
+                app:cardBackgroundColor="@color/background_gray"
+                android:layout_marginBottom="8dp">
+
+                <ImageView
+                    android:id="@+id/truckIcon"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:scaleType="centerCrop"
+                    android:scaleX="1.15"
+                    android:scaleY="1.15"
+                    android:src="@drawable/ic_open_main"
+                    android:contentDescription="Truck Icon" />
+
+            </androidx.cardview.widget.CardView>
+
+            <!-- Truck Name -->
+            <TextView
+                android:id="@+id/truckName"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Open"
+                android:textSize="12sp"
+                android:textColor="#333333"
+                android:textStyle="bold"
+                android:gravity="center"
+                android:maxLines="1"
+                android:ellipsize="end"
+                android:layout_marginTop="4dp" />
+
+            <!-- Subtypes count -->
+            <TextView
+                android:id="@+id/subtypesCount"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="10 options"
+                android:textSize="10sp"
+                android:textColor="#888888"
+                android:gravity="center" />
+        </LinearLayout>
+
+        <!-- Quantity Badge (shown when items selected) -->
+        <TextView
+            android:id="@+id/quantityBadge"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:layout_gravity="top|end"
+            android:layout_margin="6dp"
+            android:background="@drawable/bg_quantity_badge"
+            android:gravity="center"
+            android:text="0"
+            android:textColor="@android:color/white"
+            android:textSize="12sp"
+            android:textStyle="bold"
+            android:visibility="gone" />
+    </FrameLayout>
+</androidx.cardview.widget.CardView>

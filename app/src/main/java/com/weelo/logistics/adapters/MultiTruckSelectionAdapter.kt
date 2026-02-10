@@ -190,7 +190,7 @@ class MultiTruckSelectionAdapter(
                 subtypesRecyclerView.layoutManager = LinearLayoutManager(itemView.context)
             }
             
-            subtypeAdapter = TruckSubtypeAdapter(section.subtypes) { subtypeId, quantity, price ->
+            subtypeAdapter = TruckSubtypeAdapter(section.subtypes) { subtypeId, quantity, _ ->
                 section.updateQuantity(subtypeId, quantity)
                 updateSelectionSummary(section)
                 updateHeaderStyle(section.hasSelections())

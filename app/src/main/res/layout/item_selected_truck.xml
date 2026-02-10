@@ -118,7 +118,7 @@
             android:layout_width="20dp"
             android:layout_height="20dp"
             android:src="@android:drawable/ic_menu_close_clear_cancel"
-            android:tint="#F44336"
+            app:tint="#F44336"
             android:padding="2dp"
             android:background="?attr/selectableItemBackgroundBorderless"
             android:clickable="true"

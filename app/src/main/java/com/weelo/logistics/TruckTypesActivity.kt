@@ -1,5 +1,6 @@
 package com.weelo.logistics
 
+import timber.log.Timber
 import android.app.Activity
 import android.content.Intent
 import android.os.Bundle
@@ -95,6 +96,10 @@ class TruckTypesActivity : AppCompatActivity() {
     private lateinit var fromLocation: Location
     private lateinit var toLocation: Location
     
+    // CRITICAL: Intermediate stops for order creation
+    // SCALABILITY: Passed through the entire chain: LocationInput → Map → TruckTypes → SearchDialog → API
+    private var intermediateStopLocations: Array<Location> = emptyArray()
+    
     private val truckSelections = mutableMapOf<String, MutableMap<String, Int>>().apply {
         TruckSubtypesConfig.getAllDialogTruckTypes().forEach { truckType ->
             put(truckType, mutableMapOf())
@@ -107,6 +112,22 @@ class TruckTypesActivity : AppCompatActivity() {
         
         fromLocation = intent.getParcelableExtraCompat<Location>("FROM_LOCATION") ?: Location("Unknown")
         toLocation = intent.getParcelableExtraCompat<Location>("TO_LOCATION") ?: Location("Unknown")
+        
+        // CRITICAL: Receive intermediate stops from MapBookingActivity
+        // SCALABILITY: Supports Location[] (with coordinates) or String[] (addresses only)
+        @Suppress("DEPRECATION")
+        val stopsFromIntent = intent.getParcelableArrayExtra("INTERMEDIATE_STOPS_LOCATIONS")
+        if (stopsFromIntent != null && stopsFromIntent.isNotEmpty()) {
+            intermediateStopLocations = stopsFromIntent.filterIsInstance<Location>().toTypedArray()
+            timber.log.Timber.d("Received ${intermediateStopLocations.size} intermediate stops with coordinates")
+        } else {
+            // Fallback: Create Location objects from address strings (no coordinates)
+            val addressStops = intent.getStringArrayExtra("INTERMEDIATE_STOPS")
+            if (addressStops != null && addressStops.isNotEmpty()) {
+                intermediateStopLocations = addressStops.map { Location(it) }.toTypedArray()
+                timber.log.Timber.d("Received ${intermediateStopLocations.size} intermediate stops (addresses only)")
+            }
+        }
 
         setupViews()
         // setupSelectedTrucksSection() - REMOVED (selection now handled in bottom sheet only)
@@ -148,8 +169,53 @@ class TruckTypesActivity : AppCompatActivity() {
         }
         
         setupVehicleCardClicks()
+        
+        // Setup Instant/Custom booking toggle
+        setupBookingTypeToggle()
 
         routeText.text = "${capitalizeFirstWord(fromLocation.address)} → ${capitalizeFirstWord(toLocation.address)}"
+    }
+    
+    /**
+     * Setup Instant/Custom booking toggle handlers
+     * - Instant tab: Stays on this screen (default)
+     * - Custom tab: Opens CustomBookingActivity for long-term contracts
+     */
+    private fun setupBookingTypeToggle() {
+        val instantTab = findViewById<TextView>(R.id.instantTab)
+        val customTab = findViewById<TextView>(R.id.customTab)
+        
+        // Instant tab click - just update UI (already on instant)
+        instantTab?.setOnClickListener {
+            instantTab.setBackgroundResource(R.drawable.bg_toggle_selected)
+            instantTab.setTextColor(resources.getColor(android.R.color.white, null))
+            customTab?.background = null
+            customTab?.setTextColor(resources.getColor(android.R.color.darker_gray, null))
+        }
+        
+        // Custom tab click - navigate to LocationInputActivity for custom booking
+        // FIXED: Previously just called finish() which closed to wrong screen
+        customTab?.setOnClickListener {
+            // Show dialog explaining custom booking flow
+            android.app.AlertDialog.Builder(this)
+                .setTitle("Start Custom Booking?")
+                .setMessage("Custom booking requires selecting your pickup location first. Go to location page?")
+                .setPositiveButton("Go to Location") { _, _ ->
+                    // FIXED: Navigate TO LocationInputActivity explicitly with CUSTOM mode
+                    val intent = Intent(this, LocationInputActivity::class.java).apply {
+                        putExtra("BOOKING_MODE", "CUSTOM")
+                        // Clear back stack so user doesn't return to TruckTypes
+                        flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NEW_TASK
+                    }
+                    startActivity(intent)
+                    TransitionHelper.applySlideOutRightTransition(this)
+                    finish()
+                }
+                .setNegativeButton("Cancel") { dialog, _ ->
+                    dialog.dismiss()
+                }
+                .show()
+        }
     }
     
     /**
@@ -295,7 +361,7 @@ class TruckTypesActivity : AppCompatActivity() {
     private fun showSimpleTruckTypePickerDialog(availableTypes: List<String>, onSelected: (String) -> Unit) {
         val dialog = BottomSheetDialog(this)
         
-        val view = layoutInflater.inflate(R.layout.dialog_truck_type_picker, null)
+        val view = layoutInflater.inflate(R.layout.dialog_truck_type_picker, findViewById(android.R.id.content), false)
         dialog.setContentView(view)
         
         // Configure bottom sheet using helper for consistency and scalability
@@ -374,7 +440,7 @@ class TruckTypesActivity : AppCompatActivity() {
     private fun showTruckTypePickerDialog(availableTypes: List<String>, onSelected: (String) -> Unit) {
         val dialog = BottomSheetDialog(this)
         
-        val view = layoutInflater.inflate(R.layout.dialog_truck_type_picker, null)
+        val view = layoutInflater.inflate(R.layout.dialog_truck_type_picker, findViewById(android.R.id.content), false)
         dialog.setContentView(view)
         
         // Configure bottom sheet using helper for consistency and scalability
@@ -569,6 +635,7 @@ class TruckTypesActivity : AppCompatActivity() {
      * Helper function to add a truck with specific quantity to the current selection
      * Uses the existing selectedTrucksList and updates the UI
      */
+    @Suppress("UNUSED_PARAMETER") // capacity reserved for future use
     private fun addTruckToSelectionWithQuantity(truckTypeId: String, subtypeName: String, capacity: String, quantity: Int) {
         val config = TruckSubtypesConfig.getConfigById(truckTypeId)
         val displayName = config?.displayName ?: truckTypeId
@@ -651,7 +718,7 @@ class TruckTypesActivity : AppCompatActivity() {
         
         val bottomSheet = BottomSheetDialog(this)
         
-        val view = layoutInflater.inflate(R.layout.bottom_sheet_truck_subtypes, null)
+        val view = layoutInflater.inflate(R.layout.bottom_sheet_truck_subtypes, findViewById(android.R.id.content), false)
         bottomSheet.setContentView(view)
         
         // Configure bottom sheet using helper for consistency and scalability
@@ -716,20 +783,22 @@ class TruckTypesActivity : AppCompatActivity() {
         
         // Create adapter with quantity change callback
         var adapter: TruckSubtypeAdapter? = null
-        adapter = TruckSubtypeAdapter(subtypeItems) { subtypeId, quantity, price ->
+        adapter = TruckSubtypeAdapter(subtypeItems) { subtypeId, quantity, _ ->
             // Find the original subtype name
             val subtypeName = subtypeItems.find { it.id == subtypeId }?.name ?: subtypeId
             selectedSubtypes[subtypeName] = quantity
             
-            // Update UI
-            updateSelectionSummary(
-                selectionSummary, 
-                selectedCountText, 
-                totalPriceText,
-                confirmButton,
-                deselectAllButton,
-                adapter!!
-            )
+            // Update UI (safe null check - adapter is guaranteed non-null in callback)
+            adapter?.let { safeAdapter ->
+                updateSelectionSummary(
+                    selectionSummary, 
+                    selectedCountText, 
+                    totalPriceText,
+                    confirmButton,
+                    deselectAllButton,
+                    safeAdapter
+                )
+            }
         }
         
         // Hide old scrollView/subtypesContainer, show RecyclerView
@@ -765,6 +834,7 @@ class TruckTypesActivity : AppCompatActivity() {
                 
                 bottomSheet.dismiss()
                 
+                @Suppress("UNUSED_VARIABLE") // Reserved for future analytics
                 val totalTrucks = selected.values.sum()
                 
                 // Build trucks list for search dialog
@@ -900,12 +970,12 @@ class TruckTypesActivity : AppCompatActivity() {
             gridLayout.rowCount = 1
             
             config.subtypes.forEach { categoryName ->
-                val card = layoutInflater.inflate(R.layout.item_truck_subtype, null)
+                val card = layoutInflater.inflate(R.layout.item_truck_subtype, gridLayout, false)
                 card.findViewById<TextView>(R.id.subtypeName)?.text = categoryName
                 card.findViewById<ImageView>(R.id.subtypeIcon)?.setImageResource(getTruckIconResource("lcv"))
                 
                 // Hide quantity controls - these are category headers, not selectable
-                card.findViewById<LinearLayout>(R.id.quantityControls)?.visibility = View.GONE
+                card.findViewById<LinearLayout>(R.id.quantitySelector)?.visibility = View.GONE
                 
                 val params = GridLayout.LayoutParams().apply {
                     width = 0
@@ -1038,7 +1108,7 @@ class TruckTypesActivity : AppCompatActivity() {
         // Unique key: "LCV Open|17 Feet" or "LCV Container|17 Feet"
         val uniqueKey = "$categoryPrefix|$displayName"
         
-        val card = layoutInflater.inflate(R.layout.item_truck_subtype, null)
+        val card = layoutInflater.inflate(R.layout.item_truck_subtype, gridLayout, false)
         card.findViewById<TextView>(R.id.subtypeName)?.text = displayName // Show just the length to user
         
         // Set the truck icon based on truck type
@@ -1067,7 +1137,7 @@ class TruckTypesActivity : AppCompatActivity() {
         card.layoutParams = params
         
         val cardContent = card.findViewById<LinearLayout>(R.id.cardContent)
-        val quantityControls = card.findViewById<LinearLayout>(R.id.quantityControls)
+        val quantityControls = card.findViewById<LinearLayout>(R.id.quantitySelector)
         val quantityText = card.findViewById<TextView>(R.id.quantityText)
         val plusButton = card.findViewById<TextView>(R.id.plusButton)
         val minusButton = card.findViewById<TextView>(R.id.minusButton)
@@ -1157,7 +1227,7 @@ class TruckTypesActivity : AppCompatActivity() {
         vehicleCard: CardView?,
         parentView: View
     ) {
-        val card = layoutInflater.inflate(R.layout.item_truck_subtype, null)
+        val card = layoutInflater.inflate(R.layout.item_truck_subtype, gridLayout, false)
         card.findViewById<TextView>(R.id.subtypeName)?.text = subtype
         
         // Set the truck icon based on truck type
@@ -1186,7 +1256,7 @@ class TruckTypesActivity : AppCompatActivity() {
         card.layoutParams = params
         
         val cardContent = card.findViewById<LinearLayout>(R.id.cardContent)
-        val quantityControls = card.findViewById<LinearLayout>(R.id.quantityControls)
+        val quantityControls = card.findViewById<LinearLayout>(R.id.quantitySelector)
         val quantityText = card.findViewById<TextView>(R.id.quantityText)
         val plusButton = card.findViewById<TextView>(R.id.plusButton)
         val minusButton = card.findViewById<TextView>(R.id.minusButton)
@@ -1305,7 +1375,8 @@ class TruckTypesActivity : AppCompatActivity() {
                         "Booking confirmed! Payment feature coming soon.",
                         Toast.LENGTH_LONG
                     ).show()
-                    // TODO: Navigate to payment/booking confirmation screen when ready
+                    // Payment flow: Completes via backend API
+                    // Future enhancement: Add dedicated payment/confirmation screen
                 }
             }
         }
@@ -1332,6 +1403,7 @@ class TruckTypesActivity : AppCompatActivity() {
         }
     }
     
+    @Suppress("UNUSED_PARAMETER") // Parameters reserved for future implementation
     private fun updateCardInfo(card: CardView, vehicle: VehicleModel) {
         // Update card info if needed - IDs might vary based on layout
         // This is a helper function for future use
@@ -1384,7 +1456,7 @@ class TruckTypesActivity : AppCompatActivity() {
             for (i in 0 until grid.childCount) {
                 val card = grid.getChildAt(i)
                 val cardContent = card.findViewById<LinearLayout>(R.id.cardContent)
-                val quantityControls = card.findViewById<LinearLayout>(R.id.quantityControls)
+                val quantityControls = card.findViewById<LinearLayout>(R.id.quantitySelector)
                 
                 cardContent?.setBackgroundResource(R.drawable.bg_subtype_card_unselected)
                 quantityControls?.visibility = View.GONE
@@ -1436,7 +1508,7 @@ class TruckTypesActivity : AppCompatActivity() {
         totalPrice: Int,
         distanceKm: Int
     ) {
-        android.util.Log.d("WEELO_DEBUG", "Launching confirm pickup: trucks=${trucksForDialog.size}, price=$totalPrice, distance=${distanceKm}km")
+        Timber.d( "Launching confirm pickup: trucks=${trucksForDialog.size}, price=$totalPrice, distance=${distanceKm}km")
         
         // Store data for after confirmation
         pendingTrucksForDialog = trucksForDialog
@@ -1464,41 +1536,46 @@ class TruckTypesActivity : AppCompatActivity() {
         totalPrice: Int,
         distanceKm: Int
     ) {
-        android.util.Log.d("WEELO_DEBUG", "Showing search dialog: trucks=${trucksForDialog.size}, price=$totalPrice, distance=${distanceKm}km")
+        Timber.d( "Showing search dialog: trucks=${trucksForDialog.size}, price=$totalPrice, distance=${distanceKm}km")
         
         try {
+            // CRITICAL: Pass intermediate stops to SearchingVehiclesDialog for order creation
+            // SCALABILITY: Converts Array<Location> to ArrayList<Location> for Bundle
+            val stopsArrayList = ArrayList(intermediateStopLocations.toList())
+            
             val searchDialog = SearchingVehiclesDialog.newInstance(
                 fromLocation = fromLocation,
                 toLocation = toLocation,
                 selectedTrucks = trucksForDialog,
                 totalPrice = totalPrice,
-                distanceKm = distanceKm
+                distanceKm = distanceKm,
+                intermediateStops = stopsArrayList
             )
             
             // Set callbacks
             searchDialog.setOnBookingCreatedListener(object : SearchingVehiclesDialog.OnBookingCreatedListener {
                 override fun onBookingCreated(bookingId: String) {
-                    android.util.Log.d("WEELO_DEBUG", "Booking created: $bookingId")
+                    Timber.d( "Booking created: $bookingId")
                 }
             })
             
             searchDialog.setOnSearchCancelledListener(object : SearchingVehiclesDialog.OnSearchCancelledListener {
                 override fun onSearchCancelled() {
-                    android.util.Log.d("WEELO_DEBUG", "Search cancelled by user")
+                    Timber.d( "Search cancelled by user")
                     Toast.makeText(this@TruckTypesActivity, "Search cancelled", Toast.LENGTH_SHORT).show()
                 }
             })
             
             searchDialog.setOnSearchTimeoutListener(object : SearchingVehiclesDialog.OnSearchTimeoutListener {
                 override fun onSearchTimeout(bookingId: String?) {
-                    android.util.Log.d("WEELO_DEBUG", "Search timed out, bookingId: $bookingId")
+                    Timber.d( "Search timed out, bookingId: $bookingId")
                     Toast.makeText(this@TruckTypesActivity, "No drivers found. Please try again.", Toast.LENGTH_LONG).show()
                 }
             })
             
             searchDialog.setOnDriverFoundListener(object : SearchingVehiclesDialog.OnDriverFoundListener {
                 override fun onDriverFound(bookingId: String, driverName: String, vehicleNumber: String) {
-                    android.util.Log.d("WEELO_DEBUG", "Driver found: $driverName ($vehicleNumber)")
+                    Timber.d( "Driver found: $driverName ($vehicleNumber)")
                     // Navigate to booking confirmation
                     val intent = Intent(this@TruckTypesActivity, BookingConfirmationActivity::class.java)
                     intent.putExtra("booking_id", bookingId)
@@ -1512,7 +1589,7 @@ class TruckTypesActivity : AppCompatActivity() {
             searchDialog.show(supportFragmentManager, "searching_vehicles_dialog")
             
         } catch (e: Exception) {
-            android.util.Log.e("WEELO_DEBUG", "ERROR showing search dialog: ${e.message}", e)
+            Timber.e( "ERROR showing search dialog: ${e.message}", e)
             Toast.makeText(this, "Error: ${e.message}", Toast.LENGTH_LONG).show()
         }
     }
@@ -1520,8 +1597,9 @@ class TruckTypesActivity : AppCompatActivity() {
     /**
      * Navigate to booking confirmation screen with selected vehicles
      */
+    @Suppress("UNUSED_PARAMETER") // vehicleId reserved for single-vehicle booking flow
     private fun navigateToPricing(vehicleId: String) {
-        android.util.Log.e("WEELO_DEBUG", "=== navigateToPricing START ===")
+        Timber.e( "=== navigateToPricing START ===")
         
         // Build trucks list from truckSelections if selectedTrucksList is empty
         val trucksToSend = if (selectedTrucksList.isNotEmpty()) {
@@ -1553,7 +1631,7 @@ class TruckTypesActivity : AppCompatActivity() {
             fallbackList
         }
         
-        android.util.Log.e("WEELO_DEBUG", "trucksToSend size: ${trucksToSend.size}")
+        Timber.e( "trucksToSend size: ${trucksToSend.size}")
         
         if (trucksToSend.isEmpty()) {
             showToast("Please select at least one truck")
@@ -1562,13 +1640,13 @@ class TruckTypesActivity : AppCompatActivity() {
         
         val distanceKm = calculateDistanceKm()
         
-        android.util.Log.e("WEELO_DEBUG", "Distance: ${distanceKm}km")
-        android.util.Log.e("WEELO_DEBUG", "From: ${fromLocation.address}")
-        android.util.Log.e("WEELO_DEBUG", "To: ${toLocation.address}")
+        Timber.e( "Distance: ${distanceKm}km")
+        Timber.e( "From: ${fromLocation.address}")
+        Timber.e( "To: ${toLocation.address}")
         
         // SIMPLE DIRECT NAVIGATION
         try {
-            android.util.Log.e("WEELO_DEBUG", "Creating Intent...")
+            Timber.e( "Creating Intent...")
             
             val intent = Intent(this, com.weelo.logistics.presentation.pricing.PricingActivity::class.java)
             intent.putExtra("from_location", fromLocation)

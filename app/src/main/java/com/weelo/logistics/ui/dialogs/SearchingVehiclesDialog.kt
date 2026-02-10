@@ -1,5 +1,6 @@
 package com.weelo.logistics.ui.dialogs
 
+import timber.log.Timber
 import android.app.Dialog
 import android.content.Context
 import android.os.Bundle
@@ -61,6 +62,40 @@ import javax.inject.Inject
  */
 @AndroidEntryPoint
 class SearchingVehiclesDialog : com.google.android.material.bottomsheet.BottomSheetDialogFragment() {
+    
+    // ============================================================
+    // MODULARITY: SharedPreferences Helper for Order Persistence
+    // ============================================================
+    // SCALABILITY: Separate object for clean state management
+    // EASY UNDERSTANDING: Single source of truth for active order state
+    // ============================================================
+    private object ActiveOrderPrefs {
+        private const val PREFS_NAME = "weelo_active_order"
+        private const val KEY_ORDER_ID = "order_id"
+        private const val KEY_EXPIRES_AT = "expires_at"
+        
+        fun save(context: android.content.Context, orderId: String, expiresAtMs: Long) {
+            context.getSharedPreferences(PREFS_NAME, android.content.Context.MODE_PRIVATE)
+                .edit()
+                .putString(KEY_ORDER_ID, orderId)
+                .putLong(KEY_EXPIRES_AT, expiresAtMs)
+                .apply()
+        }
+        
+        fun get(context: android.content.Context): Pair<String?, Long> {
+            val prefs = context.getSharedPreferences(PREFS_NAME, android.content.Context.MODE_PRIVATE)
+            val orderId = prefs.getString(KEY_ORDER_ID, null)
+            val expiresAt = prefs.getLong(KEY_EXPIRES_AT, 0)
+            return Pair(orderId, expiresAt)
+        }
+        
+        fun clear(context: android.content.Context) {
+            context.getSharedPreferences(PREFS_NAME, android.content.Context.MODE_PRIVATE)
+                .edit()
+                .clear()
+                .apply()
+        }
+    }
 
     @Inject
     lateinit var bookingRepository: BookingApiRepository
@@ -102,13 +137,19 @@ class SearchingVehiclesDialog : com.google.android.material.bottomsheet.BottomSh
     private var totalPrice: Int = 0
     private var distanceKm: Int = 0
     private var currentBoostAmount: Int = 0
+    
+    // CRITICAL: Intermediate stops for order creation
+    // SCALABILITY: Passed through entire chain to BookingApiRepository.createOrder()
+    private var intermediateStops: ArrayList<Location> = arrayListOf()
 
     // Timer & State
     private var countDownTimer: CountDownTimer? = null
     private var skipWaitTimer: CountDownTimer? = null
     private var bookingJob: Job? = null
     private var createdBookingId: String? = null
-    private val timeoutSeconds = 60L
+    // REMOVE hardcoded timeout - now comes from backend
+    // private val timeoutSeconds = 60L  // OLD: Hardcoded
+    // NEW: Timer duration from backend response (expiresIn)
     private val showSkipWaitAfterSeconds = 15L
     private var skipWaitShown = false
     
@@ -152,22 +193,28 @@ class SearchingVehiclesDialog : com.google.android.material.bottomsheet.BottomSh
         private const val ARG_SELECTED_TRUCKS = "arg_selected_trucks"
         private const val ARG_TOTAL_PRICE = "arg_total_price"
         private const val ARG_DISTANCE_KM = "arg_distance_km"
+        private const val ARG_INTERMEDIATE_STOPS = "arg_intermediate_stops"
 
         /**
          * Create new instance of SearchingVehiclesDialog
+         * 
+         * SCALABILITY: Supports intermediate stops for multi-waypoint orders
+         * EASY UNDERSTANDING: All booking data passed in Bundle
          * 
          * @param fromLocation Pickup location
          * @param toLocation Drop location
          * @param selectedTrucks List of selected trucks with quantities
          * @param totalPrice Total calculated price
          * @param distanceKm Distance in kilometers
+         * @param intermediateStops List of intermediate stop locations (optional)
          */
         fun newInstance(
             fromLocation: Location,
             toLocation: Location,
             selectedTrucks: ArrayList<SelectedTruckItem>,
             totalPrice: Int,
-            distanceKm: Int
+            distanceKm: Int,
+            intermediateStops: ArrayList<Location> = arrayListOf()
         ): SearchingVehiclesDialog {
             return SearchingVehiclesDialog().apply {
                 arguments = Bundle().apply {
@@ -176,6 +223,7 @@ class SearchingVehiclesDialog : com.google.android.material.bottomsheet.BottomSh
                     putParcelableArrayList(ARG_SELECTED_TRUCKS, selectedTrucks)
                     putInt(ARG_TOTAL_PRICE, totalPrice)
                     putInt(ARG_DISTANCE_KM, distanceKm)
+                    putParcelableArrayList(ARG_INTERMEDIATE_STOPS, intermediateStops)
                 }
             }
         }
@@ -192,6 +240,9 @@ class SearchingVehiclesDialog : com.google.android.material.bottomsheet.BottomSh
             selectedTrucks = args.getParcelableArrayListCompat(ARG_SELECTED_TRUCKS)
             totalPrice = args.getInt(ARG_TOTAL_PRICE, 0)
             distanceKm = args.getInt(ARG_DISTANCE_KM, 0)
+            // CRITICAL: Receive intermediate stops
+            intermediateStops = args.getParcelableArrayListCompat(ARG_INTERMEDIATE_STOPS) ?: arrayListOf()
+            timber.log.Timber.d("SearchingVehiclesDialog: ${intermediateStops.size} intermediate stops received")
         }
     }
 
@@ -316,8 +367,20 @@ class SearchingVehiclesDialog : com.google.android.material.bottomsheet.BottomSh
     }
 
     private fun setupClickListeners() {
+        // Cancel/Close button - dismiss dialog and notify listener
+        // MODULARITY: Handles both cancel and close scenarios
+        // EASY UNDERSTANDING: Clear behavior based on dialog state
         cancelButton.setOnClickListener {
-            cancelSearch()
+            when (currentStatus) {
+                SearchStatus.ERROR, SearchStatus.TIMEOUT -> {
+                    // When error or timeout, just close the dialog
+                    dismiss()
+                }
+                else -> {
+                    // During search, cancel the search
+                    cancelSearch()
+                }
+            }
         }
         
         // Trip Details button - show booking summary
@@ -335,7 +398,8 @@ class SearchingVehiclesDialog : com.google.android.material.bottomsheet.BottomSh
     private fun showTripDetails() {
         // Show Trip Details as a proper bottom sheet
         val tripDetailsSheet = com.google.android.material.bottomsheet.BottomSheetDialog(requireContext())
-        val view = layoutInflater.inflate(R.layout.bottom_sheet_trip_details, null)
+        val view = layoutInflater.inflate(R.layout.bottom_sheet_trip_details, 
+            requireView().parent as? android.view.ViewGroup, false)
         tripDetailsSheet.setContentView(view)
         
         // Set vehicle icon and type - show summary of all trucks
@@ -431,7 +495,7 @@ class SearchingVehiclesDialog : com.google.android.material.bottomsheet.BottomSh
         // Group trucks by type for cleaner display
         val groupedTrucks = trucks.groupBy { it.truckTypeName }
         
-        groupedTrucks.forEach { (truckType, items) ->
+        groupedTrucks.forEach { (_, items) ->
             items.forEach { truck ->
                 // Create a row for each truck subtype
                 val rowView = createTruckRowView(truck)
@@ -538,7 +602,7 @@ class SearchingVehiclesDialog : com.google.android.material.bottomsheet.BottomSh
         }
         
         // TODO: Send boost request to backend
-        android.util.Log.d("SearchingDialog", "Applied boost: +₹$amount")
+        Timber.d( "Applied boost: +₹$amount")
         
         // Show confirmation
         android.widget.Toast.makeText(
@@ -620,33 +684,39 @@ class SearchingVehiclesDialog : com.google.android.material.bottomsheet.BottomSh
     }
 
     private fun startBookingProcess() {
-        android.util.Log.d("SearchingDialog", "Starting booking process...")
+        Timber.d( "Starting booking process...")
         
-        // Start countdown timer
-        startCountdownTimer()
-        
-        // Create booking via API
+        // Create booking first - timer starts when we get response with expiresIn
         createBooking()
     }
 
-    private fun startCountdownTimer() {
+    /**
+     * Start countdown timer with backend-provided duration
+     * 
+     * SCALABILITY: Uses backend TTL - can change duration without app update
+     * EASY UNDERSTANDING: Timer always matches backend expiry
+     * MODULARITY: Duration parameter makes this reusable
+     */
+    private fun startCountdownTimer(durationSeconds: Int) {
         progressBar.max = 100
         progressBar.progress = 0
         
-        countDownTimer = object : CountDownTimer(timeoutSeconds * 1000, 1000) {
+        Timber.d( "Starting timer with ${durationSeconds}s from backend")
+        
+        countDownTimer = object : CountDownTimer(durationSeconds * 1000L, 1000) {
             override fun onTick(millisUntilFinished: Long) {
                 val secondsRemaining = (millisUntilFinished / 1000).toInt()
-                val progress = ((timeoutSeconds - secondsRemaining) * 100 / timeoutSeconds).toInt()
+                val progress = ((durationSeconds - secondsRemaining) * 100 / durationSeconds)
                 
                 progressBar.progress = progress
                 timerText.text = "Timeout in ${secondsRemaining}s"
                 
-                // Update progress steps based on time elapsed
-                val elapsedSeconds = timeoutSeconds - secondsRemaining
+                // Update progress steps based on time elapsed (proportional to duration)
+                val elapsedSeconds = durationSeconds - secondsRemaining
                 when {
-                    elapsedSeconds >= 45 -> updateProgressSteps(4)
-                    elapsedSeconds >= 30 -> updateProgressSteps(3)
-                    elapsedSeconds >= 15 -> updateProgressSteps(2)
+                    elapsedSeconds >= (durationSeconds * 0.75).toInt() -> updateProgressSteps(4)
+                    elapsedSeconds >= (durationSeconds * 0.50).toInt() -> updateProgressSteps(3)
+                    elapsedSeconds >= (durationSeconds * 0.25).toInt() -> updateProgressSteps(2)
                     else -> updateProgressSteps(1)
                 }
             }
@@ -662,54 +732,125 @@ class SearchingVehiclesDialog : com.google.android.material.bottomsheet.BottomSh
     private fun createBooking() {
         bookingJob = lifecycleScope.launch {
             try {
+                // CRASH PREVENTION: Validate required data before proceeding
+                val pickup = fromLocation
+                val drop = toLocation
+                
+                if (pickup == null || drop == null) {
+                    updateStatus(SearchStatus.ERROR, "Location Error", "Pickup or drop location is missing")
+                    return@launch
+                }
+                
                 updateStatus(SearchStatus.SEARCHING, "Creating booking...", "Connecting to server...")
                 
-                // Convert Location to LocationRequest
-                val pickupRequest = fromLocation!!.toLocationRequest()
-                val dropRequest = toLocation!!.toLocationRequest()
-                
-                // Calculate price per truck
+                // Convert selectedTrucks to TruckSelection list for multi-truck order
                 val trucksCount = selectedTrucks?.sumOf { it.quantity } ?: 1
-                val pricePerTruck = if (trucksCount > 0) totalPrice / trucksCount else 0
+                val avgPricePerTruck = if (trucksCount > 0) totalPrice / trucksCount else 0
                 
-                val result = bookingRepository.createBookingSimple(
-                    pickup = pickupRequest,
-                    drop = dropRequest,
-                    vehicleType = selectedTrucks?.firstOrNull()?.truckTypeId ?: "open",
-                    vehicleSubtype = selectedTrucks?.firstOrNull()?.specification ?: "",
-                    trucksNeeded = trucksCount,
+                val truckSelections = selectedTrucks?.map { truck ->
+                    com.weelo.logistics.data.repository.TruckSelection(
+                        vehicleType = truck.truckTypeId,
+                        vehicleSubtype = truck.specification,
+                        quantity = truck.quantity,
+                        pricePerTruck = avgPricePerTruck  // Evenly distribute price for now
+                    )
+                } ?: emptyList()
+                
+                Timber.d( "Creating order with ${truckSelections.size} truck types: ${truckSelections.map { "${it.vehicleType}/${it.vehicleSubtype}:${it.quantity}" }}")
+                
+                // Convert Location to LocationModel for createOrder API (safe - already null checked)
+                val pickupModel = com.weelo.logistics.domain.model.LocationModel(
+                    address = pickup.address,
+                    latitude = pickup.latitude,
+                    longitude = pickup.longitude,
+                    city = pickup.city,
+                    state = pickup.state
+                )
+                val dropModel = com.weelo.logistics.domain.model.LocationModel(
+                    address = drop.address,
+                    latitude = drop.latitude,
+                    longitude = drop.longitude,
+                    city = drop.city,
+                    state = drop.state
+                )
+                
+                // CRITICAL: Convert intermediate stops to LocationModel for API
+                // SCALABILITY: Supports unlimited stops with coordinates
+                val intermediateStopModels = intermediateStops.map { stop ->
+                    com.weelo.logistics.domain.model.LocationModel(
+                        address = stop.address,
+                        latitude = stop.latitude,
+                        longitude = stop.longitude
+                    )
+                }
+                
+                Timber.d( "Creating order with ${intermediateStopModels.size} intermediate stops")
+                
+                // Use createOrder for multi-truck support (each subtype is separate)
+                val result = bookingRepository.createOrder(
+                    pickup = pickupModel,
+                    drop = dropModel,
+                    trucks = truckSelections,
                     distanceKm = distanceKm,
-                    pricePerTruck = pricePerTruck
+                    goodsType = "General", // TODO: Get from user selection
+                    intermediateStops = intermediateStopModels  // CRITICAL: Pass stops to API
                 )
                 
                 when (result) {
                     is Result.Success -> {
-                        createdBookingId = result.data
+                        val orderResult = result.data
+                        createdBookingId = orderResult.orderId
+                        
+                        // SCALABILITY: Get TTL from backend (not hardcoded)
+                        // EASY UNDERSTANDING: Backend controls timer duration
+                        val expiresIn = orderResult.expiresIn ?: 60 // Fallback to 60s if not provided
+                        
+                        // MODULARITY: Persist order state for app resume
+                        val expiresAtMs = System.currentTimeMillis() + (expiresIn * 1000L)
+                        ActiveOrderPrefs.save(requireContext(), orderResult.orderId, expiresAtMs)
+                        
+                        // Start timer with backend duration
+                        startCountdownTimer(expiresIn)
+                        
                         updateStatus(
                             SearchStatus.BOOKING_CREATED,
                             "Searching for Vehicles",
-                            "Booking created! Waiting for drivers..."
+                            "Order created with ${orderResult.totalTrucks} trucks! Broadcasting..."
                         )
                         
                         // Notify listener
-                        onBookingCreatedListener?.onBookingCreated(result.data)
+                        onBookingCreatedListener?.onBookingCreated(orderResult.orderId)
                         
-                        android.util.Log.d("SearchingDialog", "Booking created: ${result.data}")
+                        Timber.d( "Order created: ${orderResult.orderId}, expires in ${expiresIn}s")
+                    }
+                    Result.Loading -> {
+                        // Should not happen in this context (already handled by bookingJob)
+                        Timber.d( "Unexpected Loading state")
                     }
                     is Result.Error -> {
+                        // EASY UNDERSTANDING: Show user-friendly error messages
+                        // SCALABILITY: Handles different error types gracefully
+                        val errorMessage = result.exception.message ?: "Failed to create booking"
+                        
+                        // Check if it's an active order error
+                        val isActiveOrderError = errorMessage.contains("active order", ignoreCase = true) ||
+                                               errorMessage.contains("ACTIVE_ORDER", ignoreCase = true)
+                        
                         updateStatus(
                             SearchStatus.ERROR,
-                            "Booking Failed",
-                            result.exception.message ?: "Failed to create booking"
+                            if (isActiveOrderError) "Active Order Exists" else "Booking Failed",
+                            errorMessage
                         )
                         cancelButton.text = "CLOSE"
+                        
+                        Timber.e( "Booking error: $errorMessage")
                     }
                     is Result.Loading -> {
                         // Do nothing, still loading
                     }
                 }
             } catch (e: Exception) {
-                android.util.Log.e("SearchingDialog", "Error creating booking: ${e.message}", e)
+                Timber.e( "Error creating booking: ${e.message}", e)
                 updateStatus(
                     SearchStatus.ERROR,
                     "Error",
@@ -725,17 +866,36 @@ class SearchingVehiclesDialog : com.google.android.material.bottomsheet.BottomSh
         statusTitle.text = title
         statusSubtitle.text = subtitle
         
-        // Update animation based on status
+        // EASY UNDERSTANDING: Update UI based on status
+        // MODULARITY: Clean separation of status handling
         when (status) {
             SearchStatus.DRIVER_FOUND -> {
                 animationView.setAnimation(R.raw.success_animation)
                 animationView.playAnimation()
                 cancelButton.text = "VIEW DETAILS"
+                // Hide timer and progress when driver found
+                timerText.visibility = View.GONE
+                progressBar.visibility = View.GONE
             }
-            SearchStatus.ERROR, SearchStatus.TIMEOUT -> {
+            SearchStatus.ERROR -> {
                 animationView.pauseAnimation()
+                animationView.visibility = View.GONE
+                cancelButton.text = "CLOSE"
+                // Hide timer and progress on error
+                timerText.visibility = View.GONE
+                progressBar.visibility = View.GONE
+                // Hide boost cards on error
+                skipWaitCard.visibility = View.GONE
             }
-            else -> { /* Keep searching animation */ }
+            SearchStatus.TIMEOUT -> {
+                animationView.pauseAnimation()
+                cancelButton.text = "CLOSE"
+                timerText.visibility = View.GONE
+                progressBar.visibility = View.GONE
+            }
+            else -> { 
+                /* Keep searching animation and UI visible */ 
+            }
         }
     }
 
@@ -743,21 +903,110 @@ class SearchingVehiclesDialog : com.google.android.material.bottomsheet.BottomSh
         currentStatus = SearchStatus.TIMEOUT
         countDownTimer?.cancel()
         
+        // SCALABILITY: Clear persisted order state
+        ActiveOrderPrefs.clear(requireContext())
+        
         statusTitle.text = "No Drivers Found"
         statusSubtitle.text = "No transporters available right now. Try again later."
         animationView.pauseAnimation()
         cancelButton.text = "CLOSE"
         
+        // Hide timer and progress
+        timerText.visibility = View.GONE
+        progressBar.visibility = View.GONE
+        
         onSearchTimeoutListener?.onSearchTimeout(createdBookingId)
     }
 
+    /**
+     * Cancel search with optimistic UI update and backend confirmation
+     * 
+     * SCALABILITY: Backend handles Redis cleanup, DB update, transporter notifications
+     * EASY UNDERSTANDING: UI updates immediately, backend confirms async
+     * MODULARITY: Rollback if backend fails
+     */
     private fun cancelSearch() {
+        val orderId = createdBookingId
+        
+        if (orderId == null) {
+            // No order created yet, just dismiss
+            dismiss()
+            return
+        }
+        
+        Timber.d( "Cancelling order: $orderId")
+        
+        // STEP 1: Optimistic UI update (immediate feedback)
+        val previousStatus = currentStatus
         currentStatus = SearchStatus.CANCELLED
         countDownTimer?.cancel()
         bookingJob?.cancel()
         
-        onSearchCancelledListener?.onSearchCancelled()
-        dismiss()
+        // Show loading state
+        cancelButton.isEnabled = false
+        cancelButton.text = "Cancelling..."
+        
+        // STEP 2: Call backend async
+        lifecycleScope.launch {
+            try {
+                val result = bookingRepository.cancelOrder(orderId)
+                
+                when (result) {
+                    is Result.Success -> {
+                        // SCALABILITY: Backend confirmed - clear everything
+                        ActiveOrderPrefs.clear(requireContext())
+                        
+                        // Notify listener
+                        onSearchCancelledListener?.onSearchCancelled()
+                        
+                        Timber.d( "Order cancelled successfully. ${result.data.transportersNotified} transporters notified")
+                        
+                        // Dismiss dialog
+                        dismiss()
+                        
+                        android.widget.Toast.makeText(
+                            requireContext(),
+                            "Search cancelled. ${result.data.transportersNotified} drivers notified.",
+                            android.widget.Toast.LENGTH_SHORT
+                        ).show()
+                    }
+                    Result.Loading -> {
+                        // Should not happen in this context
+                        Timber.d( "Unexpected Loading state during cancel")
+                    }
+                    is Result.Error -> {
+                        // EASY UNDERSTANDING: Rollback UI if backend fails
+                        Timber.w("Cancel failed: ${result.exception.message}")
+                        
+                        currentStatus = previousStatus
+                        cancelButton.isEnabled = true
+                        cancelButton.text = "CANCEL"
+                        
+                        // Restart timer with remaining time (calculate from SharedPreferences)
+                        val (_, expiresAtMs) = ActiveOrderPrefs.get(requireContext())
+                        val remainingMs = expiresAtMs - System.currentTimeMillis()
+                        if (remainingMs > 0) {
+                            startCountdownTimer((remainingMs / 1000).toInt())
+                        } else {
+                            // Already expired
+                            handleTimeout()
+                        }
+                        
+                        android.widget.Toast.makeText(
+                            requireContext(),
+                            "Failed to cancel: ${result.exception.message}",
+                            android.widget.Toast.LENGTH_LONG
+                        ).show()
+                    }
+                }
+            } catch (e: Exception) {
+                Timber.e( "Cancel error", e)
+                // Handle exception - rollback
+                currentStatus = previousStatus
+                cancelButton.isEnabled = true
+                cancelButton.text = "CANCEL"
+            }
+        }
     }
 
     // Public methods for setting listeners
