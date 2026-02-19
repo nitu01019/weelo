@@ -337,7 +337,7 @@ class SearchingVehiclesDialog : com.google.android.material.bottomsheet.BottomSh
         selectedTrucksText.text = trucksSummary
         
         // Set price
-        totalPriceText.text = "₹${String.format("%,d", totalPrice)}"
+        totalPriceText.text = "₹${String.format(java.util.Locale.getDefault(), "%,d", totalPrice)}"
         
         // Set title based on selected truck type
         val vehicleType = selectedTrucks?.firstOrNull()?.truckTypeName ?: "Vehicle"
@@ -439,7 +439,7 @@ class SearchingVehiclesDialog : com.google.android.material.bottomsheet.BottomSh
         // Set total fare
         val totalFareText = view.findViewById<TextView>(R.id.totalFareText)
         val finalPrice = totalPrice + currentBoostAmount
-        totalFareText.text = "₹ ${String.format("%,d", finalPrice)}"
+        totalFareText.text = "₹ ${String.format(java.util.Locale.getDefault(), "%,d", finalPrice)}"
         
         // Set payment method
         val paymentMethodText = view.findViewById<TextView>(R.id.paymentMethodText)
@@ -991,7 +991,7 @@ class SearchingVehiclesDialog : com.google.android.material.bottomsheet.BottomSh
                         
                         android.widget.Toast.makeText(
                             requireContext(),
-                            "Search cancelled successfully.",
+                            getString(R.string.search_cancelled_success),
                             android.widget.Toast.LENGTH_SHORT
                         ).show()
                     }
