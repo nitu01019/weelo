@@ -146,8 +146,8 @@ class AssignedTrucksAdapter(
                     onCallClick.invoke(truck)
                 } else {
                     // Default: launch system dialler
-                    val intent = android.content.Intent(android.content.Intent.ACTION_DIAL).apply {
-                        data = android.net.Uri.parse("tel:${truck.driverPhone}")
+                    val intent = Intent(Intent.ACTION_DIAL).apply {
+                        data = Uri.parse("tel:${truck.driverPhone}")
                     }
                     itemView.context.startActivity(intent)
                 }
