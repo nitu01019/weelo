@@ -807,7 +807,8 @@ class SearchingVehiclesDialog : com.google.android.material.bottomsheet.BottomSh
                         
                         // MODULARITY: Persist order state for app resume
                         val expiresAtMs = System.currentTimeMillis() + (expiresIn * 1000L)
-                        ActiveOrderPrefs.save(requireContext(), orderResult.orderId, expiresAtMs)
+                        val ctx = context ?: return@launch  // Guard: dialog may be detached
+                        ActiveOrderPrefs.save(ctx, orderResult.orderId, expiresAtMs)
                         
                         // Start timer with backend duration
                         startCountdownTimer(expiresIn)
@@ -987,13 +988,15 @@ class SearchingVehiclesDialog : com.google.android.material.bottomsheet.BottomSh
                             "${result.data.driversNotified} drivers notified")
                         
                         cancelSheet.onCancelComplete(true)
+                        val toastCtx = context  // Capture before dismiss()
                         dismiss()
-                        
-                        android.widget.Toast.makeText(
-                            requireContext(),
-                            getString(R.string.search_cancelled_success),
-                            android.widget.Toast.LENGTH_SHORT
-                        ).show()
+                        toastCtx?.let {
+                            android.widget.Toast.makeText(
+                                it,
+                                it.getString(R.string.search_cancelled_success),
+                                android.widget.Toast.LENGTH_SHORT
+                            ).show()
+                        }
                     }
                     Result.Loading -> {
                         Timber.d("Unexpected Loading state during cancel")

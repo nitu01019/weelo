@@ -103,7 +103,7 @@
     <string name="empty_bookings">No bookings yet.\nBook a truck to get started!</string>
 
     <!-- BookingTrackingActivity -->
-    <string name="back_to_all_trucks">← All Trucks</string>
+    <string name="back_to_all_trucks">All Trucks</string>
 
     <!-- MyBookingsActivity / Booking item -->
     <string name="action_track">Track</string>

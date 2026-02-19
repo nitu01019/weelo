@@ -79,7 +79,10 @@
             android:text="@string/back_to_all_trucks"
             android:textColor="@color/primary_blue"
             android:textSize="13sp"
-            android:textStyle="bold" />
+            android:textStyle="bold"
+            android:drawableStart="@drawable/ic_arrow_back"
+            android:drawablePadding="4dp"
+            android:drawableTint="@color/primary_blue" />
 
     </androidx.cardview.widget.CardView>
 
