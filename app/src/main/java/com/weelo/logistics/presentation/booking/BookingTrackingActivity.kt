@@ -861,7 +861,7 @@ class BookingTrackingActivity : AppCompatActivity(), OnMapReadyCallback {
      * Map status codes to human-readable notification messages.
      */
     private fun getStatusMessage(status: String, vehicleNumber: String): String {
-        return when (status.lowercase()) {
+        return when (status.lowercase(java.util.Locale.ROOT)) {
             "heading_to_pickup", "driver_accepted" -> "\uD83D\uDE9B Driver is heading to pickup"
             "at_pickup" -> "\uD83D\uDE9B Driver arrived at pickup"
             "loading_complete" -> "\uD83D\uDCE6 Loading complete, trip starting"

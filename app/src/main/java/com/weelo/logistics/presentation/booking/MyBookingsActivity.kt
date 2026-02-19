@@ -274,7 +274,10 @@ class BookingsListAdapter(
             tvBookingId.text = "#${booking.id.takeLast(6).uppercase()}"
             tvRoute.text = try {
                 "${booking.pickup.address} → ${booking.drop.address}"
-            } catch (e: Exception) { "Route details" }
+            } catch (e: Exception) {
+                Timber.w(e, "Failed to parse route for booking ${booking.id}")
+                "Route details"
+            }
             tvVehicleInfo.text = "${booking.vehicleType} • ${booking.trucksNeeded} truck(s)"
             tvDate.text = booking.createdAt
             tvPrice.text = "₹${booking.totalAmount}"
