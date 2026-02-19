@@ -83,9 +83,9 @@ class OfflineManager private constructor(context: Context) {
         synchronized(pendingActions) {
             val action = PendingAction(type = type, data = data)
             pendingActions.add(action)
+            savePendingActions()
+            updateState()
         }
-        savePendingActions()
-        updateState()
         Timber.d("Action queued: $type, total pending: ${pendingActions.size}")
     }
     
@@ -100,9 +100,9 @@ class OfflineManager private constructor(context: Context) {
     fun completeAction(actionId: String) {
         synchronized(pendingActions) {
             pendingActions.removeAll { it.id == actionId }
+            savePendingActions()
+            updateState()
         }
-        savePendingActions()
-        updateState()
         Timber.d("Action completed: $actionId")
     }
     
@@ -118,18 +118,20 @@ class OfflineManager private constructor(context: Context) {
                     Timber.w("Action removed after max retries: $actionId")
                 }
             }
+            savePendingActions()
+            updateState()
         }
-        savePendingActions()
-        updateState()
     }
     
     /**
      * Clear all pending actions
      */
     fun clearPendingActions() {
-        pendingActions.clear()
-        savePendingActions()
-        updateState()
+        synchronized(pendingActions) {
+            pendingActions.clear()
+            savePendingActions()
+            updateState()
+        }
         Timber.d("All pending actions cleared")
     }
     

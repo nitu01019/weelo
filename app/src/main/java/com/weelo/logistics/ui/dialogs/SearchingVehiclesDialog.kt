@@ -1009,7 +1009,8 @@ class SearchingVehiclesDialog : com.google.android.material.bottomsheet.BottomSh
                         val (_, expiresAtMs) = ActiveOrderPrefs.get(requireContext())
                         val remainingMs = expiresAtMs - System.currentTimeMillis()
                         if (remainingMs > 0) {
-                            startCountdownTimer((remainingMs / 1000).toInt())
+                            val remainingSeconds = (remainingMs / 1000).toInt().coerceAtLeast(1)
+                            startCountdownTimer(remainingSeconds)
                         } else {
                             handleTimeout()
                         }

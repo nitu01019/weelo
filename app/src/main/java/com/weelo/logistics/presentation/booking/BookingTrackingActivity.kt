@@ -307,15 +307,16 @@ class BookingTrackingActivity : AppCompatActivity(), OnMapReadyCallback {
                 )
             }
 
-            // Route polyline (pickup → drop)
+            // Route polyline (pickup → drop) — stored so drawRoutePolyline() can replace it
             if (pickupLatLng != null && dropLatLng != null) {
-                googleMap?.addPolyline(
+                val polyline = googleMap?.addPolyline(
                     PolylineOptions()
                         .add(pickupLatLng, dropLatLng)
                         .width(8f)
                         .color(getColor(R.color.primary_blue))
                         .geodesic(true)
                 )
+                polyline?.let { routePolylines["main"] = it }
             }
 
             fitCameraToAllMarkers()
