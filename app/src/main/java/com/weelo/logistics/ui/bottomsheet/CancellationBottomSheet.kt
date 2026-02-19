@@ -260,8 +260,9 @@ class CancellationBottomSheet : BottomSheetDialogFragment() {
         if (success) {
             dismiss()
         } else {
+            val ctx = context ?: return  // Fragment may be detached before async response
             android.widget.Toast.makeText(
-                requireContext(),
+                ctx,
                 errorMessage ?: "Failed to cancel. Please try again.",
                 android.widget.Toast.LENGTH_LONG
             ).show()

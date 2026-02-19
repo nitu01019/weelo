@@ -16,6 +16,7 @@ import com.weelo.logistics.adapters.CustomTruckTypeAdapter
 import com.weelo.logistics.adapters.CustomTruckTypeItem
 import com.weelo.logistics.adapters.SubtypeQuantityItem
 import com.weelo.logistics.adapters.SubtypeWithQuantityAdapter
+import com.weelo.logistics.core.util.Constants
 import com.weelo.logistics.data.models.Location
 import com.weelo.logistics.data.models.TruckSubtypesConfig
 import com.weelo.logistics.data.remote.ApiConfig
@@ -110,9 +111,9 @@ class CustomBookingActivity : AppCompatActivity() {
 
         private fun createApiService(): WeeloApiService {
             val okHttpClient = OkHttpClient.Builder()
-                .connectTimeout(30, TimeUnit.SECONDS)
-                .readTimeout(30, TimeUnit.SECONDS)
-                .writeTimeout(30, TimeUnit.SECONDS)
+                .connectTimeout(Constants.CONNECT_TIMEOUT, TimeUnit.SECONDS)
+                .readTimeout(Constants.READ_TIMEOUT, TimeUnit.SECONDS)
+                .writeTimeout(Constants.WRITE_TIMEOUT, TimeUnit.SECONDS)
                 .build()
 
             return Retrofit.Builder()

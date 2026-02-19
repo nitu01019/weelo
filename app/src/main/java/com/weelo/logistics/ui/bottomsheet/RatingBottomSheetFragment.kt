@@ -465,6 +465,10 @@ class RatingBottomSheetFragment : BottomSheetDialogFragment() {
                     .placeholder(R.drawable.ic_person)
                     .error(R.drawable.ic_person)
                     .into(holder.ivPhoto)
+            } else {
+                // Explicitly clear to avoid recycled views showing previous driver's photo
+                Glide.with(holder.itemView.context).clear(holder.ivPhoto)
+                holder.ivPhoto.setImageResource(R.drawable.ic_person)
             }
         }
 

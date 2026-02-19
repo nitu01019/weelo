@@ -106,11 +106,13 @@ class OfflineManager private constructor(context: Context) {
      * Increment retry count for failed action
      */
     fun markActionFailed(actionId: String) {
-        pendingActions.find { it.id == actionId }?.let {
-            it.retryCount++
-            if (it.retryCount >= MAX_RETRIES) {
-                pendingActions.remove(it)
-                Timber.w("Action removed after max retries: $actionId")
+        synchronized(pendingActions) {
+            pendingActions.find { it.id == actionId }?.let {
+                it.retryCount++
+                if (it.retryCount >= MAX_RETRIES) {
+                    pendingActions.remove(it)
+                    Timber.w("Action removed after max retries: $actionId")
+                }
             }
         }
         savePendingActions()

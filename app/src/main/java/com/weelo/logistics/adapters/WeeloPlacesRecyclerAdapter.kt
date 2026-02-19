@@ -45,14 +45,15 @@ class WeeloPlacesRecyclerAdapter(
         places.addAll(newPlaces)
         
         // Use efficient notifications instead of notifyDataSetChanged
+        // Positions are offset by 1 for the header at position 0, so no +1 on count
         if (oldSize > newPlaces.size) {
-            notifyItemRangeChanged(1, newPlaces.size + 1)
+            notifyItemRangeChanged(1, newPlaces.size)
             notifyItemRangeRemoved(newPlaces.size + 1, oldSize - newPlaces.size)
         } else if (oldSize < newPlaces.size) {
-            notifyItemRangeChanged(1, oldSize + 1)
+            notifyItemRangeChanged(1, oldSize)
             notifyItemRangeInserted(oldSize + 1, newPlaces.size - oldSize)
         } else {
-            notifyItemRangeChanged(1, newPlaces.size + 1)
+            notifyItemRangeChanged(1, newPlaces.size)
         }
     }
 

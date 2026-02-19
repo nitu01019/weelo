@@ -182,6 +182,8 @@ class NetworkMonitor private constructor(context: Context) {
             ) {
                 val hasInternet = networkCapabilities.hasCapability(
                     NetworkCapabilities.NET_CAPABILITY_INTERNET
+                ) && networkCapabilities.hasCapability(
+                    NetworkCapabilities.NET_CAPABILITY_VALIDATED
                 )
                 trySend(hasInternet)
             }

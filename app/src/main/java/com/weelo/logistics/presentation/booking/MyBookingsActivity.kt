@@ -189,7 +189,7 @@ class MyBookingsActivity : AppCompatActivity() {
 
                     // Sort: active first, then pending, then completed, then cancelled
                     val sorted = bookings.sortedWith(compareBy {
-                        when (it.status.lowercase()) {
+                        when (it.status.lowercase(java.util.Locale.ROOT)) {
                             "in_progress", "in_transit" -> 0
                             "fully_filled", "confirmed", "driver_assigned" -> 1
                             "active", "pending", "partially_filled" -> 2

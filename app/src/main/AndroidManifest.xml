@@ -132,6 +132,7 @@
         <activity
             android:name=".presentation.booking.MyBookingsActivity"
             android:exported="false"
+            android:screenOrientation="portrait"
             android:theme="@style/Theme.Weelo" />
         <activity
             android:name=".presentation.booking.BookingTrackingActivity"
