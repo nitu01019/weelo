@@ -99,16 +99,12 @@ object ApiConfig {
     // TODO: CRITICAL — Change to HTTPS when SSL certificate is configured on ALB
     // Currently HTTP because ALB does not have SSL configured yet.
     // Must switch to HTTPS before public production launch.
-    // TODO: CRITICAL — Change to HTTPS when SSL certificate is configured on ALB
-    // Currently HTTP because ALB does not have HTTPS listener yet.
-    // Must switch to HTTPS before public production launch.
     private const val PRODUCTION_BASE = "http://$PRODUCTION_HOST$API_PATH"
     
     // WebSocket URLs (for Socket.IO real-time communication)
     private val WS_EMULATOR = "http://$EMULATOR_HOST:$PORT"
     private val WS_DEVICE = "http://$DEVICE_IP:$PORT"
     private const val WS_STAGING = "wss://$STAGING_HOST"
-    // TODO: CRITICAL — Change to WSS when SSL certificate is configured on ALB
     // TODO: CRITICAL — Change to WSS when SSL certificate is configured on ALB
     private const val WS_PRODUCTION = "ws://$PRODUCTION_HOST"
     

@@ -159,7 +159,7 @@ class MapSearchActivity : AppCompatActivity() {
                     city = null
                 )
             } else {
-                Toast.makeText(this, "Current location not available yet", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, getString(R.string.current_location_not_available), Toast.LENGTH_SHORT).show()
             }
         }
         

@@ -95,6 +95,7 @@ class MyBookingsActivity : AppCompatActivity() {
         }
 
         swipeRefresh.setOnRefreshListener { loadBookings() }
+        swipeRefresh.setOnChildScrollUpCallback { _, _ -> recyclerView.canScrollVertically(-1) }
     }
 
     private fun setupAdapter() {
@@ -189,7 +190,7 @@ class MyBookingsActivity : AppCompatActivity() {
 
                     // Sort: active first, then pending, then completed, then cancelled
                     val sorted = bookings.sortedWith(compareBy {
-                        when (it.status.lowercase(java.util.Locale.ROOT)) {
+                        when (it.status.lowercase(java.util.Locale.ROOT)) { // already fixed
                             "in_progress", "in_transit" -> 0
                             "fully_filled", "confirmed", "driver_assigned" -> 1
                             "active", "pending", "partially_filled" -> 2
@@ -221,7 +222,7 @@ class MyBookingsActivity : AppCompatActivity() {
     }
 
     private fun navigateToBooking(booking: BookingData) {
-        when (booking.status.lowercase()) {
+        when (booking.status.lowercase(java.util.Locale.ROOT)) {
             "in_progress", "in_transit", "fully_filled", "confirmed", "driver_assigned" -> {
                 // Active/confirmed → tracking screen
                 startActivity(BookingTrackingActivity.newIntent(this, booking.id))
@@ -280,7 +281,7 @@ class BookingsListAdapter(
             var actionHandler: (() -> Unit)? = { onBookingClick(booking) }
 
             // Status badge
-            when (booking.status.lowercase()) {
+            when (booking.status.lowercase(java.util.Locale.ROOT)) {
                 "in_progress", "in_transit" -> {
                     tvStatus.text = "🟢 In Progress"
                     tvStatus.setTextColor(itemView.context.getColor(R.color.success_green))

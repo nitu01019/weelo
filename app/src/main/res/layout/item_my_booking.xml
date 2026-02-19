@@ -105,7 +105,7 @@
                 android:id="@+id/btnAction"
                 android:layout_width="wrap_content"
                 android:layout_height="36dp"
-                android:text="Track"
+                android:text="@string/action_track"
                 android:textSize="13sp"
                 android:textAllCaps="false"
                 app:cornerRadius="18dp"

@@ -38,9 +38,7 @@ import com.weelo.logistics.data.remote.api.AssignedTruckData
  */
 class AssignedTrucksAdapter(
     private val onTrackClick: (AssignedTruckData) -> Unit,
-    private val onCallClick: (AssignedTruckData) -> Unit = { _ ->
-        // Default: no-op (call handled inside ViewHolder via Intent)
-    }
+    private val onCallClick: ((AssignedTruckData) -> Unit)? = null
 ) : ListAdapter<AssignedTruckData, AssignedTrucksAdapter.TruckViewHolder>(TruckDiffCallback()) {
 
     // ETA values keyed by assignmentId — updated externally
@@ -113,7 +111,7 @@ class AssignedTrucksAdapter(
             
             // Driver Rating — real avg from DB, "New" for unrated drivers
             if (truck.driverRating != null) {
-                tvDriverRating.text = String.format("%.1f", truck.driverRating)
+                tvDriverRating.text = String.format(java.util.Locale.US, "%.1f", truck.driverRating)
                 layoutRating.visibility = View.VISIBLE
             } else {
                 tvDriverRating.text = "New"
@@ -144,10 +142,15 @@ class AssignedTrucksAdapter(
             itemView.setOnClickListener { onTrackClick(truck) }
 
             btnCall.setOnClickListener {
-                val intent = Intent(Intent.ACTION_DIAL).apply {
-                    data = Uri.parse("tel:${truck.driverPhone}")
+                if (onCallClick != null) {
+                    onCallClick.invoke(truck)
+                } else {
+                    // Default: launch system dialler
+                    val intent = android.content.Intent(android.content.Intent.ACTION_DIAL).apply {
+                        data = android.net.Uri.parse("tel:${truck.driverPhone}")
+                    }
+                    itemView.context.startActivity(intent)
                 }
-                itemView.context.startActivity(intent)
             }
 
             btnTrack.setOnClickListener {

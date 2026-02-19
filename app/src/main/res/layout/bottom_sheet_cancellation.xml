@@ -22,10 +22,10 @@
         android:id="@+id/cancelTitle"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Why are you cancelling?"
+        android:text="@string/cancel_title"
         android:textSize="18sp"
         android:textStyle="bold"
-        android:textColor="#1A1A1A"
+        android:textColor="@color/text_primary"
         android:layout_marginBottom="16dp" />
 
     <!-- Reason Radio Group -->
@@ -39,9 +39,9 @@
             android:id="@+id/reasonFoundAnother"
             android:layout_width="match_parent"
             android:layout_height="48dp"
-            android:text="Found another transporter"
+            android:text="@string/cancel_reason_found_another"
             android:textSize="15sp"
-            android:textColor="#333333"
+            android:textColor="@color/text_secondary"
             android:buttonTint="#3366CC"
             android:paddingStart="8dp" />
 
@@ -49,9 +49,9 @@
             android:id="@+id/reasonPriceTooHigh"
             android:layout_width="match_parent"
             android:layout_height="48dp"
-            android:text="Price too high"
+            android:text="@string/cancel_reason_price_too_high"
             android:textSize="15sp"
-            android:textColor="#333333"
+            android:textColor="@color/text_secondary"
             android:buttonTint="#3366CC"
             android:paddingStart="8dp" />
 
@@ -59,9 +59,9 @@
             android:id="@+id/reasonChangeOfPlans"
             android:layout_width="match_parent"
             android:layout_height="48dp"
-            android:text="Change of plans"
+            android:text="@string/cancel_reason_change_of_plans"
             android:textSize="15sp"
-            android:textColor="#333333"
+            android:textColor="@color/text_secondary"
             android:buttonTint="#3366CC"
             android:paddingStart="8dp" />
 
@@ -69,9 +69,9 @@
             android:id="@+id/reasonWrongLocation"
             android:layout_width="match_parent"
             android:layout_height="48dp"
-            android:text="Wrong pickup/drop location"
+            android:text="@string/cancel_reason_wrong_location"
             android:textSize="15sp"
-            android:textColor="#333333"
+            android:textColor="@color/text_secondary"
             android:buttonTint="#3366CC"
             android:paddingStart="8dp" />
 
@@ -79,9 +79,9 @@
             android:id="@+id/reasonTakingTooLong"
             android:layout_width="match_parent"
             android:layout_height="48dp"
-            android:text="Taking too long"
+            android:text="@string/cancel_reason_taking_too_long"
             android:textSize="15sp"
-            android:textColor="#333333"
+            android:textColor="@color/text_secondary"
             android:buttonTint="#3366CC"
             android:paddingStart="8dp" />
 
@@ -89,9 +89,9 @@
             android:id="@+id/reasonOther"
             android:layout_width="match_parent"
             android:layout_height="48dp"
-            android:text="Other"
+            android:text="@string/cancel_reason_other"
             android:textSize="15sp"
-            android:textColor="#333333"
+            android:textColor="@color/text_secondary"
             android:buttonTint="#3366CC"
             android:paddingStart="8dp" />
     </RadioGroup>
@@ -124,7 +124,7 @@
     <View
         android:layout_width="match_parent"
         android:layout_height="1dp"
-        android:background="#E0E0E0"
+        android:background="@color/divider_gray"
         android:layout_marginVertical="12dp" />
 
     <!-- Booking Summary (compact) -->
@@ -139,10 +139,10 @@
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Booking Summary"
+            android:text="@string/cancel_booking_summary"
             android:textSize="13sp"
             android:textStyle="bold"
-            android:textColor="#666666"
+            android:textColor="@color/text_tertiary"
             android:layout_marginBottom="8dp" />
 
         <TextView
@@ -150,7 +150,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:textSize="13sp"
-            android:textColor="#333333"
+            android:textColor="@color/text_secondary"
             android:layout_marginBottom="4dp"
             android:text="📍 " />
 
@@ -159,7 +159,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:textSize="13sp"
-            android:textColor="#333333"
+            android:textColor="@color/text_secondary"
             android:layout_marginBottom="4dp"
             android:text="📌 " />
 
@@ -168,7 +168,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:textSize="13sp"
-            android:textColor="#666666"
+            android:textColor="@color/text_tertiary"
             android:layout_marginBottom="4dp" />
 
         <TextView
@@ -177,7 +177,7 @@
             android:layout_height="wrap_content"
             android:textSize="14sp"
             android:textStyle="bold"
-            android:textColor="#1A1A1A" />
+            android:textColor="@color/text_primary" />
     </LinearLayout>
 
     <!-- Action Buttons -->
@@ -192,7 +192,7 @@
             android:id="@+id/goBackButton"
             android:layout_width="wrap_content"
             android:layout_height="48dp"
-            android:text="GO BACK"
+            android:text="@string/cancel_go_back"
             android:textColor="#3366CC"
             android:textSize="14sp"
             android:layout_marginEnd="12dp"
@@ -203,7 +203,7 @@
             android:id="@+id/confirmCancelButton"
             android:layout_width="wrap_content"
             android:layout_height="48dp"
-            android:text="CONFIRM CANCEL"
+            android:text="@string/cancel_confirm"
             android:textSize="14sp"
             android:enabled="false"
             app:backgroundTint="#D32F2F"

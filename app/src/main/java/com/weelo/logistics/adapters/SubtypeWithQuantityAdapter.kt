@@ -62,6 +62,18 @@ class SubtypeWithQuantityAdapter(
         return SubtypeViewHolder(view)
     }
 
+    override fun onBindViewHolder(holder: SubtypeViewHolder, position: Int, payloads: MutableList<Any>) {
+        if (payloads.isNotEmpty() && payloads.contains("quantity")) {
+            // Partial update: only refresh quantity display and button states
+            val subtype = subtypes[position]
+            val currentQty = quantities[subtype.id]?.coerceIn(MIN_QUANTITY, MAX_QUANTITY) ?: 0
+            holder.quantityText.text = currentQty.toString()
+            updateButtonStates(holder, currentQty)
+        } else {
+            super.onBindViewHolder(holder, position, payloads)
+        }
+    }
+
     override fun onBindViewHolder(holder: SubtypeViewHolder, position: Int) {
         val subtype = subtypes[position]
         val currentQty = quantities[subtype.id]?.coerceIn(MIN_QUANTITY, MAX_QUANTITY) ?: 0

@@ -93,4 +93,25 @@
     <string name="select_truck">Please select a truck type to continue</string>
     <string name="booking_confirmed">Booking Confirmed! 🎉</string>
     <string name="booking_message" formatted="false">Your %s has been booked!\n\nTotal: ₹%d\n\nDriver will contact you shortly.</string>
+
+    <!-- MapSearchActivity -->
+    <string name="current_location_not_available">Current location not available yet</string>
+
+    <!-- BookingTrackingActivity -->
+    <string name="back_to_all_trucks">← All Trucks</string>
+
+    <!-- MyBookingsActivity / Booking item -->
+    <string name="action_track">Track</string>
+
+    <!-- CancellationBottomSheet -->
+    <string name="cancel_title">Why are you cancelling?</string>
+    <string name="cancel_reason_found_another">Found another transporter</string>
+    <string name="cancel_reason_price_too_high">Price too high</string>
+    <string name="cancel_reason_change_of_plans">Change of plans</string>
+    <string name="cancel_reason_wrong_location">Wrong pickup/drop location</string>
+    <string name="cancel_reason_taking_too_long">Taking too long</string>
+    <string name="cancel_reason_other">Other</string>
+    <string name="cancel_booking_summary">Booking Summary</string>
+    <string name="cancel_go_back">GO BACK</string>
+    <string name="cancel_confirm">CONFIRM CANCEL</string>
 </resources>

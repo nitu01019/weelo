@@ -80,7 +80,7 @@ class WeeloFirebaseService : FirebaseMessagingService() {
      */
     override fun onNewToken(token: String) {
         super.onNewToken(token)
-        Timber.d("🔑 New FCM Token: $token")
+        Timber.d("🔑 New FCM Token received (length=${token.length})")
         fcmToken = token
         
         // TODO: Send token to backend

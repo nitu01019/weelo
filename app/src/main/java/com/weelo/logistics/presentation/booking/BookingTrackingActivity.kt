@@ -335,7 +335,7 @@ class BookingTrackingActivity : AppCompatActivity(), OnMapReadyCallback {
      * Yellow = heading to pickup, Blue = at pickup/loading, Green = in transit, Rose = completed.
      */
     private fun getMarkerHueForStatus(status: String): Float {
-        return when (status.lowercase()) {
+        return when (status.lowercase(java.util.Locale.ROOT)) {
             "pending", "driver_accepted", "heading_to_pickup" -> BitmapDescriptorFactory.HUE_YELLOW
             "at_pickup", "loading_complete" -> BitmapDescriptorFactory.HUE_AZURE
             "in_transit" -> BitmapDescriptorFactory.HUE_GREEN
@@ -550,6 +550,7 @@ class BookingTrackingActivity : AppCompatActivity(), OnMapReadyCallback {
             val bounds = boundsBuilder.build()
             googleMap?.animateCamera(CameraUpdateFactory.newLatLngBounds(bounds, 150))
         } catch (e: Exception) {
+            Timber.w(e, "$TAG: Failed to build camera bounds, falling back to pickup location")
             pickupLatLng?.let {
                 googleMap?.animateCamera(CameraUpdateFactory.newLatLngZoom(it, 14f))
             }
