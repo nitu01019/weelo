@@ -25,7 +25,8 @@ import com.google.android.gms.location.LocationServices
 import com.weelo.logistics.core.util.TransitionHelper
 import com.weelo.logistics.data.local.entity.LocationEntity
 import com.weelo.logistics.data.local.WeeloDatabase
-import androidx.room.Room
+import dagger.hilt.android.AndroidEntryPoint
+import javax.inject.Inject
 import com.weelo.logistics.data.remote.api.PlaceResult
 import com.weelo.logistics.data.remote.api.PlaceSearchRequest
 import com.weelo.logistics.data.remote.api.WeeloApiService
@@ -61,7 +62,11 @@ import java.util.Locale
  * @author Weelo Team
  * =============================================================================
  */
+@AndroidEntryPoint
 class MapSearchActivity : AppCompatActivity() {
+
+    @Inject
+    lateinit var database: WeeloDatabase
 
     // Views
     private lateinit var backButton: ImageView
@@ -207,25 +212,13 @@ class MapSearchActivity : AppCompatActivity() {
      * EASY UNDERSTANDING: Shows cached locations immediately on page open
      * MODULARITY: Uses existing LocationDao
      */
-    /**
-     * Get or create database instance
-     * SCALABILITY: Singleton pattern prevents multiple DB instances
-     */
-    private fun getDatabase(): WeeloDatabase {
-        return Room.databaseBuilder(
-            applicationContext,
-            WeeloDatabase::class.java,
-            "weelo_database"
-        ).fallbackToDestructiveMigration().build()
-    }
     
     private fun loadCachedLocations() {
         resultsContainer.removeAllViews()
         
         lifecycleScope.launch {
             try {
-                val db = getDatabase()
-                val locations = db.locationDao().getRecentLocations(10).first()
+                val locations = database.locationDao().getRecentLocations(10).first()
                 
                 if (locations.isEmpty()) {
                     showEmptyState("No recent locations")
@@ -465,7 +458,6 @@ class MapSearchActivity : AppCompatActivity() {
     private fun saveToCacheAsync(name: String, address: String, latitude: Double, longitude: Double) {
         lifecycleScope.launch {
             try {
-                val db = getDatabase()
                 val entity = LocationEntity(
                     id = "${latitude}_${longitude}",
                     address = address,
@@ -474,7 +466,7 @@ class MapSearchActivity : AppCompatActivity() {
                     isFavorite = false,
                     timestamp = System.currentTimeMillis()
                 )
-                db.locationDao().insertLocation(entity)
+                database.locationDao().insertLocation(entity)
                 Timber.d("Saved to cache: $name")
             } catch (e: Exception) {
                 Timber.e(e, "Failed to save to cache")

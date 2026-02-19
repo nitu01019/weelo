@@ -93,7 +93,7 @@ class ConfirmPickupActivity : AppCompatActivity(), OnMapReadyCallback {
             try {
                 MapsInitializer.initialize(context, MapsInitializer.Renderer.LATEST) { }
             } catch (e: Exception) {
-                Timber.e("Maps pre-initialization failed: ${e.message}")
+                Timber.e(e, "Maps pre-initialization failed")
             }
         }
     }
@@ -351,7 +351,7 @@ class ConfirmPickupActivity : AppCompatActivity(), OnMapReadyCallback {
                         }
                     }
                 } catch (e: Exception) {
-                    Timber.e("Geocoding failed: ${e.message}")
+                    Timber.e(e, "Geocoding failed")
                     withContext(Dispatchers.Main) {
                         pickupLocationName.text = "Location selected"
                         pickupLocationAddress.text = "${String.format("%.6f", latLng.latitude)}, ${String.format("%.6f", latLng.longitude)}"
@@ -396,7 +396,7 @@ class ConfirmPickupActivity : AppCompatActivity(), OnMapReadyCallback {
         try {
             googleMap?.isMyLocationEnabled = true
         } catch (e: SecurityException) {
-            Timber.e("Location permission not granted: ${e.message}")
+            Timber.e(e, "Location permission not granted")
         }
     }
 
