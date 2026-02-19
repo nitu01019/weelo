@@ -268,8 +268,9 @@
 
             </LinearLayout>
 
-            <!-- History -->
+            <!-- My Bookings / Track -->
             <LinearLayout
+                android:id="@+id/trackNav"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
@@ -288,7 +289,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Track"
+                    android:text="My Trips"
                     android:textSize="12sp"
                     android:textColor="#9CA3AF" />
 

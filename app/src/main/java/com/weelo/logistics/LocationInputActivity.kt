@@ -48,6 +48,7 @@ import android.content.pm.PackageManager
 import android.provider.Settings
 import androidx.core.app.ActivityCompat
 import dagger.hilt.android.AndroidEntryPoint
+import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -152,7 +153,6 @@ class LocationInputActivity : AppCompatActivity() {
     
     // Search state
     private var searchJob: Job? = null
-    private val searchScope = CoroutineScope(Dispatchers.Main)
     private var currentSearchField: AutoCompleteTextView? = null
     
     // Selected locations (for single selection)
@@ -705,6 +705,8 @@ class LocationInputActivity : AppCompatActivity() {
             layoutManager = LinearLayoutManager(this@LocationInputActivity)
             adapter = placesAdapter
             isNestedScrollingEnabled = true
+            setHasFixedSize(false) // Size changes based on search results
+            itemAnimator = null // Disable animations for instant updates
         }
     }
     
@@ -889,7 +891,7 @@ class LocationInputActivity : AppCompatActivity() {
         showSkeletonLoading()
         
         // Debounce: Wait 150ms before API call (fast but prevents excessive calls)
-        searchJob = searchScope.launch {
+        searchJob = lifecycleScope.launch {
             delay(150)
             
             try {
@@ -1078,7 +1080,8 @@ class LocationInputActivity : AppCompatActivity() {
         // Validate based on booking mode
         if (bookingMode == "CUSTOM") {
             // Custom mode: Only FROM location required
-            if (selectedFromLocation == null || fromLocationInput.text.isNullOrBlank()) {
+            val fromSelection = selectedFromLocation
+            if (fromSelection == null || fromLocationInput.text.isNullOrBlank()) {
                 showToast("Please select a pickup location")
                 continueButton.isEnabled = true
                 return
@@ -1086,10 +1089,10 @@ class LocationInputActivity : AppCompatActivity() {
             
             // Navigate with only FROM location (Custom booking)
             val fromLoc = LocationModel(
-                id = selectedFromLocation!!.placeId,
-                address = selectedFromLocation!!.label,
-                latitude = selectedFromLocation!!.latitude,
-                longitude = selectedFromLocation!!.longitude
+                id = fromSelection.placeId,
+                address = fromSelection.label,
+                latitude = fromSelection.latitude,
+                longitude = fromSelection.longitude
             )
             
             // For Custom mode, pass same location as TO (or handle differently in MapActivity)
@@ -1097,13 +1100,15 @@ class LocationInputActivity : AppCompatActivity() {
             
         } else {
             // Instant mode: Both FROM and TO required
-            if (selectedFromLocation == null || fromLocationInput.text.isNullOrBlank()) {
+            val fromSelection = selectedFromLocation
+            if (fromSelection == null || fromLocationInput.text.isNullOrBlank()) {
                 showToast("Please select a pickup location")
                 continueButton.isEnabled = true
                 return
             }
             
-            if (selectedToLocation == null || toLocationInput.text.isNullOrBlank()) {
+            val toSelection = selectedToLocation
+            if (toSelection == null || toLocationInput.text.isNullOrBlank()) {
                 showToast("Please select a drop location")
                 continueButton.isEnabled = true
                 return
@@ -1111,17 +1116,17 @@ class LocationInputActivity : AppCompatActivity() {
             
             // Navigate with both locations (Instant booking)
             val fromLoc = LocationModel(
-                id = selectedFromLocation!!.placeId,
-                address = selectedFromLocation!!.label,
-                latitude = selectedFromLocation!!.latitude,
-                longitude = selectedFromLocation!!.longitude
+                id = fromSelection.placeId,
+                address = fromSelection.label,
+                latitude = fromSelection.latitude,
+                longitude = fromSelection.longitude
             )
             
             val toLoc = LocationModel(
-                id = selectedToLocation!!.placeId,
-                address = selectedToLocation!!.label,
-                latitude = selectedToLocation!!.latitude,
-                longitude = selectedToLocation!!.longitude
+                id = toSelection.placeId,
+                address = toSelection.label,
+                latitude = toSelection.latitude,
+                longitude = toSelection.longitude
             )
             
             navigateToMap(fromLoc, toLoc)

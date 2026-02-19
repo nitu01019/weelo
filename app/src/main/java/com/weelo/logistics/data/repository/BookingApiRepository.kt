@@ -641,23 +641,28 @@ class BookingApiRepository @Inject constructor(
     // ============================================================
     
     /**
-     * Cancel active order
+     * Cancel active order with optional reason
      * 
-     * SCALABILITY: Backend deletes from Redis + DB, notifies transporters
+     * SCALABILITY: Backend deletes from Redis + DB, notifies transporters + drivers
      * EASY UNDERSTANDING: Customer can cancel search before driver accepts
-     * MODULARITY: Returns number of transporters notified
+     * MODULARITY: Returns number of transporters/drivers notified + assignments released
+     * 
+     * @param orderId The order to cancel
+     * @param reason Optional cancellation reason (from CancellationBottomSheet)
      */
-    suspend fun cancelOrder(orderId: String): Result<CancelOrderData> {
+    suspend fun cancelOrder(orderId: String, reason: String? = null): Result<CancelOrderData> {
         return try {
-            val response = apiService.cancelOrder(getAuthToken(), orderId)
+            val request = CancelOrderRequest(reason = reason)
+            val response = apiService.cancelOrder(getAuthToken(), orderId, request)
             
             if (response.isSuccessful && response.body()?.success == true) {
                 val data = response.body()?.data
                 if (data != null) {
-                    Timber.d("Order cancelled: $orderId, ${data.transportersNotified} transporters notified")
+                    Timber.d("Order cancelled: $orderId, ${data.transportersNotified} transporters, ${data.driversNotified} drivers notified")
                     Result.Success(data)
                 } else {
-                    Result.Error(Exception("Invalid response"))
+                    // Backend returned success but no data — still treat as success
+                    Result.Success(CancelOrderData(orderId = orderId, status = "cancelled"))
                 }
             } else {
                 val errorMsg = parseErrorMessage(response)

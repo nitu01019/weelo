@@ -2,7 +2,7 @@ package com.weelo.logistics.core.util
 
 import android.content.Context
 import android.content.SharedPreferences
-import android.util.Log
+import timber.log.Timber
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -84,7 +84,7 @@ class OfflineManager private constructor(context: Context) {
         pendingActions.add(action)
         savePendingActions()
         updateState()
-        Log.d(TAG, "Action queued: $type, total pending: ${pendingActions.size}")
+        Timber.d("Action queued: $type, total pending: ${pendingActions.size}")
     }
     
     /**
@@ -99,7 +99,7 @@ class OfflineManager private constructor(context: Context) {
         pendingActions.removeAll { it.id == actionId }
         savePendingActions()
         updateState()
-        Log.d(TAG, "Action completed: $actionId")
+        Timber.d("Action completed: $actionId")
     }
     
     /**
@@ -110,7 +110,7 @@ class OfflineManager private constructor(context: Context) {
             it.retryCount++
             if (it.retryCount >= MAX_RETRIES) {
                 pendingActions.remove(it)
-                Log.w(TAG, "Action removed after max retries: $actionId")
+                Timber.w("Action removed after max retries: $actionId")
             }
         }
         savePendingActions()
@@ -124,7 +124,7 @@ class OfflineManager private constructor(context: Context) {
         pendingActions.clear()
         savePendingActions()
         updateState()
-        Log.d(TAG, "All pending actions cleared")
+        Timber.d("All pending actions cleared")
     }
     
     // =========================================================================
@@ -217,7 +217,7 @@ class OfflineManager private constructor(context: Context) {
             .remove(KEY_CACHED_VEHICLES)
             .remove(KEY_VEHICLES_TIMESTAMP)
             .apply()
-        Log.d(TAG, "Cache cleared")
+        Timber.d("Cache cleared")
     }
     
     // =========================================================================
@@ -263,9 +263,9 @@ class OfflineManager private constructor(context: Context) {
             val actions: List<PendingAction> = gson.fromJson(json, type)
             pendingActions.addAll(actions)
             updateState()
-            Log.d(TAG, "Loaded ${actions.size} pending actions")
+            Timber.d("Loaded ${actions.size} pending actions")
         } catch (e: Exception) {
-            Log.e(TAG, "Error loading pending actions", e)
+            Timber.e(e, "Error loading pending actions")
         }
     }
     

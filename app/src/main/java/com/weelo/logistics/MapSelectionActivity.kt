@@ -166,7 +166,9 @@ class MapSelectionActivity : AppCompatActivity(), OnMapReadyCallback {
             val intent = Intent(this, MapSearchActivity::class.java).apply {
                 putExtra("INPUT_TYPE", inputType)
             }
+            @Suppress("DEPRECATION")
             startActivityForResult(intent, REQUEST_CODE_CHANGE_LOCATION)
+            @Suppress("DEPRECATION")
             overridePendingTransition(R.anim.slide_in_from_right, R.anim.slide_out_to_left)
         }
     }
@@ -178,6 +180,7 @@ class MapSelectionActivity : AppCompatActivity(), OnMapReadyCallback {
      * SCALABILITY: Simple intent extras, no Parcelable complexity
      * EASY UNDERSTANDING: Read lat/lng/address → animate map → update UI
      */
+    @Deprecated("Using legacy API for backward compatibility", ReplaceWith("ActivityResultLauncher"))
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
         
@@ -357,30 +360,12 @@ class MapSelectionActivity : AppCompatActivity(), OnMapReadyCallback {
     }
 
     private fun checkLocationPermission() {
+        // Permission is requested ONCE in LocationInputActivity (the entry point).
+        // Here we only enable my-location if already granted — no dialog.
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
-            != PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(
-                this,
-                arrayOf(Manifest.permission.ACCESS_FINE_LOCATION),
-                LOCATION_PERMISSION_REQUEST_CODE
-            )
-        }
-    }
-
-    override fun onRequestPermissionsResult(
-        requestCode: Int,
-        permissions: Array<out String>,
-        grantResults: IntArray
-    ) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        if (requestCode == LOCATION_PERMISSION_REQUEST_CODE) {
-            if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                if (::googleMap.isInitialized) {
-                    if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
-                        == PackageManager.PERMISSION_GRANTED) {
-                        googleMap.isMyLocationEnabled = true
-                    }
-                }
+            == PackageManager.PERMISSION_GRANTED) {
+            if (::googleMap.isInitialized) {
+                googleMap.isMyLocationEnabled = true
             }
         }
     }

@@ -224,6 +224,17 @@ dependencies {
     // END SHIMMER
     // ============================================================
     
+    // ============================================================
+    // IMAGE LOADING — Glide (driver profile photos, avatars)
+    // ============================================================
+    // SCALABILITY: Disk + memory cache, thumbnail support, efficient transforms
+    // EASY UNDERSTANDING: One-liner image loading with placeholder/error
+    implementation 'com.github.bumptech.glide:glide:4.16.0'
+    kapt 'com.github.bumptech.glide:compiler:4.16.0'
+    // ============================================================
+    // END IMAGE LOADING
+    // ============================================================
+    
     // Testing
     testImplementation 'junit:junit:4.13.2'
     testImplementation "org.jetbrains.kotlinx:kotlinx-coroutines-test:$coroutines_version"

@@ -40,20 +40,35 @@ class WeeloPlacesRecyclerAdapter(
     }
 
     fun updatePlaces(newPlaces: List<PlaceResult>) {
+        val oldSize = places.size
         places.clear()
         places.addAll(newPlaces)
-        notifyDataSetChanged()
+        
+        // Use efficient notifications instead of notifyDataSetChanged
+        if (oldSize > newPlaces.size) {
+            notifyItemRangeChanged(1, newPlaces.size + 1)
+            notifyItemRangeRemoved(newPlaces.size + 1, oldSize - newPlaces.size)
+        } else if (oldSize < newPlaces.size) {
+            notifyItemRangeChanged(1, oldSize + 1)
+            notifyItemRangeInserted(oldSize + 1, newPlaces.size - oldSize)
+        } else {
+            notifyItemRangeChanged(1, newPlaces.size + 1)
+        }
     }
 
     fun clear() {
+        val oldSize = places.size
         places.clear()
-        notifyDataSetChanged()
+        if (oldSize > 0) {
+            notifyItemRangeRemoved(1, oldSize)
+        }
     }
 
     fun updateBias(lat: Double, lng: Double) {
         biasLat = lat
         biasLng = lng
-        notifyDataSetChanged()
+        // Only update distance display, no need to rebind all items
+        notifyItemRangeChanged(1, places.size, "distance")
     }
 
     override fun getItemViewType(position: Int): Int {
@@ -78,6 +93,17 @@ class WeeloPlacesRecyclerAdapter(
         } else {
             // Adjust position for header
             (holder as PlaceViewHolder).bind(places[position - 1])
+        }
+    }
+    
+    override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int, payloads: MutableList<Any>) {
+        if (payloads.isEmpty()) {
+            onBindViewHolder(holder, position)
+        } else {
+            // Partial update for distance only
+            if (payloads.contains("distance") && holder is PlaceViewHolder) {
+                holder.updateDistance(places[position - 1])
+            }
         }
     }
 
@@ -161,6 +187,10 @@ class WeeloPlacesRecyclerAdapter(
                 placeAddress.text = place.city ?: ""
             }
 
+            updateDistance(place)
+        }
+        
+        fun updateDistance(place: PlaceResult) {
             // Calculate Distance (shown UNDER icon - Rapido style)
             if (biasLat != null && biasLng != null) {
                 val results = FloatArray(1)

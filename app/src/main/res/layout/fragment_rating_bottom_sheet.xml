@@ -1,0 +1,146 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="20dp"
+    android:background="@drawable/bg_bottom_sheet_rounded">
+
+    <!-- Drag Handle -->
+    <View
+        android:layout_width="40dp"
+        android:layout_height="4dp"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginBottom="16dp"
+        android:background="@drawable/bg_drag_handle" />
+
+    <!-- Title -->
+    <TextView
+        android:id="@+id/tvRatingTitle"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Rate Your Experience"
+        android:textSize="20sp"
+        android:textStyle="bold"
+        android:textColor="@color/text_primary"
+        android:gravity="center"
+        android:layout_marginBottom="16dp" />
+
+    <!-- Driver Card ViewPager (for multi-truck) -->
+    <androidx.viewpager2.widget.ViewPager2
+        android:id="@+id/vpDriverCards"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="4dp" />
+
+    <!-- Page Indicator (dots for multi-truck) -->
+    <LinearLayout
+        android:id="@+id/llPageIndicator"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center"
+        android:layout_marginBottom="16dp"
+        android:visibility="gone" />
+
+    <!-- Star Rating -->
+    <RatingBar
+        android:id="@+id/ratingBar"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:numStars="5"
+        android:stepSize="1.0"
+        android:rating="0"
+        android:progressTint="@color/weelo_orange"
+        android:progressBackgroundTint="@color/divider_color"
+        style="@style/Widget.AppCompat.RatingBar.Indicator"
+        android:isIndicator="false"
+        android:layout_marginBottom="4dp" />
+
+    <TextView
+        android:id="@+id/tvRatingHint"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Tap to rate"
+        android:textSize="13sp"
+        android:textColor="@color/text_secondary"
+        android:gravity="center"
+        android:layout_marginBottom="16dp" />
+
+    <!-- Tag Chips -->
+    <com.google.android.material.chip.ChipGroup
+        android:id="@+id/chipGroupTags"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        app:chipSpacingHorizontal="8dp"
+        app:chipSpacingVertical="4dp"
+        android:layout_marginBottom="16dp" />
+
+    <!-- Comment Input -->
+    <com.google.android.material.textfield.TextInputLayout
+        android:id="@+id/tilComment"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Add a comment (optional)"
+        app:counterEnabled="true"
+        app:counterMaxLength="500"
+        app:boxStrokeColor="@color/weelo_orange"
+        app:hintTextColor="@color/weelo_orange"
+        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+        android:layout_marginBottom="20dp">
+
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/etComment"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:inputType="textMultiLine"
+            android:maxLines="3"
+            android:maxLength="500" />
+    </com.google.android.material.textfield.TextInputLayout>
+
+    <!-- Submit Button -->
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnSubmitRating"
+        android:layout_width="match_parent"
+        android:layout_height="52dp"
+        android:text="Submit Rating"
+        android:textAllCaps="false"
+        android:textSize="16sp"
+        android:enabled="false"
+        app:backgroundTint="@color/weelo_orange"
+        app:cornerRadius="12dp"
+        android:layout_marginBottom="8dp" />
+
+    <!-- Skip Button -->
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnSkipRating"
+        android:layout_width="match_parent"
+        android:layout_height="44dp"
+        android:text="Skip for now"
+        android:textAllCaps="false"
+        android:textSize="14sp"
+        android:textColor="@color/text_secondary"
+        style="@style/Widget.MaterialComponents.Button.TextButton"
+        android:layout_marginBottom="8dp" />
+
+    <!-- Loading Overlay -->
+    <FrameLayout
+        android:id="@+id/loadingOverlay"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="#99FFFFFF"
+        android:visibility="gone"
+        android:clickable="true"
+        android:focusable="true"
+        android:elevation="10dp">
+
+        <ProgressBar
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:layout_gravity="center"
+            android:indeterminateTint="@color/weelo_orange" />
+    </FrameLayout>
+
+</LinearLayout>

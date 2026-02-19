@@ -37,13 +37,20 @@ class MultiTruckSelectionAdapter(
     private val expandedStates = mutableMapOf<String, Boolean>()
     
     fun setTruckTypes(types: List<TruckTypeSection>) {
+        val oldSize = truckTypes.size
         truckTypes.clear()
         truckTypes.addAll(types)
         // Initially expand first item if has selections, otherwise all collapsed
         types.forEachIndexed { index, section ->
             expandedStates[section.truckTypeId] = section.hasSelections() || index == 0
         }
-        notifyDataSetChanged()
+        
+        // Use efficient notifications
+        if (oldSize != types.size) {
+            notifyDataSetChanged() // Only when size changes
+        } else {
+            notifyItemRangeChanged(0, types.size)
+        }
     }
     
     /**

@@ -44,6 +44,15 @@ class TruckSubtypeAdapter(
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         holder.bind(subtypes[position])
     }
+    
+    override fun onBindViewHolder(holder: ViewHolder, position: Int, payloads: MutableList<Any>) {
+        if (payloads.isEmpty()) {
+            onBindViewHolder(holder, position)
+        } else if (payloads.contains("quantity")) {
+            // Partial update for quantity only
+            holder.updateQuantity(subtypes[position])
+        }
+    }
 
     override fun getItemCount() = subtypes.size
 
@@ -63,7 +72,7 @@ class TruckSubtypeAdapter(
     
     fun clearAll() {
         quantities.keys.forEach { quantities[it] = 0 }
-        notifyDataSetChanged()
+        notifyItemRangeChanged(0, subtypes.size, "quantity")
     }
 
     inner class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
@@ -84,11 +93,19 @@ class TruckSubtypeAdapter(
             price.text = formatPrice(subtype.price)
             icon.setImageResource(subtype.iconRes)
             
+            updateQuantity(subtype)
+            setupClickListeners(subtype)
+        }
+        
+        fun updateQuantity(subtype: SubtypeItem) {
             val qty = quantities[subtype.id] ?: 0
             quantityText.text = qty.toString()
             
             // Update card highlight based on selection
             updateCardStyle(qty > 0)
+        }
+        
+        private fun setupClickListeners(subtype: SubtypeItem) {
             
             // Minus button click
             minusBtn.setOnClickListener {

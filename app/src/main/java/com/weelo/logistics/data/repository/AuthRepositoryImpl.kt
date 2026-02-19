@@ -5,6 +5,7 @@ import com.weelo.logistics.core.common.WeeloException
 import com.weelo.logistics.data.remote.TokenManager
 import com.weelo.logistics.data.remote.api.*
 import com.weelo.logistics.domain.repository.AuthRepository
+import org.json.JSONObject
 import timber.log.Timber
 import javax.inject.Inject
 
@@ -43,11 +44,13 @@ class AuthRepositoryImpl @Inject constructor(
             } else {
                 val error = response.body()?.error
                 Timber.w("OTP send failed: ${error?.code}")
-                Result.Error(WeeloException.AuthException(error?.message ?: "Failed to send OTP"))
+                val friendlyMsg = error?.message?.takeIf { !it.startsWith("{") }
+                    ?: parseFriendlyError(response, "Failed to send OTP. Please try again.")
+                Result.Error(WeeloException.AuthException(friendlyMsg))
             }
         } catch (e: Exception) {
             Timber.e(e, "OTP send error")
-            Result.Error(WeeloException.NetworkException("Network error. Please try again."))
+            Result.Error(WeeloException.NetworkException(friendlyNetworkError(e)))
         }
     }
 
@@ -81,11 +84,13 @@ class AuthRepositoryImpl @Inject constructor(
             } else {
                 val error = response.body()?.error
                 Timber.w("OTP verification failed: ${error?.code}")
-                Result.Error(WeeloException.AuthException(error?.message ?: "Invalid OTP"))
+                val friendlyMsg = error?.message?.takeIf { !it.startsWith("{") }
+                    ?: parseFriendlyError(response, "Invalid OTP. Please check and try again.")
+                Result.Error(WeeloException.AuthException(friendlyMsg))
             }
         } catch (e: Exception) {
             Timber.e(e, "OTP verify error")
-            Result.Error(WeeloException.NetworkException("Network error. Please try again."))
+            Result.Error(WeeloException.NetworkException(friendlyNetworkError(e)))
         }
     }
 
@@ -172,11 +177,13 @@ class AuthRepositoryImpl @Inject constructor(
             } else {
                 val error = response.body()?.error
                 Timber.w("Get profile failed: ${error?.code}")
-                Result.Error(WeeloException.AuthException(error?.message ?: "Failed to load profile"))
+                val friendlyMsg = error?.message?.takeIf { !it.startsWith("{") }
+                    ?: parseFriendlyError(response, "Failed to load profile. Please try again.")
+                Result.Error(WeeloException.AuthException(friendlyMsg))
             }
         } catch (e: Exception) {
             Timber.e(e, "Get profile error")
-            Result.Error(WeeloException.NetworkException("Network error. Please try again."))
+            Result.Error(WeeloException.NetworkException(friendlyNetworkError(e)))
         }
     }
 
@@ -209,11 +216,75 @@ class AuthRepositoryImpl @Inject constructor(
             } else {
                 val error = response.body()?.error
                 Timber.w("Update profile failed: ${error?.code}")
-                Result.Error(WeeloException.AuthException(error?.message ?: "Failed to update profile"))
+                val friendlyMsg = error?.message?.takeIf { !it.startsWith("{") }
+                    ?: parseFriendlyError(response, "Failed to update profile. Please try again.")
+                Result.Error(WeeloException.AuthException(friendlyMsg))
             }
         } catch (e: Exception) {
             Timber.e(e, "Update profile error")
-            Result.Error(WeeloException.NetworkException("Network error. Please try again."))
+            Result.Error(WeeloException.NetworkException(friendlyNetworkError(e)))
+        }
+    }
+
+    // =========================================================================
+    // FRIENDLY ERROR MESSAGE HELPERS
+    // =========================================================================
+    //
+    // Ensures users NEVER see raw JSON or error codes on screen.
+    // All API errors are converted to plain English messages.
+    // =========================================================================
+
+    /**
+     * Parses error body JSON and maps error codes to friendly messages.
+     */
+    private fun parseFriendlyError(response: retrofit2.Response<*>, defaultMsg: String): String {
+        try {
+            val errorBodyStr = response.errorBody()?.string()
+            if (!errorBodyStr.isNullOrBlank()) {
+                val json = JSONObject(errorBodyStr)
+                val errorObj = json.optJSONObject("error")
+                val code = errorObj?.optString("code", "") ?: ""
+                val message = errorObj?.optString("message", "") ?: ""
+                return mapErrorCode(code, message, defaultMsg)
+            }
+        } catch (_: Exception) {}
+        return defaultMsg
+    }
+
+    /**
+     * Maps backend error codes to plain English.
+     */
+    private fun mapErrorCode(code: String, serverMsg: String, defaultMsg: String): String {
+        return when (code) {
+            "OTP_RATE_LIMIT_EXCEEDED" -> "Too many OTP attempts. Please try again in 2 minutes."
+            "RATE_LIMIT_EXCEEDED", "TOO_MANY_REQUESTS" -> "Too many requests. Please wait a moment and try again."
+            "OTP_EXPIRED" -> "OTP has expired. Please request a new one."
+            "INVALID_OTP" -> "Incorrect OTP. Please check and try again."
+            "OTP_ALREADY_VERIFIED" -> "This OTP has already been used. Please request a new one."
+            "OTP_MAX_ATTEMPTS" -> "Too many incorrect attempts. Please request a new OTP."
+            "OTP_SEND_FAILED" -> "Could not send OTP. Please check your number and try again."
+            "USER_NOT_FOUND" -> "No account found with this phone number."
+            "ACCOUNT_DISABLED" -> "Your account has been disabled. Please contact support."
+            "ACCOUNT_SUSPENDED" -> "Your account is suspended. Please contact support."
+            "UNAUTHORIZED" -> "Session expired. Please log in again."
+            "FORBIDDEN" -> "You don't have permission for this action."
+            "SERVICE_UNAVAILABLE" -> "Service is temporarily unavailable. Please try again shortly."
+            "INTERNAL_ERROR", "SERVER_ERROR" -> "Something went wrong. Please try again."
+            "INVALID_PHONE" -> "Please enter a valid 10-digit phone number."
+            "VALIDATION_ERROR" -> serverMsg.ifBlank { "Please check your input and try again." }
+            else -> if (serverMsg.isNotBlank() && !serverMsg.startsWith("{")) serverMsg else defaultMsg
+        }
+    }
+
+    /**
+     * Converts network exceptions to plain English.
+     */
+    private fun friendlyNetworkError(e: Exception): String {
+        return when {
+            e.message?.contains("timeout", true) == true -> "Connection timed out. Please check your internet and try again."
+            e.message?.contains("Unable to resolve", true) == true -> "No internet connection. Please check your network."
+            e.message?.contains("Connection refused", true) == true -> "Server is not reachable. Please try again later."
+            else -> "Something went wrong. Please check your internet connection and try again."
         }
     }
 }

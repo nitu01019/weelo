@@ -7,7 +7,7 @@ import android.content.Context
 import android.content.Intent
 import android.media.RingtoneManager
 import android.os.Build
-import android.util.Log
+import timber.log.Timber
 import androidx.core.app.NotificationCompat
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
@@ -54,6 +54,8 @@ class WeeloFirebaseService : FirebaseMessagingService() {
         const val TYPE_DRIVER_ARRIVING = "driver_arriving"
         const val TYPE_TRIP_STARTED = "trip_started"
         const val TYPE_TRIP_COMPLETED = "trip_completed"
+        const val TYPE_TRIP_STATUS_UPDATE = "trip_status_update"  // Phase 4: real-time status
+        const val TYPE_TRIP_UPDATE = "trip_update"                // FCM type from backend
         const val TYPE_PAYMENT_RECEIVED = "payment_received"
         const val TYPE_PROMOTIONAL = "promotional"
         
@@ -78,7 +80,7 @@ class WeeloFirebaseService : FirebaseMessagingService() {
      */
     override fun onNewToken(token: String) {
         super.onNewToken(token)
-        Log.d(TAG, "🔑 New FCM Token: $token")
+        Timber.d("🔑 New FCM Token: $token")
         fcmToken = token
         
         // TODO: Send token to backend
@@ -92,7 +94,7 @@ class WeeloFirebaseService : FirebaseMessagingService() {
     override fun onMessageReceived(remoteMessage: RemoteMessage) {
         super.onMessageReceived(remoteMessage)
         
-        Log.d(TAG, "📩 Message received from: ${remoteMessage.from}")
+        Timber.d("📩 Message received from: ${remoteMessage.from}")
         
         // Parse notification data
         val data = remoteMessage.data
@@ -113,12 +115,21 @@ class WeeloFirebaseService : FirebaseMessagingService() {
         data: Map<String, String>,
         remoteNotification: RemoteMessage.Notification?
     ): FCMNotification {
+        // Map backend "trip_update" type to our internal "trip_status_update" for routing
+        val rawType = data["type"] ?: TYPE_PROMOTIONAL
+        val resolvedType = when {
+            rawType == "trip_update" && data.containsKey("status") -> TYPE_TRIP_STATUS_UPDATE
+            else -> rawType
+        }
+
         return FCMNotification(
-            type = data["type"] ?: TYPE_PROMOTIONAL,
+            type = resolvedType,
             title = data["title"] ?: remoteNotification?.title ?: "Weelo",
             body = data["body"] ?: remoteNotification?.body ?: "",
             data = data,
             bookingId = data["bookingId"],
+            tripId = data["tripId"],
+            tripStatus = data["status"],
             driverId = data["driverId"],
             driverName = data["driverName"],
             driverPhone = data["driverPhone"],
@@ -133,7 +144,9 @@ class WeeloFirebaseService : FirebaseMessagingService() {
             TYPE_DRIVER_ASSIGNED,
             TYPE_DRIVER_ARRIVING,
             TYPE_TRIP_STARTED,
-            TYPE_TRIP_COMPLETED -> true
+            TYPE_TRIP_COMPLETED,
+            TYPE_TRIP_STATUS_UPDATE,
+            TYPE_TRIP_UPDATE -> true
             else -> true // Show all notifications for now
         }
     }
@@ -185,7 +198,9 @@ class WeeloFirebaseService : FirebaseMessagingService() {
             TYPE_PAYMENT_RECEIVED -> CHANNEL_BOOKING
             
             TYPE_DRIVER_ASSIGNED,
-            TYPE_DRIVER_ARRIVING -> CHANNEL_DRIVER
+            TYPE_DRIVER_ARRIVING,
+            TYPE_TRIP_STATUS_UPDATE,
+            TYPE_TRIP_UPDATE -> CHANNEL_DRIVER
             
             else -> CHANNEL_PROMO
         }
@@ -220,27 +235,33 @@ class WeeloFirebaseService : FirebaseMessagingService() {
             .setContentIntent(pendingIntent)
             .setPriority(NotificationCompat.PRIORITY_HIGH)
         
-        // Add extra info for driver notifications
-        if (notification.type == TYPE_DRIVER_ASSIGNED || notification.type == TYPE_DRIVER_ARRIVING) {
-            notification.driverName?.let { _ ->
-                val bigText = buildString {
-                    append(notification.body)
-                    notification.vehicleNumber?.let { append("\nVehicle: $it") }
-                    notification.estimatedArrival?.let { append("\nETA: $it") }
-                }
-                notificationBuilder.setStyle(NotificationCompat.BigTextStyle().bigText(bigText))
+        // Add extra info for driver/trip notifications
+        if (notification.type in listOf(TYPE_DRIVER_ASSIGNED, TYPE_DRIVER_ARRIVING, TYPE_TRIP_STATUS_UPDATE, TYPE_TRIP_UPDATE)) {
+            val bigText = buildString {
+                append(notification.body)
+                notification.vehicleNumber?.let { append("\nVehicle: $it") }
+                notification.estimatedArrival?.let { append("\nETA: $it") }
             }
+            notificationBuilder.setStyle(NotificationCompat.BigTextStyle().bigText(bigText))
         }
         
         val notificationId = (notification.bookingId ?: System.currentTimeMillis().toString()).hashCode()
         notificationManager.notify(notificationId, notificationBuilder.build())
         
-        Log.d(TAG, "📬 Notification shown: ${notification.title}")
+        Timber.d("📬 Notification shown: ${notification.title}")
     }
 }
 
 /**
  * FCM Notification data class for Customer App
+ *
+ * PHASE 4 ADDITIONS:
+ * - tripId: identifies which trip the notification is about
+ * - tripStatus: the new status (at_pickup, loading_complete, in_transit, completed)
+ *
+ * When customer taps a trip_status_update notification:
+ *   → Opens BookingTrackingActivity with the bookingId
+ *   → If app was in background, WebSocket reconnects and re-syncs
  */
 data class FCMNotification(
     val type: String,
@@ -248,6 +269,8 @@ data class FCMNotification(
     val body: String,
     val data: Map<String, String>,
     val bookingId: String? = null,
+    val tripId: String? = null,
+    val tripStatus: String? = null,
     val driverId: String? = null,
     val driverName: String? = null,
     val driverPhone: String? = null,

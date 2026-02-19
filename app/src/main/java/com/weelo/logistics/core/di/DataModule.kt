@@ -138,5 +138,15 @@ object DataModule {
     ): PricingRepository {
         return PricingRepository(apiService, tokenManager)
     }
-    
+
+    @Provides
+    @Singleton
+    fun provideTrackingRepository(
+        apiService: WeeloApiService,
+        tokenManager: TokenManager,
+        webSocketService: com.weelo.logistics.data.remote.WebSocketService
+    ): com.weelo.logistics.data.repository.TrackingRepository {
+        return com.weelo.logistics.data.repository.TrackingRepository(apiService, tokenManager, webSocketService)
+    }
+
 }

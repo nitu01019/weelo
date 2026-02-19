@@ -38,12 +38,12 @@ import com.weelo.logistics.data.remote.api.RouteCalculationRequest
 import com.weelo.logistics.data.remote.api.RouteCoordinates
 import com.weelo.logistics.data.remote.api.MultiPointRouteRequest
 import com.weelo.logistics.data.remote.api.RoutePoint
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
+import androidx.lifecycle.lifecycleScope
 
 /**
  * MapBookingActivity - Map & Booking Screen
@@ -414,7 +414,7 @@ class MapBookingActivity : AppCompatActivity(), OnMapReadyCallback {
             includePolyline = true
         )
 
-        CoroutineScope(Dispatchers.IO).launch {
+        lifecycleScope.launch(Dispatchers.IO) {
             try {
                 val response = weeloApiService.calculateRouteMulti(request)
                 
@@ -667,14 +667,18 @@ class MapBookingActivity : AppCompatActivity(), OnMapReadyCallback {
         }
     }
 
+    /**
+     * Check location permission silently — do NOT request here.
+     * Permission is requested ONCE in LocationInputActivity (the entry point).
+     * This avoids showing the permission dialog 3 times during the booking flow.
+     */
     private fun checkLocationPermission() {
+        // Only enable my-location layer if already granted — no dialog
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
-            != PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(
-                this,
-                arrayOf(Manifest.permission.ACCESS_FINE_LOCATION),
-                LOCATION_PERMISSION_REQUEST_CODE
-            )
+            == PackageManager.PERMISSION_GRANTED) {
+            if (::googleMap.isInitialized) {
+                googleMap.isMyLocationEnabled = true
+            }
         }
     }
 
@@ -741,6 +745,13 @@ class MapBookingActivity : AppCompatActivity(), OnMapReadyCallback {
      * CRITICAL: Passes intermediate stops through to TruckTypesActivity
      * so they reach the order creation API
      */
+    override fun onDestroy() {
+        super.onDestroy()
+        // Clean up map resources
+        currentPolyline?.remove()
+        currentPolyline = null
+    }
+    
     private fun navigateToInstantBooking(vehicleCategory: String) {
         val intent = when (vehicleCategory) {
             "truck" -> Intent(this, TruckTypesActivity::class.java).apply {

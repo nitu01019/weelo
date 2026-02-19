@@ -98,6 +98,7 @@ class WebSocketService @Inject constructor(
         const val TRUCK_ASSIGNED = "truck_assigned"
         const val LOCATION_UPDATED = "location_updated"
         const val ASSIGNMENT_STATUS_CHANGED = "assignment_status_changed"
+        const val BOOKING_COMPLETED = "booking_completed"
         const val PONG = "pong"
         const val ERROR = "error"
     }
@@ -461,7 +462,35 @@ class WebSocketService @Inject constructor(
             socket?.off(Events.ASSIGNMENT_STATUS_CHANGED, listener)
         }
     }
-    
+
+    /**
+     * Listen for booking_completed events.
+     * Emitted when ALL trucks in a booking have completed delivery.
+     * Used to auto-show the rating bottom sheet.
+     */
+    fun onBookingCompleted(): kotlinx.coroutines.flow.Flow<BookingCompletedEvent> = kotlinx.coroutines.flow.callbackFlow {
+        val listener = io.socket.emitter.Emitter.Listener { args ->
+            try {
+                val data = args.getOrNull(0) as? org.json.JSONObject ?: return@Listener
+                val event = BookingCompletedEvent(
+                    bookingId = data.optString("bookingId", "")
+                )
+                if (event.bookingId.isNotEmpty()) {
+                    trySend(event)
+                    Timber.i("$TAG: booking_completed received for ${event.bookingId}")
+                }
+            } catch (e: Exception) {
+                Timber.e(e, "$TAG: Error parsing booking_completed")
+            }
+        }
+
+        socket?.on(Events.BOOKING_COMPLETED, listener)
+
+        awaitClose {
+            socket?.off(Events.BOOKING_COMPLETED, listener)
+        }
+    }
+
     /**
      * Get current connection state
      */
@@ -512,4 +541,8 @@ data class AssignmentStatusEvent(
     val tripId: String,
     val status: String,
     val vehicleNumber: String
+)
+
+data class BookingCompletedEvent(
+    val bookingId: String
 )

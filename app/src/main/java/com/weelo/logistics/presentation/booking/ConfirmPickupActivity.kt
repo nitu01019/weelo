@@ -5,7 +5,7 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.location.Geocoder
 import android.os.Bundle
-import android.util.Log
+import timber.log.Timber
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
@@ -93,7 +93,7 @@ class ConfirmPickupActivity : AppCompatActivity(), OnMapReadyCallback {
             try {
                 MapsInitializer.initialize(context, MapsInitializer.Renderer.LATEST) { }
             } catch (e: Exception) {
-                Log.e(TAG, "Maps pre-initialization failed: ${e.message}")
+                Timber.e("Maps pre-initialization failed: ${e.message}")
             }
         }
     }
@@ -160,10 +160,10 @@ class ConfirmPickupActivity : AppCompatActivity(), OnMapReadyCallback {
         totalPrice = intent.getIntExtra(EXTRA_TOTAL_PRICE, 0)
         distanceKm = intent.getIntExtra(EXTRA_DISTANCE_KM, 0)
 
-        Log.d(TAG, "Pickup: ${pickupLocation?.address}")
-        Log.d(TAG, "Drop: ${dropLocation?.address}")
-        Log.d(TAG, "Trucks: ${selectedTrucks?.size}")
-        Log.d(TAG, "Price: $totalPrice")
+        Timber.d("Pickup: ${pickupLocation?.address}")
+        Timber.d("Drop: ${dropLocation?.address}")
+        Timber.d("Trucks: ${selectedTrucks?.size}")
+        Timber.d("Price: $totalPrice")
     }
 
     private fun initViews() {
@@ -295,7 +295,7 @@ class ConfirmPickupActivity : AppCompatActivity(), OnMapReadyCallback {
             }
         }
         
-        Log.d(TAG, "Map ready and configured for optimal performance")
+        Timber.d("Map ready and configured for optimal performance")
     }
 
     private fun onMapCameraIdle() {
@@ -351,7 +351,7 @@ class ConfirmPickupActivity : AppCompatActivity(), OnMapReadyCallback {
                         }
                     }
                 } catch (e: Exception) {
-                    Log.e(TAG, "Geocoding failed: ${e.message}")
+                    Timber.e("Geocoding failed: ${e.message}")
                     withContext(Dispatchers.Main) {
                         pickupLocationName.text = "Location selected"
                         pickupLocationAddress.text = "${String.format("%.6f", latLng.latitude)}, ${String.format("%.6f", latLng.longitude)}"
@@ -396,7 +396,7 @@ class ConfirmPickupActivity : AppCompatActivity(), OnMapReadyCallback {
         try {
             googleMap?.isMyLocationEnabled = true
         } catch (e: SecurityException) {
-            Log.e(TAG, "Location permission not granted: ${e.message}")
+            Timber.e("Location permission not granted: ${e.message}")
         }
     }
 
@@ -439,7 +439,7 @@ class ConfirmPickupActivity : AppCompatActivity(), OnMapReadyCallback {
             return
         }
 
-        Log.d(TAG, "Confirming pickup: ${pickup.address}")
+        Timber.d("Confirming pickup: ${pickup.address}")
 
         // Return result to calling activity
         val resultIntent = Intent().apply {

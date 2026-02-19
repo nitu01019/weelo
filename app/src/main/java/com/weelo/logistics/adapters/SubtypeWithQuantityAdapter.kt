@@ -126,6 +126,6 @@ class SubtypeWithQuantityAdapter(
      */
     fun resetAllQuantities() {
         quantities.clear()
-        notifyDataSetChanged()
+        notifyItemRangeChanged(0, subtypes.size, "quantity")
     }
 }

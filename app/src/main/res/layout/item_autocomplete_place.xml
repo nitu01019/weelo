@@ -10,6 +10,7 @@ CODING STANDARDS: Follows Android best practices
 =============================================================================
 -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
@@ -33,7 +34,7 @@ CODING STANDARDS: Follows Android best practices
             android:layout_width="22dp"
             android:layout_height="22dp"
             android:src="@drawable/ic_location"
-            android:tint="#666666"
+            app:tint="#666666"
             android:contentDescription="Location" />
 
         <!-- Distance BELOW Icon (RAPIDO STYLE) -->
@@ -93,7 +94,7 @@ CODING STANDARDS: Follows Android best practices
         android:layout_height="28dp"
         android:padding="2dp"
         android:src="@drawable/ic_heart_outline"
-        android:tint="#CCCCCC"
+        app:tint="#CCCCCC"
         android:background="?android:attr/selectableItemBackgroundBorderless"
         android:contentDescription="Add to favorites" />
 

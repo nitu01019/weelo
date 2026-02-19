@@ -93,10 +93,12 @@ class BookingRequestActivity : AppCompatActivity() {
     }
 
     private fun setupRecyclerView() {
-        trucksAdapter = AssignedTrucksAdapter { truck ->
-            // Handle truck click - show details or track
-            Toast.makeText(this, "Tracking ${truck.vehicleNumber}", Toast.LENGTH_SHORT).show()
-        }
+        trucksAdapter = AssignedTrucksAdapter(
+            onTrackClick = { truck ->
+                // Handle truck click - show details or track
+                Toast.makeText(this, "Tracking ${truck.vehicleNumber}", Toast.LENGTH_SHORT).show()
+            }
+        )
         
         binding.rvAssignedTrucks.apply {
             layoutManager = LinearLayoutManager(this@BookingRequestActivity)

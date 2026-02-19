@@ -154,16 +154,17 @@ interface WeeloApiService {
     ): Response<OrderDetailResponse>
     
     /**
-     * Cancel active order
+     * Cancel active order with reason
      * 
-     * SCALABILITY: Backend deletes from Redis + DB, notifies transporters
+     * SCALABILITY: Backend deletes from Redis + DB, notifies transporters + drivers
      * EASY UNDERSTANDING: Customer can cancel search before driver accepts
-     * MODULARITY: Works with existing cancelOrder service
+     * MODULARITY: Uses POST with body for reason (not DELETE which can't have body)
      */
-    @DELETE("orders/{orderId}/cancel")
+    @POST("orders/{orderId}/cancel")
     suspend fun cancelOrder(
         @Header("Authorization") token: String,
-        @Path("orderId") orderId: String
+        @Path("orderId") orderId: String,
+        @Body request: CancelOrderRequest
     ): Response<CancelOrderResponse>
     
     /**
@@ -251,6 +252,21 @@ interface WeeloApiService {
         @Header("Authorization") token: String,
         @Path("bookingId") bookingId: String
     ): Response<BookingTrackingResponse>
+
+    /**
+     * Get real Google Maps ETA for all active trucks in a booking.
+     * Phase 5: Real driving-time ETA (not straight-line estimate).
+     *
+     * SCALABILITY: Cached server-side (1hr TTL per origin→dest pair)
+     * MODULARITY: Returns map of tripId → ETA data
+     *
+     * @see GET /api/v1/tracking/booking/:bookingId/eta
+     */
+    @GET("tracking/booking/{bookingId}/eta")
+    suspend fun getBookingETA(
+        @Header("Authorization") token: String,
+        @Path("bookingId") bookingId: String
+    ): Response<BookingETAResponse>
 
     // ============================================================
     // VEHICLES (Public)
@@ -355,6 +371,29 @@ interface WeeloApiService {
      */
     @GET("geocoding/status")
     suspend fun getGeocodingStatus(): Response<GeocodingStatusResponse>
+
+    // ============================================================
+    // RATING ENDPOINTS
+    // ============================================================
+
+    /**
+     * Submit a rating for a completed trip assignment
+     * @see POST /api/v1/rating
+     */
+    @POST("rating")
+    suspend fun submitRating(
+        @Header("Authorization") auth: String,
+        @Body request: SubmitRatingRequest
+    ): Response<SubmitRatingResponse>
+
+    /**
+     * Get unrated completed trips for the customer (last 7 days)
+     * @see GET /api/v1/rating/pending
+     */
+    @GET("rating/pending")
+    suspend fun getPendingRatings(
+        @Header("Authorization") auth: String
+    ): Response<PendingRatingsResponse>
 }
 
 // ============================================================
@@ -512,7 +551,9 @@ data class BookingData(
     val scheduledAt: String? = null,
     val createdAt: String,
     val expiresAt: String,
-    val completedAt: String? = null
+    val completedAt: String? = null,
+    val isRated: Boolean? = null,
+    val hasUnratedTrips: Boolean? = null
 )
 
 data class LocationData(
@@ -542,9 +583,30 @@ data class AssignedTruckData(
     val vehicleType: String,
     val driverName: String,
     val driverPhone: String,
+    val driverProfilePhotoUrl: String? = null,
+    val driverRating: Double? = null,        // Real avg from DB (null = new driver, no ratings yet)
+    val driverTotalRatings: Int = 0,         // Total number of ratings received
+    val customerRating: Int? = null,          // This customer's rating for this trip (null = not yet rated)
     val status: String,
     val assignedAt: String,
     val currentLocation: CoordinatesData? = null
+)
+
+// Phase 5: Real Google Maps ETA response
+data class BookingETAResponse(
+    val success: Boolean,
+    val data: BookingETAData? = null,
+    val error: ApiError? = null
+)
+
+data class BookingETAData(
+    val etas: Map<String, TruckETAData> = emptyMap()
+)
+
+data class TruckETAData(
+    val durationMinutes: Int = 0,
+    val distanceKm: Int = 0,
+    val durationText: String = ""
 )
 
 data class CancelBookingResponse(
@@ -765,15 +827,28 @@ data class OrderLocationRequest(
  * 
  * EASY UNDERSTANDING: Shows how many drivers were notified about cancellation
  */
+/**
+ * Request body for cancelling an order with reason
+ */
+data class CancelOrderRequest(
+    val reason: String? = null
+)
+
 data class CancelOrderResponse(
     val success: Boolean,
-    val message: String,
+    val message: String? = null,
     val data: CancelOrderData? = null
 )
 
 data class CancelOrderData(
-    val message: String,
-    val transportersNotified: Int
+    val orderId: String? = null,
+    val status: String? = null,
+    val reason: String? = null,
+    val message: String? = null,
+    val transportersNotified: Int = 0,
+    val driversNotified: Int = 0,
+    val assignmentsCancelled: Int = 0,
+    val cancelledAt: String? = null
 )
 
 /**
@@ -1247,4 +1322,48 @@ data class CustomBookingCancelResponse(
     val success: Boolean,
     val message: String? = null,
     val error: ApiError? = null
+)
+
+// ============================================================
+// RATING DATA CLASSES
+// ============================================================
+
+data class SubmitRatingRequest(
+    val assignmentId: String,
+    val stars: Int,
+    val comment: String? = null,
+    val tags: List<String> = emptyList()
+)
+
+data class SubmitRatingResponse(
+    val success: Boolean,
+    val data: SubmitRatingData? = null,
+    val error: ApiError? = null
+)
+
+data class SubmitRatingData(
+    val ratingId: String,
+    val stars: Int,
+    val driverAvgRating: Double,
+    val message: String,
+    val idempotent: Boolean
+)
+
+data class PendingRatingsResponse(
+    val success: Boolean,
+    val data: List<PendingRatingData>? = null,
+    val error: ApiError? = null
+)
+
+data class PendingRatingData(
+    val assignmentId: String,
+    val tripId: String,
+    val driverName: String,
+    val driverProfilePhotoUrl: String? = null,
+    val vehicleNumber: String,
+    val vehicleType: String,
+    val pickup: LocationData? = null,
+    val drop: LocationData? = null,
+    val completedAt: String? = null,
+    val bookingId: String? = null
 )

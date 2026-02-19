@@ -130,6 +130,10 @@
 
         <!-- Booking Tracking Activity -->
         <activity
+            android:name=".presentation.booking.MyBookingsActivity"
+            android:exported="false"
+            android:theme="@style/Theme.Weelo" />
+        <activity
             android:name=".presentation.booking.BookingTrackingActivity"
             android:exported="false"
             android:screenOrientation="portrait" />

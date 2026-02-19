@@ -5,7 +5,7 @@ import android.net.ConnectivityManager
 import android.net.Network
 import android.net.NetworkCapabilities
 import android.net.NetworkRequest
-import android.util.Log
+import timber.log.Timber
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -75,13 +75,13 @@ class NetworkMonitor private constructor(context: Context) {
      */
     private val networkCallback = object : ConnectivityManager.NetworkCallback() {
         override fun onAvailable(network: Network) {
-            Log.d(TAG, "Network available")
+            Timber.d("Network available")
             _isOnline.value = true
             _networkType.value = getCurrentNetworkType()
         }
         
         override fun onLost(network: Network) {
-            Log.d(TAG, "Network lost")
+            Timber.d("Network lost")
             _isOnline.value = checkCurrentConnectivity()
             _networkType.value = getCurrentNetworkType()
         }
@@ -108,9 +108,9 @@ class NetworkMonitor private constructor(context: Context) {
         
         try {
             connectivityManager.registerNetworkCallback(networkRequest, networkCallback)
-            Log.d(TAG, "Network callback registered")
+            Timber.d("Network callback registered")
         } catch (e: Exception) {
-            Log.e(TAG, "Failed to register network callback", e)
+            Timber.e(e, "Failed to register network callback")
         }
     }
     
@@ -125,7 +125,7 @@ class NetworkMonitor private constructor(context: Context) {
             capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET) &&
             capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED)
         } catch (e: Exception) {
-            Log.e(TAG, "Error checking connectivity", e)
+            Timber.e(e, "Error checking connectivity")
             false
         }
     }
@@ -141,7 +141,7 @@ class NetworkMonitor private constructor(context: Context) {
             
             getNetworkTypeFromCapabilities(capabilities)
         } catch (e: Exception) {
-            Log.e(TAG, "Error getting network type", e)
+            Timber.e(e, "Error getting network type")
             NetworkType.UNKNOWN
         }
     }
@@ -207,9 +207,9 @@ class NetworkMonitor private constructor(context: Context) {
     fun cleanup() {
         try {
             connectivityManager.unregisterNetworkCallback(networkCallback)
-            Log.d(TAG, "Network callback unregistered")
+            Timber.d("Network callback unregistered")
         } catch (e: Exception) {
-            Log.e(TAG, "Error unregistering callback", e)
+            Timber.e(e, "Error unregistering callback")
         }
     }
     

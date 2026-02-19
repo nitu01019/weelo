@@ -45,6 +45,7 @@ class MainActivity : AppCompatActivity() {
     // UI Components
     private lateinit var searchContainer: CardView
     private var profileButton: LinearLayout? = null
+    private var trackButton: LinearLayout? = null
     
     // Tutorial
     private var tutorialCoordinator: TutorialCoordinator? = null
@@ -102,8 +103,9 @@ class MainActivity : AppCompatActivity() {
      */
     private fun initializeViews() {
         searchContainer = findViewById(R.id.searchContainer)
-        // Find profile button in bottom nav (if exists)
+        // Find bottom nav buttons
         profileButton = findViewById(R.id.profileNav)
+        trackButton = findViewById(R.id.trackNav)
     }
 
     /**
@@ -117,6 +119,11 @@ class MainActivity : AppCompatActivity() {
         // Profile navigation
         profileButton?.setOnClickListener {
             navigateToProfile()
+        }
+        
+        // My Trips navigation
+        trackButton?.setOnClickListener {
+            navigateToMyBookings()
         }
     }
 
@@ -194,6 +201,16 @@ class MainActivity : AppCompatActivity() {
      */
     private fun navigateToProfile() {
         val intent = Intent(this, ProfileActivity::class.java)
+        startActivity(intent)
+        TransitionHelper.applySlideInLeftTransition(this)
+    }
+
+    /**
+     * Navigates to MyBookingsActivity
+     * User can see active/completed bookings and track trucks
+     */
+    private fun navigateToMyBookings() {
+        val intent = com.weelo.logistics.presentation.booking.MyBookingsActivity.newIntent(this)
         startActivity(intent)
         TransitionHelper.applySlideInLeftTransition(this)
     }

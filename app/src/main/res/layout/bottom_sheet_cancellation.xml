@@ -1,0 +1,223 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 
+  CancellationBottomSheet Layout
+  ==============================
+  Two-step cancellation flow:
+  1. Select reason (radio buttons)
+  2. Confirm with booking summary
+  
+  EASY UNDERSTANDING: Clean white bottom sheet with clear action buttons
+  MODULARITY: Reusable for both SearchingVehiclesDialog and BookingTrackingActivity
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:background="@drawable/bottom_sheet_rounded_bg"
+    android:padding="20dp">
+
+    <!-- Header -->
+    <TextView
+        android:id="@+id/cancelTitle"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Why are you cancelling?"
+        android:textSize="18sp"
+        android:textStyle="bold"
+        android:textColor="#1A1A1A"
+        android:layout_marginBottom="16dp" />
+
+    <!-- Reason Radio Group -->
+    <RadioGroup
+        android:id="@+id/reasonRadioGroup"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="8dp">
+
+        <RadioButton
+            android:id="@+id/reasonFoundAnother"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:text="Found another transporter"
+            android:textSize="15sp"
+            android:textColor="#333333"
+            android:buttonTint="#3366CC"
+            android:paddingStart="8dp" />
+
+        <RadioButton
+            android:id="@+id/reasonPriceTooHigh"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:text="Price too high"
+            android:textSize="15sp"
+            android:textColor="#333333"
+            android:buttonTint="#3366CC"
+            android:paddingStart="8dp" />
+
+        <RadioButton
+            android:id="@+id/reasonChangeOfPlans"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:text="Change of plans"
+            android:textSize="15sp"
+            android:textColor="#333333"
+            android:buttonTint="#3366CC"
+            android:paddingStart="8dp" />
+
+        <RadioButton
+            android:id="@+id/reasonWrongLocation"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:text="Wrong pickup/drop location"
+            android:textSize="15sp"
+            android:textColor="#333333"
+            android:buttonTint="#3366CC"
+            android:paddingStart="8dp" />
+
+        <RadioButton
+            android:id="@+id/reasonTakingTooLong"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:text="Taking too long"
+            android:textSize="15sp"
+            android:textColor="#333333"
+            android:buttonTint="#3366CC"
+            android:paddingStart="8dp" />
+
+        <RadioButton
+            android:id="@+id/reasonOther"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:text="Other"
+            android:textSize="15sp"
+            android:textColor="#333333"
+            android:buttonTint="#3366CC"
+            android:paddingStart="8dp" />
+    </RadioGroup>
+
+    <!-- Other reason text input (hidden by default) -->
+    <com.google.android.material.textfield.TextInputLayout
+        android:id="@+id/otherReasonLayout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:visibility="gone"
+        android:layout_marginBottom="12dp"
+        app:boxCornerRadiusBottomEnd="8dp"
+        app:boxCornerRadiusBottomStart="8dp"
+        app:boxCornerRadiusTopEnd="8dp"
+        app:boxCornerRadiusTopStart="8dp"
+        app:boxStrokeColor="#3366CC"
+        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
+
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/otherReasonInput"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Tell us your reason..."
+            android:maxLines="3"
+            android:inputType="textMultiLine"
+            android:textSize="14sp" />
+    </com.google.android.material.textfield.TextInputLayout>
+
+    <!-- Divider -->
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="#E0E0E0"
+        android:layout_marginVertical="12dp" />
+
+    <!-- Booking Summary (compact) -->
+    <LinearLayout
+        android:id="@+id/bookingSummaryContainer"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:visibility="gone"
+        android:layout_marginBottom="16dp">
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Booking Summary"
+            android:textSize="13sp"
+            android:textStyle="bold"
+            android:textColor="#666666"
+            android:layout_marginBottom="8dp" />
+
+        <TextView
+            android:id="@+id/summaryPickup"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textSize="13sp"
+            android:textColor="#333333"
+            android:layout_marginBottom="4dp"
+            android:text="📍 " />
+
+        <TextView
+            android:id="@+id/summaryDrop"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textSize="13sp"
+            android:textColor="#333333"
+            android:layout_marginBottom="4dp"
+            android:text="📌 " />
+
+        <TextView
+            android:id="@+id/summaryVehicle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textSize="13sp"
+            android:textColor="#666666"
+            android:layout_marginBottom="4dp" />
+
+        <TextView
+            android:id="@+id/summaryPrice"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:textColor="#1A1A1A" />
+    </LinearLayout>
+
+    <!-- Action Buttons -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="end">
+
+        <!-- Go Back button -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/goBackButton"
+            android:layout_width="wrap_content"
+            android:layout_height="48dp"
+            android:text="GO BACK"
+            android:textColor="#3366CC"
+            android:textSize="14sp"
+            android:layout_marginEnd="12dp"
+            style="@style/Widget.MaterialComponents.Button.TextButton" />
+
+        <!-- Confirm Cancel button -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/confirmCancelButton"
+            android:layout_width="wrap_content"
+            android:layout_height="48dp"
+            android:text="CONFIRM CANCEL"
+            android:textSize="14sp"
+            android:enabled="false"
+            app:backgroundTint="#D32F2F"
+            app:cornerRadius="8dp" />
+    </LinearLayout>
+
+    <!-- Loading indicator (shown during cancel API call) -->
+    <ProgressBar
+        android:id="@+id/cancelProgressBar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:visibility="gone"
+        android:layout_marginTop="8dp"
+        style="@style/Widget.AppCompat.ProgressBar.Horizontal"
+        android:indeterminate="true" />
+
+</LinearLayout>

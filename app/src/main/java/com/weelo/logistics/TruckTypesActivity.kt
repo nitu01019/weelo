@@ -385,7 +385,7 @@ class TruckTypesActivity : AppCompatActivity() {
             )
         }
         
-        // Setup grid
+        // Setup grid with optimizations
         val gridRecyclerView = view.findViewById<RecyclerView>(R.id.truckTypesGridRecyclerView)
         gridRecyclerView.layoutManager = GridLayoutManager(this, 4) // 4-column grid
         
@@ -395,6 +395,10 @@ class TruckTypesActivity : AppCompatActivity() {
             onSelected(selectedTypeId)
         }
         gridRecyclerView.adapter = gridAdapter
+        // Do NOT setHasFixedSize(true) here: RecyclerView height is wrap_content in the bottom sheet.
+        // Setting fixed size would be incorrect and triggers lint InvalidSetHasFixedSize.
+        gridRecyclerView.setHasFixedSize(false)
+        gridRecyclerView.itemAnimator = null // Disable animations for instant search
         
         // Search functionality
         val searchInput = view.findViewById<EditText>(R.id.searchTruckType)
@@ -467,6 +471,10 @@ class TruckTypesActivity : AppCompatActivity() {
         // ==================== STEP 1: Truck Type Grid ====================
         val gridRecyclerView = view.findViewById<RecyclerView>(R.id.truckTypesGridRecyclerView)
         gridRecyclerView.layoutManager = GridLayoutManager(this, 4) // 4-column grid
+        // Do NOT setHasFixedSize(true) here: RecyclerView height is wrap_content in the bottom sheet.
+        // Setting fixed size would be incorrect and triggers lint InvalidSetHasFixedSize.
+        gridRecyclerView.setHasFixedSize(false)
+        gridRecyclerView.itemAnimator = null // Disable animations
         
         val gridAdapter = TruckTypePickerAdapter(allTruckTypeItems) { selectedTypeId ->
             // Transition to Step 2 with selected truck type
@@ -524,9 +532,12 @@ class TruckTypesActivity : AppCompatActivity() {
         val config = TruckSubtypesConfig.getConfigById(truckTypeId)
         dialogView.findViewById<TextView>(R.id.selectedTruckTypeName)?.text = "${config?.displayName ?: truckTypeId} Trucks"
         
-        // Setup subtypes RecyclerView
+        // Setup subtypes RecyclerView with optimizations
         val subtypesRecyclerView = dialogView.findViewById<RecyclerView>(R.id.subtypesRecyclerView)
         subtypesRecyclerView.layoutManager = LinearLayoutManager(this)
+        // Do NOT setHasFixedSize(true) here: height is wrap_content in a bottom sheet.
+        subtypesRecyclerView.setHasFixedSize(false)
+        subtypesRecyclerView.itemAnimator = null // Disable animations for performance
         
         // Get subtypes for selected truck type and convert to SubtypeQuantityItem
         val subtypeStrings = config?.subtypes ?: emptyList()
@@ -805,9 +816,12 @@ class TruckTypesActivity : AppCompatActivity() {
         view.findViewById<View>(R.id.scrollView)?.visibility = View.GONE
         recyclerView?.visibility = View.VISIBLE
         
-        // Setup RecyclerView
+        // Setup RecyclerView with optimizations
         recyclerView?.layoutManager = LinearLayoutManager(this)
         recyclerView?.adapter = adapter
+        // Do NOT setHasFixedSize(true) here: height is wrap_content in a bottom sheet.
+        recyclerView?.setHasFixedSize(false)
+        recyclerView?.itemAnimator = null // Disable animations for performance
         
         // Initial UI state
         updateSelectionSummary(selectionSummary, selectedCountText, totalPriceText, confirmButton, deselectAllButton, adapter)

@@ -61,7 +61,7 @@ CODING STANDARDS: Material Design
             android:layout_height="match_parent"
             android:padding="10dp"
             android:src="@drawable/ic_arrow_back"
-            android:tint="#333333"
+            app:tint="#333333"
             android:background="?attr/selectableItemBackgroundBorderless"
             android:contentDescription="Go back" />
 

@@ -919,11 +919,12 @@ class SearchingVehiclesDialog : com.google.android.material.bottomsheet.BottomSh
     }
 
     /**
-     * Cancel search with optimistic UI update and backend confirmation
+     * Cancel search — opens CancellationBottomSheet for reason selection,
+     * then calls backend with the selected reason.
      * 
-     * SCALABILITY: Backend handles Redis cleanup, DB update, transporter notifications
-     * EASY UNDERSTANDING: UI updates immediately, backend confirms async
-     * MODULARITY: Rollback if backend fails
+     * SCALABILITY: Backend handles Redis cleanup, DB update, transporter/driver notifications
+     * EASY UNDERSTANDING: User picks reason → UI confirms → backend processes
+     * MODULARITY: CancellationBottomSheet is reusable across the app
      */
     private fun cancelSearch() {
         val orderId = createdBookingId
@@ -934,77 +935,93 @@ class SearchingVehiclesDialog : com.google.android.material.bottomsheet.BottomSh
             return
         }
         
-        Timber.d( "Cancelling order: $orderId")
+        Timber.d("Opening cancellation reason sheet for order: $orderId")
         
-        // STEP 1: Optimistic UI update (immediate feedback)
+        // Build vehicle summary for the bottom sheet
+        val vehicleSummary = selectedTrucks?.joinToString(", ") { 
+            "${it.quantity}x ${it.truckTypeName}" 
+        } ?: "Vehicle"
+        
+        // Show CancellationBottomSheet for reason selection
+        val cancelSheet = com.weelo.logistics.ui.bottomsheet.CancellationBottomSheet.newInstance(
+            pickupAddress = fromLocation?.address,
+            dropAddress = toLocation?.address,
+            vehicleSummary = vehicleSummary,
+            totalPrice = totalPrice
+        )
+        
+        cancelSheet.onCancellationConfirmed = { reason ->
+            // User confirmed — call backend with reason
+            executeCancelWithReason(orderId, reason, cancelSheet)
+        }
+        
+        cancelSheet.show(childFragmentManager, "cancel_reason")
+    }
+    
+    /**
+     * Execute the actual cancellation with the selected reason
+     * 
+     * SCALABILITY: Optimistic UI + backend confirmation pattern
+     * EASY UNDERSTANDING: Loading state on bottom sheet, rollback on failure
+     * MODULARITY: Separated from reason collection for clean architecture
+     */
+    private fun executeCancelWithReason(
+        orderId: String, 
+        reason: String,
+        cancelSheet: com.weelo.logistics.ui.bottomsheet.CancellationBottomSheet
+    ) {
         val previousStatus = currentStatus
         currentStatus = SearchStatus.CANCELLED
         countDownTimer?.cancel()
         bookingJob?.cancel()
         
-        // Show loading state
-        cancelButton.isEnabled = false
-        cancelButton.text = "Cancelling..."
-        
-        // STEP 2: Call backend async
         lifecycleScope.launch {
             try {
-                val result = bookingRepository.cancelOrder(orderId)
+                val result = bookingRepository.cancelOrder(orderId, reason)
                 
                 when (result) {
                     is Result.Success -> {
-                        // SCALABILITY: Backend confirmed - clear everything
+                        // Backend confirmed — clear everything
                         ActiveOrderPrefs.clear(requireContext())
-                        
-                        // Notify listener
                         onSearchCancelledListener?.onSearchCancelled()
                         
-                        Timber.d( "Order cancelled successfully. ${result.data.transportersNotified} transporters notified")
+                        Timber.d("Order cancelled: $orderId, reason: $reason, " +
+                            "${result.data.transportersNotified} transporters, " +
+                            "${result.data.driversNotified} drivers notified")
                         
-                        // Dismiss dialog
+                        cancelSheet.onCancelComplete(true)
                         dismiss()
                         
                         android.widget.Toast.makeText(
                             requireContext(),
-                            "Search cancelled. ${result.data.transportersNotified} drivers notified.",
+                            "Search cancelled successfully.",
                             android.widget.Toast.LENGTH_SHORT
                         ).show()
                     }
                     Result.Loading -> {
-                        // Should not happen in this context
-                        Timber.d( "Unexpected Loading state during cancel")
+                        Timber.d("Unexpected Loading state during cancel")
                     }
                     is Result.Error -> {
-                        // EASY UNDERSTANDING: Rollback UI if backend fails
                         Timber.w("Cancel failed: ${result.exception.message}")
                         
+                        // Rollback
                         currentStatus = previousStatus
-                        cancelButton.isEnabled = true
-                        cancelButton.text = "CANCEL"
+                        cancelSheet.onCancelComplete(false, result.exception.message)
                         
-                        // Restart timer with remaining time (calculate from SharedPreferences)
+                        // Restart timer with remaining time
                         val (_, expiresAtMs) = ActiveOrderPrefs.get(requireContext())
                         val remainingMs = expiresAtMs - System.currentTimeMillis()
                         if (remainingMs > 0) {
                             startCountdownTimer((remainingMs / 1000).toInt())
                         } else {
-                            // Already expired
                             handleTimeout()
                         }
-                        
-                        android.widget.Toast.makeText(
-                            requireContext(),
-                            "Failed to cancel: ${result.exception.message}",
-                            android.widget.Toast.LENGTH_LONG
-                        ).show()
                     }
                 }
             } catch (e: Exception) {
-                Timber.e( "Cancel error", e)
-                // Handle exception - rollback
+                Timber.e(e, "Cancel error")
                 currentStatus = previousStatus
-                cancelButton.isEnabled = true
-                cancelButton.text = "CANCEL"
+                cancelSheet.onCancelComplete(false, e.message)
             }
         }
     }

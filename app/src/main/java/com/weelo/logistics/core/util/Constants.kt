@@ -12,9 +12,12 @@ object Constants {
     // To change URL, update ApiConfig.kt -> DEVICE_IP
     val BASE_URL: String get() = ApiConfig.BASE_URL
     
-    const val CONNECT_TIMEOUT = 30L
-    const val READ_TIMEOUT = 30L
-    const val WRITE_TIMEOUT = 30L
+    // PERFORMANCE FIX: Reduced from 30s to fail faster and show retry UI sooner.
+    // Backend with warm Redis responds in <2s. If it takes >15s, something is wrong
+    // and the circuit breaker / retry mechanism should kick in.
+    const val CONNECT_TIMEOUT = 15L   // was 30L — TCP connect should be instant
+    const val READ_TIMEOUT = 20L      // was 30L — API responses should be <5s
+    const val WRITE_TIMEOUT = 15L     // was 30L — request upload is small
     
     // Location
     const val DEFAULT_LOCATION_LAT = 32.7266

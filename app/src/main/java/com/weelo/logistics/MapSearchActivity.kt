@@ -17,6 +17,7 @@ import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.ScrollView
 import android.widget.TextView
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import com.google.android.gms.location.FusedLocationProviderClient
@@ -147,14 +148,18 @@ class MapSearchActivity : AppCompatActivity() {
         
         // My Location button - use current GPS location
         myLocationButton.setOnClickListener {
-            if (userLatitude != null && userLongitude != null) {
-                Timber.d("My location selected: $userLatitude, $userLongitude")
+            val latitude = userLatitude
+            val longitude = userLongitude
+            if (latitude != null && longitude != null) {
+                Timber.d("My location selected: $latitude, $longitude")
                 returnSelectedLocation(
-                    latitude = userLatitude!!,
-                    longitude = userLongitude!!,
+                    latitude = latitude,
+                    longitude = longitude,
                     address = "Current Location",
                     city = null
                 )
+            } else {
+                Toast.makeText(this, "Current location not available yet", Toast.LENGTH_SHORT).show()
             }
         }
         
@@ -419,9 +424,11 @@ class MapSearchActivity : AppCompatActivity() {
             addView(textLayout)
             
             // Distance (if user location available)
-            if (userLatitude != null && userLongitude != null) {
+            val currentLatitude = userLatitude
+            val currentLongitude = userLongitude
+            if (currentLatitude != null && currentLongitude != null) {
                 val results = FloatArray(1)
-                Location.distanceBetween(userLatitude!!, userLongitude!!, latitude, longitude, results)
+                Location.distanceBetween(currentLatitude, currentLongitude, latitude, longitude, results)
                 val distanceMeters = results[0]
                 val distanceText = if (distanceMeters < 1000) {
                     "${distanceMeters.toInt()} m"
@@ -576,6 +583,7 @@ class MapSearchActivity : AppCompatActivity() {
 
     override fun finish() {
         super.finish()
+        @Suppress("DEPRECATION")
         overridePendingTransition(R.anim.slide_in_from_left, R.anim.slide_out_to_right)
     }
 }
