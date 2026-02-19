@@ -55,7 +55,6 @@
     <!-- AWS Backend: Cleartext allowed — ALB does not have SSL/HTTPS listener yet -->
     <!-- TODO: CRITICAL — Set cleartextTrafficPermitted="false" when SSL cert + HTTPS listener is on ALB -->
     <domain-config cleartextTrafficPermitted="true">
-        <domain includeSubdomains="true">ap-south-1.elb.amazonaws.com</domain>
         <domain includeSubdomains="false">weelo-alb-380596483.ap-south-1.elb.amazonaws.com</domain>
     </domain-config>
     

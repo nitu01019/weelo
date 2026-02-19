@@ -48,7 +48,6 @@ import kotlinx.coroutines.flow.distinctUntilChanged
  */
 class NetworkMonitor private constructor(context: Context) {
     
-    private val TAG = "NetworkMonitor"
     
     private val connectivityManager = context.getSystemService(Context.CONNECTIVITY_SERVICE) 
         as ConnectivityManager

@@ -40,8 +40,6 @@ import java.util.concurrent.ConcurrentLinkedQueue
  */
 class OfflineManager private constructor(context: Context) {
     
-    private val TAG = "OfflineManager"
-    
     private val prefs: SharedPreferences = context.getSharedPreferences(
         PREFS_NAME, Context.MODE_PRIVATE
     )
