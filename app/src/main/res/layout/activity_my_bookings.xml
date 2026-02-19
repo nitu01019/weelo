@@ -23,7 +23,8 @@
             android:src="@drawable/ic_arrow_back"
             android:padding="4dp"
             android:background="?attr/selectableItemBackgroundBorderless"
-            android:contentDescription="Back"
+            android:contentDescription="@string/back"
+
             app:tint="@color/text_primary" />
 
         <TextView
@@ -31,7 +32,7 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:layout_marginStart="16dp"
-            android:text="My Trips"
+            android:text="@string/my_trips"
             android:textSize="20sp"
             android:textStyle="bold"
             android:textColor="@color/text_primary" />
@@ -62,7 +63,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_gravity="center"
-                android:text="No bookings yet.\nBook a truck to get started!"
+                android:text="@string/empty_bookings"
                 android:textAlignment="center"
                 android:textSize="16sp"
                 android:textColor="@color/text_secondary"

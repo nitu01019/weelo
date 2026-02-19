@@ -215,7 +215,7 @@ class CancellationBottomSheet : BottomSheetDialogFragment() {
             summaryPickup?.text = "📍 ${pickupAddress ?: ""}"
             summaryDrop?.text = "📌 ${dropAddress ?: ""}"
             summaryVehicle?.text = vehicleSummary ?: ""
-            summaryPrice?.text = if (totalPrice > 0) "₹${String.format("%,d", totalPrice)}" else ""
+            summaryPrice?.text = if (totalPrice > 0) "₹${String.format(java.util.Locale.getDefault(), "%,d", totalPrice)}" else ""
         } else {
             bookingSummaryContainer?.visibility = View.GONE
         }

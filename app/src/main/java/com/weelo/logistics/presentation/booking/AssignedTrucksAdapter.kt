@@ -168,7 +168,7 @@ class AssignedTrucksAdapter(
         }
 
         private fun bindStatus(status: String) {
-            when (status.lowercase()) {
+            when (status.lowercase(java.util.Locale.ROOT)) {
                 "pending" -> {
                     tvStatus.text = "Waiting"
                     tvStatus.setTextColor(itemView.context.getColor(R.color.warning_orange))

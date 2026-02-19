@@ -845,9 +845,6 @@ class SearchingVehiclesDialog : com.google.android.material.bottomsheet.BottomSh
                         
                         Timber.e( "Booking error: $errorMessage")
                     }
-                    is Result.Loading -> {
-                        // Do nothing, still loading
-                    }
                 }
             } catch (e: Exception) {
                 Timber.e( "Error creating booking: ${e.message}", e)

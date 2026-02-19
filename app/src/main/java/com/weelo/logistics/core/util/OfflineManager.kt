@@ -80,8 +80,10 @@ class OfflineManager private constructor(context: Context) {
      * Queue an action to be executed when online
      */
     fun queueAction(type: String, data: String) {
-        val action = PendingAction(type = type, data = data)
-        pendingActions.add(action)
+        synchronized(pendingActions) {
+            val action = PendingAction(type = type, data = data)
+            pendingActions.add(action)
+        }
         savePendingActions()
         updateState()
         Timber.d("Action queued: $type, total pending: ${pendingActions.size}")
@@ -96,7 +98,9 @@ class OfflineManager private constructor(context: Context) {
      * Mark action as completed and remove from queue
      */
     fun completeAction(actionId: String) {
-        pendingActions.removeAll { it.id == actionId }
+        synchronized(pendingActions) {
+            pendingActions.removeAll { it.id == actionId }
+        }
         savePendingActions()
         updateState()
         Timber.d("Action completed: $actionId")

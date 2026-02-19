@@ -932,6 +932,7 @@ class LocationInputActivity : AppCompatActivity() {
                     }
                 }
             } catch (e: Exception) {
+                if (e is kotlinx.coroutines.CancellationException) throw e
                 Timber.e(e, "Places search error")
                 withContext(Dispatchers.Main) {
                     hideSkeletonLoading()

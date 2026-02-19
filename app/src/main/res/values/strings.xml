@@ -97,6 +97,10 @@
     <!-- MapSearchActivity -->
     <string name="current_location_not_available">Current location not available yet</string>
 
+    <!-- MyBookingsActivity -->
+    <string name="my_trips">My Trips</string>
+    <string name="empty_bookings">No bookings yet.\nBook a truck to get started!</string>
+
     <!-- BookingTrackingActivity -->
     <string name="back_to_all_trucks">← All Trucks</string>
 
