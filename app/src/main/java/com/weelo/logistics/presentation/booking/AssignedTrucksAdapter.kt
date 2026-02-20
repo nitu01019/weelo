@@ -191,19 +191,19 @@ class AssignedTrucksAdapter(
                     btnTrack.visibility = View.VISIBLE
                 }
                 "in_transit" -> {
-                    tvStatus.text = "In transit"
+                    tvStatus.text = itemView.context.getString(R.string.status_in_transit)
                     tvStatus.setTextColor(itemView.context.getColor(R.color.success_green))
                     ivStatusIcon.setImageResource(R.drawable.ic_truck)
                     btnTrack.visibility = View.VISIBLE
                 }
                 "completed" -> {
-                    tvStatus.text = "Delivered ✓"
+                    tvStatus.text = itemView.context.getString(R.string.status_delivered)
                     tvStatus.setTextColor(itemView.context.getColor(R.color.success_green))
                     ivStatusIcon.setImageResource(R.drawable.ic_check)
                     btnTrack.visibility = View.GONE
                 }
                 "driver_declined" -> {
-                    tvStatus.text = "Declined"
+                    tvStatus.text = itemView.context.getString(R.string.status_declined)
                     tvStatus.setTextColor(itemView.context.getColor(R.color.error_red))
                     ivStatusIcon.setImageResource(R.drawable.ic_error)
                     btnTrack.visibility = View.GONE

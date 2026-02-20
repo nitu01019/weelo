@@ -59,7 +59,7 @@
         android:rating="0"
         android:progressTint="@color/weelo_orange"
         android:progressBackgroundTint="@color/divider_color"
-        style="@style/Widget.AppCompat.RatingBar.Indicator"
+        style="@style/Widget.AppCompat.RatingBar.Small"
         android:isIndicator="false"
         android:layout_marginBottom="4dp" />
 

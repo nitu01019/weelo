@@ -139,6 +139,9 @@
     <string name="rating_max_tags">Maximum 5 tags</string>
     <string name="driver_photo_desc">Driver photo</string>
     <string name="driver_status_icon_desc">Driver status</string>
+    <string name="status_in_transit">In transit</string>
+    <string name="status_delivered">Delivered ✓</string>
+    <string name="status_declined">Declined</string>
     <string name="error_network_pull_retry">Network error. Pull to retry.</string>
     <string name="all_trips_rated">All trips already rated!</string>
     <string name="failed_to_load_ratings">Failed to load rating data</string>

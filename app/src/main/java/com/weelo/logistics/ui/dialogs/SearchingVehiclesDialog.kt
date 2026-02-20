@@ -981,7 +981,7 @@ class SearchingVehiclesDialog : com.google.android.material.bottomsheet.BottomSh
                 when (result) {
                     is Result.Success -> {
                         // Backend confirmed — clear everything
-                        ActiveOrderPrefs.clear(requireContext())
+                        ActiveOrderPrefs.clear(context?.applicationContext ?: requireContext())
                         onSearchCancelledListener?.onSearchCancelled()
                         
                         Timber.d("Order cancelled: $orderId, reason: $reason, " +
