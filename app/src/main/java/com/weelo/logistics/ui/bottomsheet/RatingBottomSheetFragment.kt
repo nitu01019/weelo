@@ -274,8 +274,9 @@ class RatingBottomSheetFragment : BottomSheetDialogFragment() {
             val chip = chipGroupTags.getChildAt(i) as? Chip ?: continue
             val key = chip.tag as? String ?: continue
             val isNegative = negativeTags.any { it.first == key }
-            // Show negative tags for 1-2 stars, positive for 3-5
-            val shouldHide = (stars <= 2 && !isNegative) || (stars >= 4 && isNegative)
+            // Show negative tags for 1-3 stars, positive tags for 3-5 stars
+            // At 3 stars (neutral), show both positive and negative tags
+            val shouldHide = (stars >= 4 && isNegative) || (stars <= 2 && !isNegative)
             if (shouldHide) {
                 // Clear selection so hidden chips don't get submitted
                 chip.isChecked = false
