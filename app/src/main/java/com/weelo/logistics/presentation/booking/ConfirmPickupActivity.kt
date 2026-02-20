@@ -160,8 +160,6 @@ class ConfirmPickupActivity : AppCompatActivity(), OnMapReadyCallback {
         totalPrice = intent.getIntExtra(EXTRA_TOTAL_PRICE, 0)
         distanceKm = intent.getIntExtra(EXTRA_DISTANCE_KM, 0)
 
-        Timber.d("Pickup: ${pickupLocation?.address}")
-        Timber.d("Drop: ${dropLocation?.address}")
         Timber.d("Trucks: ${selectedTrucks?.size}")
         Timber.d("Price: $totalPrice")
     }

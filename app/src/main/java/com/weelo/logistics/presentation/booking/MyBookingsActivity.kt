@@ -132,9 +132,6 @@ class MyBookingsActivity : AppCompatActivity() {
                     if (bookingRatings.isNotEmpty()) {
                         val fragment = com.weelo.logistics.ui.bottomsheet.RatingBottomSheetFragment
                             .newInstance(bookingRatings).apply {
-                                // CRITICAL: Set apiService + tokenManager so fragment can submit ratings
-                                this.apiService = this@MyBookingsActivity.apiService
-                                this.tokenManager = this@MyBookingsActivity.tokenManager
                                 onAllRatingsComplete = {
                                     // Refresh the bookings list to update the Rate badge
                                     loadBookings()

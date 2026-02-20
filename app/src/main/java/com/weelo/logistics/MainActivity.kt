@@ -61,10 +61,45 @@ class MainActivity : AppCompatActivity() {
         initializeViews()
         setupListeners()
         observeViewModel()
-        
+        handleNotificationIntent(intent)
+
         // Start tutorial for first-time users (after layout settles)
         window.decorView.post {
             startTutorialIfNeeded()
+        }
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        handleNotificationIntent(intent)
+    }
+
+    /**
+     * Route FCM notification taps to the correct screen.
+     * Extras: notification_type, booking_id, trip_id, trip_status
+     */
+    private fun handleNotificationIntent(intent: Intent?) {
+        val notificationType = intent?.getStringExtra("notification_type") ?: return
+        val bookingId = intent.getStringExtra("booking_id")
+        when (notificationType) {
+            com.weelo.logistics.data.remote.WeeloFirebaseService.TYPE_BOOKING_CONFIRMED,
+            com.weelo.logistics.data.remote.WeeloFirebaseService.TYPE_DRIVER_ASSIGNED,
+            com.weelo.logistics.data.remote.WeeloFirebaseService.TYPE_DRIVER_ARRIVING,
+            com.weelo.logistics.data.remote.WeeloFirebaseService.TYPE_TRIP_STARTED,
+            com.weelo.logistics.data.remote.WeeloFirebaseService.TYPE_TRIP_STATUS_UPDATE,
+            com.weelo.logistics.data.remote.WeeloFirebaseService.TYPE_TRIP_UPDATE -> {
+                if (!bookingId.isNullOrBlank()) {
+                    val trackIntent = com.weelo.logistics.presentation.booking.BookingTrackingActivity
+                        .newIntent(this, bookingId)
+                    startActivity(trackIntent)
+                }
+            }
+            com.weelo.logistics.data.remote.WeeloFirebaseService.TYPE_TRIP_COMPLETED -> {
+                val myTripsIntent = com.weelo.logistics.presentation.booking.MyBookingsActivity
+                    .newIntent(this)
+                startActivity(myTripsIntent)
+            }
+            else -> { /* stay on home screen */ }
         }
     }
     

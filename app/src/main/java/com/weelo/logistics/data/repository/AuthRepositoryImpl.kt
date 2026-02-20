@@ -44,7 +44,7 @@ class AuthRepositoryImpl @Inject constructor(
             } else {
                 val error = response.body()?.error
                 Timber.w("OTP send failed: ${error?.code}")
-                val friendlyMsg = error?.message?.takeIf { !it.startsWith("{") }
+                val friendlyMsg = error?.message?.takeIf { it.isNotBlank() && !it.startsWith("{") }
                     ?: parseFriendlyError(response, "Failed to send OTP. Please try again.")
                 Result.Error(WeeloException.AuthException(friendlyMsg))
             }
@@ -84,7 +84,7 @@ class AuthRepositoryImpl @Inject constructor(
             } else {
                 val error = response.body()?.error
                 Timber.w("OTP verification failed: ${error?.code}")
-                val friendlyMsg = error?.message?.takeIf { !it.startsWith("{") }
+                val friendlyMsg = error?.message?.takeIf { it.isNotBlank() && !it.startsWith("{") }
                     ?: parseFriendlyError(response, "Invalid OTP. Please check and try again.")
                 Result.Error(WeeloException.AuthException(friendlyMsg))
             }
@@ -177,7 +177,7 @@ class AuthRepositoryImpl @Inject constructor(
             } else {
                 val error = response.body()?.error
                 Timber.w("Get profile failed: ${error?.code}")
-                val friendlyMsg = error?.message?.takeIf { !it.startsWith("{") }
+                val friendlyMsg = error?.message?.takeIf { it.isNotBlank() && !it.startsWith("{") }
                     ?: parseFriendlyError(response, "Failed to load profile. Please try again.")
                 Result.Error(WeeloException.AuthException(friendlyMsg))
             }
@@ -216,7 +216,7 @@ class AuthRepositoryImpl @Inject constructor(
             } else {
                 val error = response.body()?.error
                 Timber.w("Update profile failed: ${error?.code}")
-                val friendlyMsg = error?.message?.takeIf { !it.startsWith("{") }
+                val friendlyMsg = error?.message?.takeIf { it.isNotBlank() && !it.startsWith("{") }
                     ?: parseFriendlyError(response, "Failed to update profile. Please try again.")
                 Result.Error(WeeloException.AuthException(friendlyMsg))
             }

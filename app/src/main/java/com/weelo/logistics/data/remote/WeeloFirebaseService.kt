@@ -80,7 +80,7 @@ class WeeloFirebaseService : FirebaseMessagingService() {
      */
     override fun onNewToken(token: String) {
         super.onNewToken(token)
-        Timber.d("🔑 New FCM Token received (length=${token.length})")
+        Timber.d("🔑 New FCM Token received (length=${token.length}, prefix=${token.take(6)}…)")
         fcmToken = token
         
         // TODO: Send token to backend
@@ -214,6 +214,8 @@ class WeeloFirebaseService : FirebaseMessagingService() {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
             putExtra("notification_type", notification.type)
             notification.bookingId?.let { putExtra("booking_id", it) }
+            notification.tripId?.let { putExtra("trip_id", it) }
+            notification.tripStatus?.let { putExtra("trip_status", it) }
         }
         
         val pendingIntent = PendingIntent.getActivity(
@@ -248,7 +250,7 @@ class WeeloFirebaseService : FirebaseMessagingService() {
         val notificationId = (notification.bookingId ?: System.currentTimeMillis().toString()).hashCode()
         notificationManager.notify(notificationId, notificationBuilder.build())
         
-        Timber.d("📬 Notification shown: ${notification.title}")
+        Timber.d("📬 Notification shown: type=${notification.type}")
     }
 }
 

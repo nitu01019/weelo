@@ -209,6 +209,7 @@ class AssignedTrucksAdapter(
                     tvStatus.text = status.replace("_", " ")
                     tvStatus.setTextColor(itemView.context.getColor(R.color.text_secondary))
                     ivStatusIcon.setImageResource(R.drawable.ic_truck)
+                    btnTrack.visibility = View.GONE
                 }
             }
         }

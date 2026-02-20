@@ -29,10 +29,12 @@ import com.weelo.logistics.data.remote.api.PendingRatingData
 import com.weelo.logistics.data.remote.api.SubmitRatingRequest
 import com.weelo.logistics.data.remote.api.WeeloApiService
 import com.weelo.logistics.data.remote.TokenManager
+import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import timber.log.Timber
+import javax.inject.Inject
 
 /**
  * RatingBottomSheetFragment
@@ -59,14 +61,15 @@ import timber.log.Timber
  * MODULARITY: Works from both BookingTrackingActivity and MyBookingsActivity
  * SCALABILITY: Each rating is submitted individually, handles 1-N trucks
  */
+@AndroidEntryPoint
 class RatingBottomSheetFragment : BottomSheetDialogFragment() {
 
     // Callbacks — set by caller before showing
     var onAllRatingsComplete: (() -> Unit)? = null
 
-    // Dependencies — injected via setter (fragment can't use @Inject easily)
-    var apiService: WeeloApiService? = null
-    var tokenManager: TokenManager? = null
+    // Dependencies — injected by Hilt (survives configuration changes)
+    @Inject lateinit var apiService: WeeloApiService
+    @Inject lateinit var tokenManager: TokenManager
 
     // UI Components
     private lateinit var tvTitle: TextView
@@ -314,8 +317,8 @@ class RatingBottomSheetFragment : BottomSheetDialogFragment() {
         )
 
         val service = apiService
-        val accessToken = tokenManager?.getAccessToken()
-        if (service == null || accessToken.isNullOrBlank()) {
+        val accessToken = tokenManager.getAccessToken()
+        if (accessToken.isNullOrBlank()) {
             context?.let {
                 Toast.makeText(it, "Session expired. Please reopen ratings.", Toast.LENGTH_SHORT).show()
             }

@@ -95,6 +95,7 @@ class BookingTrackingActivity : AppCompatActivity(), OnMapReadyCallback {
     private lateinit var binding: ActivityBookingTrackingBinding
     private var googleMap: GoogleMap? = null
     private lateinit var bottomSheetBehavior: BottomSheetBehavior<*>
+    private var isMapReady = false
 
     // =========================================================================
     // MULTI-TRUCK MARKER SYSTEM
@@ -198,8 +199,8 @@ class BookingTrackingActivity : AppCompatActivity(), OnMapReadyCallback {
         setupMap()
         setupBackPressHandler()
 
-        // Fetch initial data + start real-time tracking
-        fetchInitialData()
+        // fetchInitialData() is deferred to onMapReady() to prevent marker loss
+        // if REST response arrives before GoogleMap is initialized
         startLocationUpdates()
     }
 
@@ -325,6 +326,10 @@ class BookingTrackingActivity : AppCompatActivity(), OnMapReadyCallback {
             Timber.e(e, "$TAG: Error setting up map")
             Toast.makeText(this, "Error loading map", Toast.LENGTH_SHORT).show()
         }
+
+        // Map is ready — now safe to add markers. Fetch initial data here.
+        isMapReady = true
+        fetchInitialData()
     }
 
     // =========================================================================
@@ -906,8 +911,6 @@ class BookingTrackingActivity : AppCompatActivity(), OnMapReadyCallback {
                         com.weelo.logistics.ui.bottomsheet.RatingBottomSheetFragment
                             .newInstance(pending)
                             .apply {
-                                this.apiService = this@BookingTrackingActivity.apiService
-                                this.tokenManager = this@BookingTrackingActivity.tokenManager
                                 onAllRatingsComplete = {
                                     timber.log.Timber.i("$TAG: All ratings submitted from tracking")
                                 }

@@ -58,7 +58,8 @@ class TrackingRepository @Inject constructor(
      */
     suspend fun getBookingTracking(bookingId: String): List<TripTrackingData> {
         return try {
-            val token = "Bearer ${tokenManager.getAccessToken()}"
+            val accessToken = tokenManager.getAccessToken() ?: return emptyList()
+            val token = "Bearer $accessToken"
             val response = apiService.getBookingTracking(token, bookingId)
 
             if (response.isSuccessful && response.body()?.success == true) {
@@ -84,7 +85,8 @@ class TrackingRepository @Inject constructor(
      */
     suspend fun getAssignedTrucks(bookingId: String): List<AssignedTruckData> {
         return try {
-            val token = "Bearer ${tokenManager.getAccessToken()}"
+            val accessToken = tokenManager.getAccessToken() ?: return emptyList()
+            val token = "Bearer $accessToken"
             val response = apiService.getAssignedTrucks(token, bookingId)
 
             if (response.isSuccessful && response.body()?.success == true) {
@@ -109,7 +111,8 @@ class TrackingRepository @Inject constructor(
      */
     suspend fun getTripTracking(tripId: String): TripTrackingData? {
         return try {
-            val token = "Bearer ${tokenManager.getAccessToken()}"
+            val accessToken = tokenManager.getAccessToken() ?: return null
+            val token = "Bearer $accessToken"
             val response = apiService.getTripTracking(token, tripId)
 
             if (response.isSuccessful && response.body()?.success == true) {
