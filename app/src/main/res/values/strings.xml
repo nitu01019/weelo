@@ -96,6 +96,13 @@
 
     <!-- MapSearchActivity -->
     <string name="current_location_not_available">Current location not available yet</string>
+    <string name="location_type_drop">Drop</string>
+    <string name="location_type_stop">Stop</string>
+    <string name="location_type_pickup">Pickup</string>
+    <string name="search_drop_location">Search drop location...</string>
+    <string name="search_stop_location">Search stop location...</string>
+    <string name="search_pickup_location">Search pickup location...</string>
+    <string name="current_location">Current Location</string>
     <string name="search_cancelled_success">Search cancelled successfully.</string>
     <string name="search_location_hint">Search for a location...</string>
     <string name="use_my_location">Use my location</string>

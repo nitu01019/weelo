@@ -59,7 +59,11 @@ import java.util.concurrent.TimeUnit
  *
  * =============================================================================
  */
+@dagger.hilt.android.AndroidEntryPoint
 class CustomBookingActivity : AppCompatActivity() {
+
+    @javax.inject.Inject
+    lateinit var injectedApiService: WeeloApiService
 
     // Form fields
     private lateinit var pickupCityInput: EditText
@@ -284,9 +288,10 @@ class CustomBookingActivity : AppCompatActivity() {
             truckTypeIconRes = truckType.iconResId,
             quantities = quantities
         ) { subtypeId, newQuantity ->
-            // Enforce maximum quantity per subtype
+            // Enforce maximum quantity per subtype — clamp before applying
+            val clampedQuantity = newQuantity.coerceAtMost(MAX_QUANTITY_PER_SUBTYPE)
+            quantities[subtypeId] = clampedQuantity
             if (newQuantity > MAX_QUANTITY_PER_SUBTYPE) {
-                quantities[subtypeId] = MAX_QUANTITY_PER_SUBTYPE
                 Toast.makeText(this, "Maximum $MAX_QUANTITY_PER_SUBTYPE per type", Toast.LENGTH_SHORT).show()
             }
 
@@ -520,7 +525,7 @@ class CustomBookingActivity : AppCompatActivity() {
                     return@launch
                 }
 
-                val response = getApiService().submitCustomBooking(
+                val response = injectedApiService.submitCustomBooking(
                     token = "Bearer $token",
                     request = request,
                     idempotencyKey = idempotencyKey

@@ -68,6 +68,9 @@ class MapSearchActivity : AppCompatActivity() {
     @Inject
     lateinit var database: WeeloDatabase
 
+    @Inject
+    lateinit var apiService: WeeloApiService
+
     // Views
     private lateinit var backButton: ImageView
     private lateinit var titleText: TextView
@@ -124,19 +127,19 @@ class MapSearchActivity : AppCompatActivity() {
         // Configure UI based on type
         when (inputType) {
             "TO" -> {
-                titleText.text = "Drop"
+                titleText.text = getString(R.string.location_type_drop)
                 dotIndicator.setBackgroundResource(R.drawable.bg_red_dot)
-                searchInput.hint = "Search drop location..."
+                searchInput.hint = getString(R.string.search_drop_location)
             }
             "STOP" -> {
-                titleText.text = "Stop"
+                titleText.text = getString(R.string.location_type_stop)
                 dotIndicator.setBackgroundResource(R.drawable.bg_grey_dot)
-                searchInput.hint = "Search stop location..."
+                searchInput.hint = getString(R.string.search_stop_location)
             }
             else -> {
-                titleText.text = "Pickup"
+                titleText.text = getString(R.string.location_type_pickup)
                 dotIndicator.setBackgroundResource(R.drawable.bg_green_dot)
-                searchInput.hint = "Search pickup location..."
+                searchInput.hint = getString(R.string.search_pickup_location)
             }
         }
     }
@@ -160,7 +163,7 @@ class MapSearchActivity : AppCompatActivity() {
                 returnSelectedLocation(
                     latitude = latitude,
                     longitude = longitude,
-                    address = "Current Location",
+                    address = getString(R.string.current_location),
                     city = null
                 )
             } else {
@@ -284,7 +287,7 @@ class MapSearchActivity : AppCompatActivity() {
             delay(300) // Debounce
             
             try {
-                val apiService = getApiService()
+
                 val request = PlaceSearchRequest(
                     query = query,
                     biasLat = userLatitude,
@@ -495,32 +498,6 @@ class MapSearchActivity : AppCompatActivity() {
         finish()
     }
 
-    companion object {
-        // Singleton Retrofit instance for scalability
-        @Volatile
-        private var apiService: WeeloApiService? = null
-
-        private fun getApiService(): WeeloApiService {
-            return apiService ?: synchronized(this) {
-                apiService ?: createApiServiceInstance().also { apiService = it }
-            }
-        }
-
-        private fun createApiServiceInstance(): WeeloApiService {
-            val okHttpClient = okhttp3.OkHttpClient.Builder()
-                .connectTimeout(15, java.util.concurrent.TimeUnit.SECONDS)
-                .readTimeout(15, java.util.concurrent.TimeUnit.SECONDS)
-                .writeTimeout(15, java.util.concurrent.TimeUnit.SECONDS)
-                .build()
-
-            return retrofit2.Retrofit.Builder()
-                .baseUrl(ApiConfig.BASE_URL)
-                .client(okHttpClient)
-                .addConverterFactory(retrofit2.converter.gson.GsonConverterFactory.create())
-                .build()
-                .create(WeeloApiService::class.java)
-        }
-    }
 
     /**
      * Show empty state message

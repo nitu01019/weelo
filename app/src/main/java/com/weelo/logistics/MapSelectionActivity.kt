@@ -49,7 +49,11 @@ import java.util.concurrent.TimeUnit
  * - Clear separation of map, geocoding, and UI logic
  * - Reusable for both FROM and TO field selection
  */
+@dagger.hilt.android.AndroidEntryPoint
 class MapSelectionActivity : AppCompatActivity(), OnMapReadyCallback {
+
+    @javax.inject.Inject
+    lateinit var apiService: WeeloApiService
 
     private lateinit var googleMap: GoogleMap
     private lateinit var backButton: ImageView
@@ -71,32 +75,6 @@ class MapSelectionActivity : AppCompatActivity(), OnMapReadyCallback {
     private var currentCity: String? = null
     private var isConfirmInProgress = false  // Prevent double-click
 
-    companion object {
-        // Singleton Retrofit instance for scalability
-        @Volatile
-        private var apiService: WeeloApiService? = null
-
-        private fun getApiService(): WeeloApiService {
-            return apiService ?: synchronized(this) {
-                apiService ?: createApiService().also { apiService = it }
-            }
-        }
-
-        private fun createApiService(): WeeloApiService {
-            val okHttpClient = OkHttpClient.Builder()
-                .connectTimeout(15, TimeUnit.SECONDS)
-                .readTimeout(15, TimeUnit.SECONDS)
-                .writeTimeout(15, TimeUnit.SECONDS)
-                .build()
-
-            return Retrofit.Builder()
-                .baseUrl(ApiConfig.BASE_URL)
-                .client(okHttpClient)
-                .addConverterFactory(GsonConverterFactory.create())
-                .build()
-                .create(WeeloApiService::class.java)
-        }
-    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -334,7 +312,7 @@ class MapSelectionActivity : AppCompatActivity(), OnMapReadyCallback {
                     latitude = latLng.latitude,
                     longitude = latLng.longitude
                 )
-                val response = getApiService().reverseGeocode(request)
+                val response = apiService.reverseGeocode(request)
 
                 if (response.isSuccessful && response.body()?.success == true) {
                     val data = response.body()?.data
