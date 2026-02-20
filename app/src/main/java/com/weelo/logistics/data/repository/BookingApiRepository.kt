@@ -123,7 +123,7 @@ class BookingApiRepository @Inject constructor(
             Timber.e(e, "Error parsing error message")
         }
         
-        return "Failed to create order. Please try again."
+        return fallback
     }
 
     /**

@@ -265,9 +265,15 @@ class RatingBottomSheetFragment : BottomSheetDialogFragment() {
             val key = chip.tag as? String ?: continue
             val isNegative = negativeTags.any { it.first == key }
             // Show negative tags for 1-2 stars, positive for 3-5
-            chip.visibility = if (stars <= 2 && !isNegative) View.GONE
-                else if (stars >= 4 && isNegative) View.GONE
-                else View.VISIBLE
+            val shouldHide = (stars <= 2 && !isNegative) || (stars >= 4 && isNegative)
+            if (shouldHide) {
+                // Clear selection so hidden chips don't get submitted
+                chip.isChecked = false
+                selectedTags.remove(key)
+                chip.visibility = View.GONE
+            } else {
+                chip.visibility = View.VISIBLE
+            }
         }
     }
 
@@ -324,11 +330,13 @@ class RatingBottomSheetFragment : BottomSheetDialogFragment() {
                     val data = response.body()?.data
                     Timber.i("$TAG: Rating submitted for ${rating.assignmentId}, avg=${data?.driverAvgRating}")
 
-                    Toast.makeText(
-                        requireContext(),
-                        data?.message ?: "Thank you for your feedback!",
-                        Toast.LENGTH_SHORT
-                    ).show()
+                    context?.let {
+                        Toast.makeText(
+                            it,
+                            data?.message ?: "Thank you for your feedback!",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    }
 
                     // Auto-advance to next unrated driver or dismiss
                     advanceToNextOrDismiss()
@@ -338,6 +346,7 @@ class RatingBottomSheetFragment : BottomSheetDialogFragment() {
                     context?.let { Toast.makeText(it, "Could not submit rating. Try again.", Toast.LENGTH_SHORT).show() }
                 }
             } catch (e: Exception) {
+                if (e is kotlinx.coroutines.CancellationException) throw e
                 Timber.e(e, "$TAG: Rating submit error")
                 context?.let { Toast.makeText(it, "Network error. Please try again.", Toast.LENGTH_SHORT).show() }
             } finally {
