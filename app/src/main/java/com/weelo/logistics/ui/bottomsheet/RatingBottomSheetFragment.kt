@@ -10,6 +10,7 @@ import android.widget.LinearLayout
 import android.widget.RatingBar
 import android.widget.TextView
 import android.widget.Toast
+import androidx.fragment.app.setFragmentResult
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.RecyclerView
 import androidx.viewpager2.widget.ViewPager2
