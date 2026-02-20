@@ -288,8 +288,8 @@ class CustomBookingActivity : AppCompatActivity() {
             truckTypeIconRes = truckType.iconResId,
             quantities = quantities
         ) { subtypeId, newQuantity ->
-            // Enforce maximum quantity per subtype — clamp before applying
-            val clampedQuantity = newQuantity.coerceAtMost(MAX_QUANTITY_PER_SUBTYPE)
+            // Enforce maximum quantity per subtype — clamp before applying (coerceIn ensures 0..MAX)
+            val clampedQuantity = newQuantity.coerceIn(0, MAX_QUANTITY_PER_SUBTYPE)
             quantities[subtypeId] = clampedQuantity
             if (newQuantity > MAX_QUANTITY_PER_SUBTYPE) {
                 Toast.makeText(this, getString(R.string.max_quantity_per_type, MAX_QUANTITY_PER_SUBTYPE), Toast.LENGTH_SHORT).show()
