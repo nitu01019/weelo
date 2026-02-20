@@ -144,6 +144,12 @@
     <string name="failed_to_load_ratings">Failed to load rating data</string>
     <string name="rating_new_driver">New</string>
     <string name="cancel_booking">Cancel Booking</string>
+    <string name="tracking_n_trucks">Tracking %d trucks</string>
+    <string name="tracking_your_truck">Tracking your truck</string>
+    <string name="waiting_for_truck">Waiting for truck assignment…</string>
+    <string name="unable_to_load_tracking">Unable to load tracking data</string>
+    <string name="failed_to_load_tracking">Failed to load tracking data</string>
+    <string name="retry">Retry</string>
 
     <!-- Rating tags -->
     <string name="tag_polite">Polite</string>

@@ -608,13 +608,13 @@ class BookingTrackingActivity : AppCompatActivity(), OnMapReadyCallback {
 
                     // Update tracking status header
                     binding.tvTrackingStatus.text = if (assignedTrucks.size > 1) {
-                        "Tracking ${assignedTrucks.size} trucks"
+                        getString(R.string.tracking_n_trucks, assignedTrucks.size)
                     } else {
-                        "Tracking your truck"
+                        getString(R.string.tracking_your_truck)
                     }
                 } else {
                     // No trucks assigned yet — show waiting state
-                    binding.tvTrackingStatus.text = "Waiting for truck assignment..."
+                    binding.tvTrackingStatus.text = getString(R.string.waiting_for_truck)
                     Timber.w("$TAG: No assigned trucks found for booking $id")
                 }
 
@@ -647,12 +647,12 @@ class BookingTrackingActivity : AppCompatActivity(), OnMapReadyCallback {
 
                 if (!isFinishing && !isDestroyed) {
                     hideLoading()
-                    binding.tvTrackingStatus.text = "Unable to load tracking data"
+                    binding.tvTrackingStatus.text = getString(R.string.unable_to_load_tracking)
 
                     // Show retry snackbar — user can tap to retry
                     com.google.android.material.snackbar.Snackbar
-                        .make(binding.root, "Failed to load tracking data", com.google.android.material.snackbar.Snackbar.LENGTH_INDEFINITE)
-                        .setAction("Retry") { fetchInitialData() }
+                        .make(binding.root, getString(R.string.failed_to_load_tracking), com.google.android.material.snackbar.Snackbar.LENGTH_INDEFINITE)
+                        .setAction(getString(R.string.retry)) { fetchInitialData() }
                         .show()
                 }
             }
