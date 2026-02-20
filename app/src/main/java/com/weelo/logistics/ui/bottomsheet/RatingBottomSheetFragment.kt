@@ -67,11 +67,6 @@ class RatingBottomSheetFragment : BottomSheetDialogFragment() {
     // Callbacks — kept for backward compat but prefer setFragmentResult for config-change safety
     var onAllRatingsComplete: (() -> Unit)? = null
 
-    companion object {
-        const val RESULT_KEY = "rating_complete"
-        const val RESULT_BUNDLE_KEY = "done"
-    }
-
     // Dependencies — injected by Hilt (survives configuration changes)
     @Inject lateinit var apiService: WeeloApiService
     @Inject lateinit var tokenManager: TokenManager
@@ -119,6 +114,8 @@ class RatingBottomSheetFragment : BottomSheetDialogFragment() {
         private const val TAG = "RatingBottomSheet"
         private const val ARG_RATINGS_JSON = "ratings_json"
         private val gson = Gson()
+        const val RESULT_KEY = "rating_complete"
+        const val RESULT_BUNDLE_KEY = "done"
 
         fun newInstance(ratings: List<PendingRatingData>): RatingBottomSheetFragment {
             return RatingBottomSheetFragment().apply {
