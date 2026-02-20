@@ -96,7 +96,7 @@ class BookingRequestActivity : AppCompatActivity() {
         trucksAdapter = AssignedTrucksAdapter(
             onTrackClick = { truck ->
                 // Handle truck click - show details or track
-                Toast.makeText(this, "Tracking ${truck.vehicleNumber}", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, getString(R.string.tracking_vehicle, truck.vehicleNumber), Toast.LENGTH_SHORT).show()
             }
         )
         

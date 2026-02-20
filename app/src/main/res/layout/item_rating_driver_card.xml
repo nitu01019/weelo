@@ -2,6 +2,7 @@
 <com.google.android.material.card.MaterialCardView
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:layout_margin="4dp"
@@ -25,7 +26,7 @@
             android:src="@drawable/ic_person"
             android:background="@drawable/bg_circle_grey"
             android:scaleType="centerCrop"
-            android:contentDescription="Driver photo" />
+            android:contentDescription="@string/driver_photo" />
 
         <!-- Driver Info -->
         <LinearLayout
@@ -42,7 +43,7 @@
                 android:textSize="15sp"
                 android:textStyle="bold"
                 android:textColor="@color/text_primary"
-                android:text="Driver Name" />
+                tools:text="Driver Name" />
 
             <TextView
                 android:id="@+id/tvVehicleInfo"
@@ -51,7 +52,7 @@
                 android:textSize="13sp"
                 android:textColor="@color/text_secondary"
                 android:layout_marginTop="2dp"
-                android:text="MH 12 AB 1234" />
+                tools:text="MH 12 AB 1234" />
 
             <TextView
                 android:id="@+id/tvVehicleType"
@@ -60,7 +61,7 @@
                 android:textSize="12sp"
                 android:textColor="@color/text_tertiary"
                 android:layout_marginTop="1dp"
-                android:text="Open Body Truck" />
+                tools:text="Open Body Truck" />
 
         </LinearLayout>
 
@@ -69,7 +70,7 @@
             android:layout_width="32dp"
             android:layout_height="32dp"
             android:src="@drawable/ic_truck"
-            android:contentDescription="Vehicle"
+            android:contentDescription="@string/vehicle"
             android:alpha="0.5" />
 
     </LinearLayout>

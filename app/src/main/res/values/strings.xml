@@ -97,6 +97,21 @@
     <!-- MapSearchActivity -->
     <string name="current_location_not_available">Current location not available yet</string>
     <string name="search_cancelled_success">Search cancelled successfully.</string>
+    <string name="search_location_hint">Search for a location...</string>
+    <string name="use_my_location">Use my location</string>
+
+    <!-- MapSelectionActivity -->
+    <string name="location_pin">Location pin</string>
+    <string name="select_your_location">Select your location</string>
+    <string name="change">Change</string>
+    <string name="finding_your_location">Finding your location...</string>
+    <string name="select_pickup">Select Pickup</string>
+
+    <!-- BookingRequestActivity -->
+    <string name="tracking_vehicle">Tracking %s</string>
+
+    <!-- RatingBottomSheetFragment / item_rating_driver_card -->
+    <string name="vehicle">Vehicle</string>
 
     <!-- MyBookingsActivity -->
     <string name="my_trips">My Trips</string>

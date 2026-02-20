@@ -335,11 +335,11 @@ class RatingBottomSheetFragment : BottomSheetDialogFragment() {
                 } else {
                     val errorMsg = response.errorBody()?.string() ?: "Failed to submit rating"
                     Timber.w("$TAG: Rating submit failed: $errorMsg")
-                    Toast.makeText(requireContext(), "Could not submit rating. Try again.", Toast.LENGTH_SHORT).show()
+                    context?.let { Toast.makeText(it, "Could not submit rating. Try again.", Toast.LENGTH_SHORT).show() }
                 }
             } catch (e: Exception) {
                 Timber.e(e, "$TAG: Rating submit error")
-                Toast.makeText(requireContext(), "Network error. Please try again.", Toast.LENGTH_SHORT).show()
+                context?.let { Toast.makeText(it, "Network error. Please try again.", Toast.LENGTH_SHORT).show() }
             } finally {
                 setLoading(false)
             }

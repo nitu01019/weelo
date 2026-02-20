@@ -746,10 +746,10 @@ class MapBookingActivity : AppCompatActivity(), OnMapReadyCallback {
      * so they reach the order creation API
      */
     override fun onDestroy() {
-        super.onDestroy()
-        // Clean up map resources
+        // Clean up map resources before super to avoid NPE on destroyed surface
         currentPolyline?.remove()
         currentPolyline = null
+        super.onDestroy()
     }
     
     private fun navigateToInstantBooking(vehicleCategory: String) {

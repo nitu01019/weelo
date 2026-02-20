@@ -91,7 +91,10 @@ class BookingApiRepository @Inject constructor(
      * - {"success": false, "message": "..."}
      * - Raw error body strings
      */
-    private fun <T> parseErrorMessage(response: retrofit2.Response<T>): String {
+    private fun <T> parseErrorMessage(
+        response: retrofit2.Response<T>,
+        fallback: String = "Failed to create order. Please try again."
+    ): String {
         try {
             // Try to parse error body JSON
             val errorBody = response.errorBody()?.string()
@@ -665,7 +668,7 @@ class BookingApiRepository @Inject constructor(
                     Result.Success(CancelOrderData(orderId = orderId, status = "cancelled"))
                 }
             } else {
-                val errorMsg = parseErrorMessage(response)
+                val errorMsg = parseErrorMessage(response, fallback = "Failed to cancel order. Please try again.")
                 Timber.w("Cancel order failed: $errorMsg")
                 Result.Error(Exception(errorMsg))
             }
