@@ -136,6 +136,9 @@
     <string name="rating_submit_failed">Could not submit rating. Try again.</string>
     <string name="rating_network_error">Network error. Please try again.</string>
     <string name="cancel_failed">Failed to cancel. Please try again.</string>
+    <string name="rating_max_tags">Maximum 5 tags</string>
+    <string name="driver_photo_desc">Driver photo</string>
+    <string name="driver_status_icon_desc">Driver status</string>
 
     <!-- Rating tags -->
     <string name="tag_polite">Polite</string>

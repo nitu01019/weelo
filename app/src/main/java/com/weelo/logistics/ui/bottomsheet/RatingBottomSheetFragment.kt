@@ -255,7 +255,7 @@ class RatingBottomSheetFragment : BottomSheetDialogFragment() {
                             selectedTags.add(key)
                         } else {
                             this.isChecked = false
-                            Toast.makeText(context, "Maximum 5 tags", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(context, getString(R.string.rating_max_tags), Toast.LENGTH_SHORT).show()
                         }
                     } else {
                         selectedTags.remove(key)

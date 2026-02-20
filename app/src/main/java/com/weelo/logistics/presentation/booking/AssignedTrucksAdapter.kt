@@ -145,11 +145,14 @@ class AssignedTrucksAdapter(
                 if (onCallClick != null) {
                     onCallClick.invoke(truck)
                 } else {
-                    // Default: launch system dialler
-                    val intent = Intent(Intent.ACTION_DIAL).apply {
-                        data = Uri.parse("tel:${truck.driverPhone}")
+                    // Default: launch system dialler — guard against blank phone
+                    val phone = truck.driverPhone.trim()
+                    if (phone.isNotBlank()) {
+                        val intent = Intent(Intent.ACTION_DIAL).apply {
+                            data = Uri.parse("tel:$phone")
+                        }
+                        itemView.context.startActivity(intent)
                     }
-                    itemView.context.startActivity(intent)
                 }
             }
 

@@ -97,7 +97,11 @@ class OfflineManager private constructor(context: Context) {
      */
     fun completeAction(actionId: String) {
         synchronized(pendingActions) {
-            pendingActions.removeAll { it.id == actionId }
+            // ConcurrentLinkedQueue does not support removeAll(Predicate) — use iterator instead
+            val iterator = pendingActions.iterator()
+            while (iterator.hasNext()) {
+                if (iterator.next().id == actionId) iterator.remove()
+            }
             savePendingActions()
             updateState()
         }
