@@ -1046,7 +1046,7 @@ class BookingTrackingActivity : AppCompatActivity(), OnMapReadyCallback {
         cancelSheet.onCancellationConfirmed = { reason ->
             lifecycleScope.launch {
                 try {
-                    val result = bookingApiRepository.cancelBooking(orderId, reason)
+                    val result = bookingApiRepository.cancelOrder(orderId, reason)
                     when (result) {
                         is com.weelo.logistics.core.common.Result.Success -> {
                             cancelSheet.onCancelComplete(true)
