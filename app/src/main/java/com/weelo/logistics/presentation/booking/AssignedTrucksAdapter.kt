@@ -114,7 +114,7 @@ class AssignedTrucksAdapter(
                 tvDriverRating.text = String.format(java.util.Locale.US, "%.1f", truck.driverRating)
                 layoutRating.visibility = View.VISIBLE
             } else {
-                tvDriverRating.text = "New"
+                tvDriverRating.text = itemView.context.getString(R.string.rating_new_driver)
                 layoutRating.visibility = View.VISIBLE
             }
             

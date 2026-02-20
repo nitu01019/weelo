@@ -139,6 +139,11 @@
     <string name="rating_max_tags">Maximum 5 tags</string>
     <string name="driver_photo_desc">Driver photo</string>
     <string name="driver_status_icon_desc">Driver status</string>
+    <string name="error_network_pull_retry">Network error. Pull to retry.</string>
+    <string name="all_trips_rated">All trips already rated!</string>
+    <string name="failed_to_load_ratings">Failed to load rating data</string>
+    <string name="rating_new_driver">New</string>
+    <string name="cancel_booking">Cancel Booking</string>
 
     <!-- Rating tags -->
     <string name="tag_polite">Polite</string>

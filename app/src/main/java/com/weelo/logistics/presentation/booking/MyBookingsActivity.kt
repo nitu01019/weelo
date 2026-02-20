@@ -139,11 +139,11 @@ class MyBookingsActivity : AppCompatActivity() {
                             }
                         fragment.show(supportFragmentManager, "rating_sheet")
                     } else {
-                        Toast.makeText(this@MyBookingsActivity, "All trips already rated!", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(this@MyBookingsActivity, getString(R.string.all_trips_rated), Toast.LENGTH_SHORT).show()
                         loadBookings() // Refresh to remove stale Rate badge
                     }
                 } else {
-                    Toast.makeText(this@MyBookingsActivity, "Failed to load rating data", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this@MyBookingsActivity, getString(R.string.failed_to_load_ratings), Toast.LENGTH_SHORT).show()
                 }
             } catch (e: Exception) {
                 Timber.e(e, "Failed to fetch pending ratings for booking ${booking.id}")
@@ -211,7 +211,7 @@ class MyBookingsActivity : AppCompatActivity() {
                 skeletonContainer.visibility = View.GONE
                 recyclerView.visibility = View.VISIBLE
                 if (adapter.currentList.isEmpty()) {
-                    emptyView.text = "Network error. Pull to retry."
+                    emptyView.text = getString(R.string.error_network_pull_retry)
                     emptyView.visibility = View.VISIBLE
                 }
             }

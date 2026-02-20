@@ -1033,6 +1033,7 @@ class BookingTrackingActivity : AppCompatActivity(), OnMapReadyCallback {
                         else -> {}
                     }
                 } catch (e: Exception) {
+                    if (e is kotlinx.coroutines.CancellationException) throw e
                     cancelSheet.onCancelComplete(false, e.message)
                 }
             }

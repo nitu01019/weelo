@@ -364,7 +364,7 @@
             android:layout_marginHorizontal="16dp"
             android:layout_marginTop="8dp"
             android:layout_marginBottom="8dp"
-            android:text="Cancel Booking"
+            android:text="@string/cancel_booking"
             android:textColor="@color/error_red_dark"
             android:textSize="14sp"
             android:textAllCaps="false"
