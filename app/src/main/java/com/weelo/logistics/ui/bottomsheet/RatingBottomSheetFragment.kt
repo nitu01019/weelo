@@ -64,8 +64,13 @@ import javax.inject.Inject
 @AndroidEntryPoint
 class RatingBottomSheetFragment : BottomSheetDialogFragment() {
 
-    // Callbacks — set by caller before showing
+    // Callbacks — kept for backward compat but prefer setFragmentResult for config-change safety
     var onAllRatingsComplete: (() -> Unit)? = null
+
+    companion object {
+        const val RESULT_KEY = "rating_complete"
+        const val RESULT_BUNDLE_KEY = "done"
+    }
 
     // Dependencies — injected by Hilt (survives configuration changes)
     @Inject lateinit var apiService: WeeloApiService
@@ -291,7 +296,8 @@ class RatingBottomSheetFragment : BottomSheetDialogFragment() {
                 // Skip to next driver
                 vpDriverCards.currentItem = currentIndex + 1
             } else {
-                // All done or skipped
+                // All done or skipped — fire both callback and FragmentResult for config-change safety
+                setFragmentResult(RESULT_KEY, android.os.Bundle().apply { putBoolean(RESULT_BUNDLE_KEY, true) })
                 dismiss()
                 onAllRatingsComplete?.invoke()
             }
@@ -373,7 +379,8 @@ class RatingBottomSheetFragment : BottomSheetDialogFragment() {
             vpDriverCards.currentItem = nextIndex
             resetRatingForm()
         } else {
-            // All rated or end of list
+            // All rated or end of list — fire both callback and FragmentResult for config-change safety
+            setFragmentResult(RESULT_KEY, android.os.Bundle().apply { putBoolean(RESULT_BUNDLE_KEY, true) })
             dismiss()
             onAllRatingsComplete?.invoke()
         }

@@ -150,6 +150,9 @@
     <string name="unable_to_load_tracking">Unable to load tracking data</string>
     <string name="failed_to_load_tracking">Failed to load tracking data</string>
     <string name="retry">Retry</string>
+    <string name="something_went_wrong">Something went wrong. Please try again.</string>
+    <string name="max_quantity_per_type">Maximum %d per type</string>
+    <string name="max_trucks_total">Maximum %d trucks total</string>
 
     <!-- Rating tags -->
     <string name="tag_polite">Polite</string>

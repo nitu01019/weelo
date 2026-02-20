@@ -911,13 +911,13 @@ class BookingTrackingActivity : AppCompatActivity(), OnMapReadyCallback {
                 if (response.isSuccessful && response.body()?.success == true) {
                     val pending = response.body()?.data ?: emptyList()
                     if (pending.isNotEmpty()) {
+                        // Use FragmentResult for config-change safety (survives rotation)
+                        supportFragmentManager.setFragmentResultListener(
+                            com.weelo.logistics.ui.bottomsheet.RatingBottomSheetFragment.RESULT_KEY,
+                            this@BookingTrackingActivity
+                        ) { _, _ -> timber.log.Timber.i("$TAG: All ratings submitted from tracking") }
                         com.weelo.logistics.ui.bottomsheet.RatingBottomSheetFragment
                             .newInstance(pending)
-                            .apply {
-                                onAllRatingsComplete = {
-                                    timber.log.Timber.i("$TAG: All ratings submitted from tracking")
-                                }
-                            }
                             .show(supportFragmentManager, "rating_sheet")
                     } else {
                         // Allow a retry in case backend eventual consistency delays pending ratings.

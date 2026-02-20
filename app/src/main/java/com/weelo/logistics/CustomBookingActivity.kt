@@ -292,13 +292,13 @@ class CustomBookingActivity : AppCompatActivity() {
             val clampedQuantity = newQuantity.coerceAtMost(MAX_QUANTITY_PER_SUBTYPE)
             quantities[subtypeId] = clampedQuantity
             if (newQuantity > MAX_QUANTITY_PER_SUBTYPE) {
-                Toast.makeText(this, "Maximum $MAX_QUANTITY_PER_SUBTYPE per type", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, getString(R.string.max_quantity_per_type, MAX_QUANTITY_PER_SUBTYPE), Toast.LENGTH_SHORT).show()
             }
 
             // Check total trucks limit
             val totalTrucks = selectedTrucks.values.sumOf { it.values.sum() }
             if (totalTrucks > MAX_TOTAL_TRUCKS) {
-                Toast.makeText(this, "Maximum $MAX_TOTAL_TRUCKS trucks total", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, getString(R.string.max_trucks_total, MAX_TOTAL_TRUCKS), Toast.LENGTH_SHORT).show()
             }
 
             updateTotalDisplay()

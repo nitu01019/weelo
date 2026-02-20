@@ -130,13 +130,13 @@ class MyBookingsActivity : AppCompatActivity() {
                     val bookingRatings = allPending.filter { rating -> rating.bookingId == booking.id }
 
                     if (bookingRatings.isNotEmpty()) {
+                        // Use FragmentResult for config-change safety (survives rotation)
+                        supportFragmentManager.setFragmentResultListener(
+                            com.weelo.logistics.ui.bottomsheet.RatingBottomSheetFragment.RESULT_KEY,
+                            this@MyBookingsActivity
+                        ) { _, _ -> loadBookings() }
                         val fragment = com.weelo.logistics.ui.bottomsheet.RatingBottomSheetFragment
-                            .newInstance(bookingRatings).apply {
-                                onAllRatingsComplete = {
-                                    // Refresh the bookings list to update the Rate badge
-                                    loadBookings()
-                                }
-                            }
+                            .newInstance(bookingRatings)
                         fragment.show(supportFragmentManager, "rating_sheet")
                     } else {
                         Toast.makeText(this@MyBookingsActivity, getString(R.string.all_trips_rated), Toast.LENGTH_SHORT).show()
@@ -146,8 +146,9 @@ class MyBookingsActivity : AppCompatActivity() {
                     Toast.makeText(this@MyBookingsActivity, getString(R.string.failed_to_load_ratings), Toast.LENGTH_SHORT).show()
                 }
             } catch (e: Exception) {
+                if (e is kotlinx.coroutines.CancellationException) throw e
                 Timber.e(e, "Failed to fetch pending ratings for booking ${booking.id}")
-                Toast.makeText(this@MyBookingsActivity, "Something went wrong", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this@MyBookingsActivity, getString(R.string.something_went_wrong), Toast.LENGTH_SHORT).show()
             }
         }
     }
