@@ -82,6 +82,7 @@ class MainActivity : AppCompatActivity() {
     private fun handleNotificationIntent(intent: Intent?) {
         val notificationType = intent?.getStringExtra("notification_type") ?: return
         val bookingId = intent.getStringExtra("booking_id")
+        @Suppress("UNUSED_VARIABLE") // read to clear extra; may be used for future deep-link routing
         val tripId = intent.getStringExtra("trip_id")
         val tripStatus = intent.getStringExtra("trip_status")
         // Clear extras so rotation / activity recreation doesn't re-trigger navigation
