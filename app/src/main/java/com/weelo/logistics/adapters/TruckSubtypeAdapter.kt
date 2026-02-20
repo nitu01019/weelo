@@ -51,6 +51,9 @@ class TruckSubtypeAdapter(
         } else if (payloads.contains("quantity")) {
             // Partial update for quantity only
             holder.updateQuantity(subtypes[position])
+        } else {
+            // Unknown payload — fall back to full bind
+            super.onBindViewHolder(holder, position, payloads)
         }
     }
 

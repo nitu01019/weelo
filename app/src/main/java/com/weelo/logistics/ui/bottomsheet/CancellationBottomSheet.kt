@@ -192,8 +192,7 @@ class CancellationBottomSheet : BottomSheetDialogFragment() {
 
         // Go Back — dismiss without cancelling
         goBackButton.setOnClickListener {
-            dismiss()
-            onDismissed?.invoke()
+            dismiss() // onDismiss() will fire the callback
         }
 
         // Confirm Cancel — collect reason and invoke callback
@@ -247,8 +246,16 @@ class CancellationBottomSheet : BottomSheetDialogFragment() {
         cancelProgressBar.visibility = if (loading) View.VISIBLE else View.GONE
         confirmCancelButton.isEnabled = !loading
         goBackButton.isEnabled = !loading
-        confirmCancelButton.text = if (loading) "CANCELLING..." else "CONFIRM CANCEL"
+        confirmCancelButton.text = if (loading)
+            getString(R.string.cancel_cancelling)
+        else
+            getString(R.string.cancel_confirm)
         isCancelable = !loading
+    }
+
+    override fun onDismiss(dialog: android.content.DialogInterface) {
+        super.onDismiss(dialog)
+        onDismissed?.invoke()
     }
 
     /**
@@ -258,7 +265,7 @@ class CancellationBottomSheet : BottomSheetDialogFragment() {
     fun onCancelComplete(success: Boolean, errorMessage: String? = null) {
         showLoading(false)
         if (success) {
-            dismiss()
+            dismiss() // onDismiss() will fire the callback
         } else {
             val ctx = context ?: return  // Fragment may be detached before async response
             android.widget.Toast.makeText(

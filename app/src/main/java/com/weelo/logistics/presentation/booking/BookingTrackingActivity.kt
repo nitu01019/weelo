@@ -843,8 +843,9 @@ class BookingTrackingActivity : AppCompatActivity(), OnMapReadyCallback {
             binding.tvStatusBanner.text = message
             binding.statusBanner.visibility = View.VISIBLE
 
-            // Slide down animation
-            ObjectAnimator.ofFloat(binding.statusBanner, "translationY", -100f, 0f).apply {
+            // Slide down animation — use dp→px to match XML translationY="-100dp"
+            val entryOffsetPx = (-100 * resources.displayMetrics.density)
+            ObjectAnimator.ofFloat(binding.statusBanner, "translationY", entryOffsetPx, 0f).apply {
                 duration = 300
                 start()
             }
@@ -852,7 +853,8 @@ class BookingTrackingActivity : AppCompatActivity(), OnMapReadyCallback {
             // Auto-dismiss after 3.5 seconds
             bannerHandler.removeCallbacksAndMessages(null)
             bannerHandler.postDelayed({
-                ObjectAnimator.ofFloat(binding.statusBanner, "translationY", 0f, -100f).apply {
+                val dismissOffsetPx = (-100 * resources.displayMetrics.density)
+                ObjectAnimator.ofFloat(binding.statusBanner, "translationY", 0f, dismissOffsetPx).apply {
                     duration = 250
                     start()
                 }

@@ -71,6 +71,7 @@ class TrackingRepository @Inject constructor(
                 emptyList()
             }
         } catch (e: Exception) {
+            if (e is kotlinx.coroutines.CancellationException) throw e
             Timber.e(e, "$TAG: Error fetching booking tracking")
             emptyList()
         }
@@ -98,6 +99,7 @@ class TrackingRepository @Inject constructor(
                 emptyList()
             }
         } catch (e: Exception) {
+            if (e is kotlinx.coroutines.CancellationException) throw e
             Timber.e(e, "$TAG: Error fetching assigned trucks")
             emptyList()
         }
@@ -122,6 +124,7 @@ class TrackingRepository @Inject constructor(
                 null
             }
         } catch (e: Exception) {
+            if (e is kotlinx.coroutines.CancellationException) throw e
             Timber.e(e, "$TAG: Error fetching trip tracking")
             null
         }

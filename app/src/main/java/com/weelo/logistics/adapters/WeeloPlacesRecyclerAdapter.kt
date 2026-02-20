@@ -104,6 +104,9 @@ class WeeloPlacesRecyclerAdapter(
             // Partial update for distance only
             if (payloads.contains("distance") && holder is PlaceViewHolder) {
                 holder.updateDistance(places[position - 1])
+            } else {
+                // Unknown payload — fall back to full bind
+                super.onBindViewHolder(holder, position, payloads)
             }
         }
     }

@@ -164,4 +164,5 @@
     <string name="cancel_booking_summary">Booking Summary</string>
     <string name="cancel_go_back">GO BACK</string>
     <string name="cancel_confirm">CONFIRM CANCEL</string>
+    <string name="cancel_cancelling">CANCELLING\u2026</string>
 </resources>

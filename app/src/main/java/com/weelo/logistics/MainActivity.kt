@@ -2,6 +2,7 @@ package com.weelo.logistics
 
 import android.content.Intent
 import android.os.Bundle
+import timber.log.Timber
 import android.widget.LinearLayout
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
@@ -81,6 +82,13 @@ class MainActivity : AppCompatActivity() {
     private fun handleNotificationIntent(intent: Intent?) {
         val notificationType = intent?.getStringExtra("notification_type") ?: return
         val bookingId = intent.getStringExtra("booking_id")
+        val tripId = intent.getStringExtra("trip_id")
+        val tripStatus = intent.getStringExtra("trip_status")
+        // Clear extras so rotation / activity recreation doesn't re-trigger navigation
+        intent.removeExtra("notification_type")
+        intent.removeExtra("booking_id")
+        intent.removeExtra("trip_id")
+        intent.removeExtra("trip_status")
         when (notificationType) {
             com.weelo.logistics.data.remote.WeeloFirebaseService.TYPE_BOOKING_CONFIRMED,
             com.weelo.logistics.data.remote.WeeloFirebaseService.TYPE_DRIVER_ASSIGNED,
@@ -88,9 +96,13 @@ class MainActivity : AppCompatActivity() {
             com.weelo.logistics.data.remote.WeeloFirebaseService.TYPE_TRIP_STARTED,
             com.weelo.logistics.data.remote.WeeloFirebaseService.TYPE_TRIP_STATUS_UPDATE,
             com.weelo.logistics.data.remote.WeeloFirebaseService.TYPE_TRIP_UPDATE -> {
-                if (!bookingId.isNullOrBlank()) {
+                // Route using bookingId when available, fall back to tripId for trip-only updates
+                val routingId = bookingId?.takeIf { it.isNotBlank() }
+                    ?: tripId?.takeIf { it.isNotBlank() }
+                Timber.d("Routing trip notification: type=$notificationType bookingId=$routingId tripStatus=$tripStatus")
+                if (routingId != null) {
                     val trackIntent = com.weelo.logistics.presentation.booking.BookingTrackingActivity
-                        .newIntent(this, bookingId)
+                        .newIntent(this, routingId)
                     startActivity(trackIntent)
                 }
             }
