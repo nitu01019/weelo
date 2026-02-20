@@ -316,7 +316,9 @@ class RatingBottomSheetFragment : BottomSheetDialogFragment() {
         val service = apiService
         val accessToken = tokenManager?.getAccessToken()
         if (service == null || accessToken.isNullOrBlank()) {
-            Toast.makeText(requireContext(), "Session expired. Please reopen ratings.", Toast.LENGTH_SHORT).show()
+            context?.let {
+                Toast.makeText(it, "Session expired. Please reopen ratings.", Toast.LENGTH_SHORT).show()
+            }
             dismissAllowingStateLoss()
             return
         }
@@ -380,7 +382,7 @@ class RatingBottomSheetFragment : BottomSheetDialogFragment() {
 
     private fun resetRatingForm() {
         ratingBar.rating = 0f
-        tvRatingHint.text = "Tap to rate"
+        tvRatingHint.text = getString(R.string.rating_tap_to_rate)
         btnSubmit.isEnabled = false
         etComment.setText("")
         selectedTags.clear()

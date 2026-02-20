@@ -672,6 +672,9 @@ class BookingApiRepository @Inject constructor(
                 Timber.w("Cancel order failed: $errorMsg")
                 Result.Error(WeeloException.BookingException(errorMsg))
             }
+        } catch (e: WeeloException.AuthException) {
+            Timber.e(e, "Cancel order auth error")
+            Result.Error(e)
         } catch (e: Exception) {
             if (e is kotlinx.coroutines.CancellationException) throw e
             Timber.e(e, "Cancel order error")
@@ -703,6 +706,9 @@ class BookingApiRepository @Inject constructor(
                 Timber.w("Get order status failed: $errorMsg")
                 Result.Error(WeeloException.BookingException(errorMsg))
             }
+        } catch (e: WeeloException.AuthException) {
+            Timber.e(e, "Get order status auth error")
+            Result.Error(e)
         } catch (e: Exception) {
             if (e is kotlinx.coroutines.CancellationException) throw e
             Timber.e(e, "Get order status error")
