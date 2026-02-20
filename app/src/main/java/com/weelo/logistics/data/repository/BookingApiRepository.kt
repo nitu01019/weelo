@@ -670,11 +670,12 @@ class BookingApiRepository @Inject constructor(
             } else {
                 val errorMsg = parseErrorMessage(response, fallback = "Failed to cancel order. Please try again.")
                 Timber.w("Cancel order failed: $errorMsg")
-                Result.Error(Exception(errorMsg))
+                Result.Error(WeeloException.BookingException(errorMsg))
             }
         } catch (e: Exception) {
+            if (e is kotlinx.coroutines.CancellationException) throw e
             Timber.e(e, "Cancel order error")
-            Result.Error(Exception("Network error. Please try again."))
+            Result.Error(WeeloException.NetworkException("Network error. Please try again."))
         }
     }
     
@@ -695,16 +696,17 @@ class BookingApiRepository @Inject constructor(
                     Timber.d("Order status: ${data.orderId}, remaining: ${data.remainingSeconds}s, active: ${data.isActive}")
                     Result.Success(data)
                 } else {
-                    Result.Error(Exception("Invalid response"))
+                    Result.Error(WeeloException.ApiError("Invalid response", 200))
                 }
             } else {
-                val errorMsg = parseErrorMessage(response)
+                val errorMsg = parseErrorMessage(response, fallback = "Failed to fetch order status.")
                 Timber.w("Get order status failed: $errorMsg")
-                Result.Error(Exception(errorMsg))
+                Result.Error(WeeloException.BookingException(errorMsg))
             }
         } catch (e: Exception) {
+            if (e is kotlinx.coroutines.CancellationException) throw e
             Timber.e(e, "Get order status error")
-            Result.Error(Exception("Network error. Please try again."))
+            Result.Error(WeeloException.NetworkException("Network error. Please try again."))
         }
     }
 }
