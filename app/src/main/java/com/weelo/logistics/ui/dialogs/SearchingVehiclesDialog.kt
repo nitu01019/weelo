@@ -848,6 +848,7 @@ class SearchingVehiclesDialog : com.google.android.material.bottomsheet.BottomSh
                     }
                 }
             } catch (e: Exception) {
+                if (e is kotlinx.coroutines.CancellationException) throw e
                 Timber.e( "Error creating booking: ${e.message}", e)
                 updateStatus(
                     SearchStatus.ERROR,
@@ -1020,6 +1021,7 @@ class SearchingVehiclesDialog : com.google.android.material.bottomsheet.BottomSh
                     }
                 }
             } catch (e: Exception) {
+                if (e is kotlinx.coroutines.CancellationException) throw e
                 Timber.e(e, "Cancel error")
                 currentStatus = previousStatus
                 cancelSheet.onCancelComplete(false, e.message)

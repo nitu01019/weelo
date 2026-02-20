@@ -616,8 +616,8 @@ class BookingTrackingActivity : AppCompatActivity(), OnMapReadyCallback {
                 trackingData.forEach { truck ->
                     addOrUpdateDriverMarker(
                         tripId = truck.tripId,
-                        lat = truck.latitude.toDouble(),
-                        lng = truck.longitude.toDouble(),
+                        lat = truck.latitude,
+                        lng = truck.longitude,
                         status = truck.status,
                         title = truck.vehicleNumber
                     )

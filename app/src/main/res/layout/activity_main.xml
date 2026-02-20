@@ -289,7 +289,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="My Trips"
+                    android:text="@string/my_trips"
                     android:textSize="12sp"
                     android:textColor="#9CA3AF" />
 

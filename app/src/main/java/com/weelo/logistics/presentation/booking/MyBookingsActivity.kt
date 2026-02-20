@@ -278,9 +278,9 @@ class BookingsListAdapter(
                 Timber.w(e, "Failed to parse route for booking ${booking.id}")
                 "Route details"
             }
-            tvVehicleInfo.text = "${booking.vehicleType} • ${booking.trucksNeeded} truck(s)"
+            tvVehicleInfo.text = "${booking.vehicleType} • ${itemView.context.resources.getQuantityString(R.plurals.truck_count, booking.trucksNeeded, booking.trucksNeeded)}"
             tvDate.text = booking.createdAt
-            tvPrice.text = "₹${booking.totalAmount}"
+            tvPrice.text = java.text.NumberFormat.getCurrencyInstance(java.util.Locale("en", "IN")).format(booking.totalAmount)
             var actionHandler: (() -> Unit)? = { onBookingClick(booking) }
 
             // Status badge

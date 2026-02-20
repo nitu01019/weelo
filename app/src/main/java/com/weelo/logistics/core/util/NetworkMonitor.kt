@@ -172,6 +172,7 @@ class NetworkMonitor private constructor(context: Context) {
             }
             
             override fun onLost(network: Network) {
+                // Emit false immediately on network loss (consistent with StateFlow callback)
                 trySend(false)
             }
             

@@ -232,7 +232,7 @@ class CancellationBottomSheet : BottomSheetDialogFragment() {
         if (checkedId == -1) return ""
         
         if (checkedId == R.id.reasonOther) {
-            val customReason = otherReasonInput.text?.toString()?.trim() ?: ""
+            val customReason = otherReasonInput.text?.toString()?.trim()?.take(200) ?: ""
             return if (customReason.isNotBlank()) customReason else "Other"
         }
         
