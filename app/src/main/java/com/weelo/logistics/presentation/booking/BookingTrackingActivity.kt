@@ -583,6 +583,34 @@ class BookingTrackingActivity : AppCompatActivity(), OnMapReadyCallback {
                 val assignedTrucks = trackingRepository.getAssignedTrucks(id)
                 val trackingData = trackingRepository.getBookingTracking(id)
 
+                // If launched from FCM (only bookingId in intent, no coords), fetch them from backend
+                if (pickupLatLng == null || dropLatLng == null) {
+                    try {
+                        val token = trackingRepository.getToken()
+                        if (!token.isNullOrBlank()) {
+                            val resp = trackingRepository.getApiService()
+                                .getBookingById("Bearer $token", id)
+                            val bookingResp = if (resp.isSuccessful) resp.body()?.data?.booking else null
+                            bookingResp?.pickup?.coordinates?.let { c ->
+                                if (c.latitude != 0.0 && c.longitude != 0.0)
+                                    pickupLatLng = com.google.android.gms.maps.model.LatLng(c.latitude, c.longitude)
+                            }
+                            bookingResp?.drop?.coordinates?.let { c ->
+                                if (c.latitude != 0.0 && c.longitude != 0.0)
+                                    dropLatLng = com.google.android.gms.maps.model.LatLng(c.latitude, c.longitude)
+                            }
+                            // Update address labels if missing from intent
+                            if (binding.tvPickupAddress.text.isBlank() || binding.tvPickupAddress.text == "Pickup Location")
+                                bookingResp?.pickup?.address?.let { binding.tvPickupAddress.text = it }
+                            if (binding.tvDropAddress.text.isBlank() || binding.tvDropAddress.text == "Drop Location")
+                                bookingResp?.drop?.address?.let { binding.tvDropAddress.text = it }
+                        }
+                    } catch (e: Exception) {
+                        if (e is kotlinx.coroutines.CancellationException) throw e
+                        Timber.w("$TAG: Could not fetch booking coords from backend: ${e.message}")
+                    }
+                }
+
                 // Guard: if activity is finishing/destroyed, skip UI updates
                 if (isFinishing || isDestroyed) return@launch
 
