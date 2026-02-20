@@ -200,8 +200,9 @@ class BookingTrackingActivity : AppCompatActivity(), OnMapReadyCallback {
         setupBackPressHandler()
 
         // fetchInitialData() is deferred to onMapReady() to prevent marker loss
-        // if REST response arrives before GoogleMap is initialized
-        startLocationUpdates()
+        // if REST response arrives before GoogleMap is initialized.
+        // startLocationUpdates() also deferred to onMapReady() so WebSocket
+        // location updates are not silently dropped before the map is ready.
     }
 
     private fun extractIntentData() {
@@ -220,9 +221,8 @@ class BookingTrackingActivity : AppCompatActivity(), OnMapReadyCallback {
             dropLatLng = LatLng(dropLat, dropLng)
         }
 
-        // Default coordinates if not provided
-        if (pickupLatLng == null) pickupLatLng = LatLng(32.7266, 74.8570)
-        if (dropLatLng == null) dropLatLng = LatLng(32.7355, 74.8702)
+        // Do NOT set fallback coordinates — if intent extras are missing,
+        // real coordinates will be fetched from the backend in fetchInitialData().
     }
 
     private fun setupUI() {
@@ -280,6 +280,7 @@ class BookingTrackingActivity : AppCompatActivity(), OnMapReadyCallback {
 
     override fun onMapReady(map: GoogleMap) {
         googleMap = map
+        startLocationUpdates() // Safe to start now — map is initialized
 
         try {
             googleMap?.uiSettings?.apply {

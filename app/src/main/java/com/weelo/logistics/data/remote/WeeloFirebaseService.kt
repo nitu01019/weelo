@@ -122,18 +122,22 @@ class WeeloFirebaseService : FirebaseMessagingService() {
             else -> rawType
         }
 
+        // Backend sends snake_case keys (e.g. booking_id, trip_id, driver_id).
+        // Support both snake_case and camelCase so the app works regardless of backend version.
+        fun d(camel: String, snake: String) = data[camel] ?: data[snake]
+
         return FCMNotification(
             type = resolvedType,
             title = data["title"] ?: remoteNotification?.title ?: "Weelo",
             body = data["body"] ?: remoteNotification?.body ?: "",
             data = data,
-            bookingId = data["bookingId"],
-            tripId = data["tripId"],
+            bookingId = d("bookingId", "booking_id"),
+            tripId = d("tripId", "trip_id"),
             tripStatus = data["status"],
-            driverId = data["driverId"],
-            driverName = data["driverName"],
-            driverPhone = data["driverPhone"],
-            vehicleNumber = data["vehicleNumber"],
+            driverId = d("driverId", "driver_id"),
+            driverName = d("driverName", "driver_name"),
+            driverPhone = d("driverPhone", "driver_phone"),
+            vehicleNumber = d("vehicleNumber", "vehicle_number"),
             estimatedArrival = data["eta"]
         )
     }

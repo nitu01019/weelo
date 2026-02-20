@@ -320,7 +320,7 @@ class RatingBottomSheetFragment : BottomSheetDialogFragment() {
         val accessToken = tokenManager.getAccessToken()
         if (accessToken.isNullOrBlank()) {
             context?.let {
-                Toast.makeText(it, "Session expired. Please reopen ratings.", Toast.LENGTH_SHORT).show()
+                Toast.makeText(it, getString(R.string.rating_session_expired), Toast.LENGTH_SHORT).show()
             }
             dismissAllowingStateLoss()
             return
@@ -342,7 +342,7 @@ class RatingBottomSheetFragment : BottomSheetDialogFragment() {
                     context?.let {
                         Toast.makeText(
                             it,
-                            data?.message ?: "Thank you for your feedback!",
+                            data?.message ?: getString(R.string.rating_thank_you),
                             Toast.LENGTH_SHORT
                         ).show()
                     }
@@ -352,12 +352,12 @@ class RatingBottomSheetFragment : BottomSheetDialogFragment() {
                 } else {
                     val errorMsg = response.errorBody()?.string() ?: "Failed to submit rating"
                     Timber.w("$TAG: Rating submit failed: $errorMsg")
-                    context?.let { Toast.makeText(it, "Could not submit rating. Try again.", Toast.LENGTH_SHORT).show() }
+                    context?.let { Toast.makeText(it, getString(R.string.rating_submit_failed), Toast.LENGTH_SHORT).show() }
                 }
             } catch (e: Exception) {
                 if (e is kotlinx.coroutines.CancellationException) throw e
                 Timber.e(e, "$TAG: Rating submit error")
-                context?.let { Toast.makeText(it, "Network error. Please try again.", Toast.LENGTH_SHORT).show() }
+                context?.let { Toast.makeText(it, getString(R.string.rating_network_error), Toast.LENGTH_SHORT).show() }
             } finally {
                 setLoading(false)
             }

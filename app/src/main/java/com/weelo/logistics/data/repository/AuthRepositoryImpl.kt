@@ -49,6 +49,7 @@ class AuthRepositoryImpl @Inject constructor(
                 Result.Error(WeeloException.AuthException(friendlyMsg))
             }
         } catch (e: Exception) {
+            if (e is kotlinx.coroutines.CancellationException) throw e
             Timber.e(e, "OTP send error")
             Result.Error(WeeloException.NetworkException(friendlyNetworkError(e)))
         }
@@ -89,6 +90,7 @@ class AuthRepositoryImpl @Inject constructor(
                 Result.Error(WeeloException.AuthException(friendlyMsg))
             }
         } catch (e: Exception) {
+            if (e is kotlinx.coroutines.CancellationException) throw e
             Timber.e(e, "OTP verify error")
             Result.Error(WeeloException.NetworkException(friendlyNetworkError(e)))
         }
@@ -125,6 +127,7 @@ class AuthRepositoryImpl @Inject constructor(
                 Result.Error(WeeloException.AuthException("Session expired. Please login again."))
             }
         } catch (e: Exception) {
+            if (e is kotlinx.coroutines.CancellationException) throw e
             Timber.e(e, "Token refresh error")
             Result.Error(WeeloException.NetworkException("Network error"))
         }
@@ -141,6 +144,7 @@ class AuthRepositoryImpl @Inject constructor(
             Timber.d("User logged out")
             Result.Success(Unit)
         } catch (e: Exception) {
+            if (e is kotlinx.coroutines.CancellationException) throw e
             // Still clear local tokens even if API fails
             tokenManager.clearTokens()
             Timber.w(e, "Logout API failed, local tokens cleared")
@@ -182,6 +186,7 @@ class AuthRepositoryImpl @Inject constructor(
                 Result.Error(WeeloException.AuthException(friendlyMsg))
             }
         } catch (e: Exception) {
+            if (e is kotlinx.coroutines.CancellationException) throw e
             Timber.e(e, "Get profile error")
             Result.Error(WeeloException.NetworkException(friendlyNetworkError(e)))
         }
@@ -221,6 +226,7 @@ class AuthRepositoryImpl @Inject constructor(
                 Result.Error(WeeloException.AuthException(friendlyMsg))
             }
         } catch (e: Exception) {
+            if (e is kotlinx.coroutines.CancellationException) throw e
             Timber.e(e, "Update profile error")
             Result.Error(WeeloException.NetworkException(friendlyNetworkError(e)))
         }

@@ -131,6 +131,11 @@
     <string name="rating_add_comment">Add a comment (optional)</string>
     <string name="rating_submit">Submit Rating</string>
     <string name="rating_skip">Skip for now</string>
+    <string name="rating_session_expired">Session expired. Please reopen ratings.</string>
+    <string name="rating_thank_you">Thank you for your feedback!</string>
+    <string name="rating_submit_failed">Could not submit rating. Try again.</string>
+    <string name="rating_network_error">Network error. Please try again.</string>
+    <string name="cancel_failed">Failed to cancel. Please try again.</string>
 
     <!-- Rating tags -->
     <string name="tag_polite">Polite</string>
