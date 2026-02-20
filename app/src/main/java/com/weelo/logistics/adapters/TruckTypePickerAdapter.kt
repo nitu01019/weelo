@@ -44,15 +44,11 @@ class TruckTypePickerAdapter(
      * @param newItems filtered list of truck type items
      */
     fun updateItems(newItems: List<TruckTypePickerItem>) {
-        val oldSize = truckTypes.size
         truckTypes = newItems
-        
-        // Use efficient notifications
-        if (oldSize != newItems.size) {
-            notifyDataSetChanged() // Only when size changes
-        } else {
-            notifyItemRangeChanged(0, newItems.size)
-        }
+        // Always use notifyDataSetChanged() for filter swaps:
+        // notifyItemRangeChanged with no payload skips rebind for same-position items,
+        // causing stale visuals when filtering changes item content but not count.
+        notifyDataSetChanged()
     }
 
     inner class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {

@@ -437,7 +437,7 @@ class ConfirmPickupActivity : AppCompatActivity(), OnMapReadyCallback {
             return
         }
 
-        Timber.d("Confirming pickup: ${pickup.address}")
+        Timber.d("Confirming pickup: [address redacted]")
 
         // Return result to calling activity
         val resultIntent = Intent().apply {
