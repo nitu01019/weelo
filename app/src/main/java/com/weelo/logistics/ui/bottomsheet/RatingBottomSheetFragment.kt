@@ -87,21 +87,25 @@ class RatingBottomSheetFragment : BottomSheetDialogFragment() {
     private val ratedAssignments = mutableSetOf<String>()
     private var pageChangeCallback: ViewPager2.OnPageChangeCallback? = null
 
-    // Predefined tags matching backend schema
-    private val ratingTags = listOf(
-        "polite" to "Polite",
-        "on_time" to "On Time",
-        "safe_driving" to "Safe Driving",
-        "good_vehicle_condition" to "Good Vehicle",
-        "professional" to "Professional",
-        "helpful" to "Helpful"
+    // Predefined tags matching backend schema — keys stay English, labels are localized in setupTagChips
+    private val ratingTagKeys = listOf(
+        "polite" to R.string.tag_polite,
+        "on_time" to R.string.tag_on_time,
+        "safe_driving" to R.string.tag_safe_driving,
+        "good_vehicle_condition" to R.string.tag_good_vehicle,
+        "professional" to R.string.tag_professional,
+        "helpful" to R.string.tag_helpful
     )
 
-    private val negativeTags = listOf(
-        "rude" to "Rude",
-        "late" to "Late",
-        "rash_driving" to "Rash Driving"
+    private val negativeTagKeys = listOf(
+        "rude" to R.string.tag_rude,
+        "late" to R.string.tag_late,
+        "rash_driving" to R.string.tag_rash_driving
     )
+
+    // Keep legacy refs for updateTagVisibility which checks negativeTags
+    private val ratingTags get() = ratingTagKeys.map { (k, res) -> k to getString(res) }
+    private val negativeTags get() = negativeTagKeys.map { (k, res) -> k to getString(res) }
 
     companion object {
         private const val TAG = "RatingBottomSheet"
@@ -221,12 +225,12 @@ class RatingBottomSheetFragment : BottomSheetDialogFragment() {
             val stars = rating.toInt()
             btnSubmit.isEnabled = stars >= 1
             tvRatingHint.text = when (stars) {
-                1 -> "Poor"
-                2 -> "Fair"
-                3 -> "Good"
-                4 -> "Very Good"
-                5 -> "Excellent!"
-                else -> "Tap to rate"
+                1 -> getString(R.string.rating_poor)
+                2 -> getString(R.string.rating_fair)
+                3 -> getString(R.string.rating_good)
+                4 -> getString(R.string.rating_very_good)
+                5 -> getString(R.string.rating_excellent)
+                else -> getString(R.string.rating_tap_to_rate)
             }
             // Show negative tags for low ratings, positive for high
             updateTagVisibility(stars)
@@ -391,9 +395,9 @@ class RatingBottomSheetFragment : BottomSheetDialogFragment() {
 
     private fun updateTitle() {
         tvTitle.text = if (pendingRatings.size > 1) {
-            "Rate Driver ${currentIndex + 1} of ${pendingRatings.size}"
+            getString(R.string.rate_driver_of, currentIndex + 1, pendingRatings.size)
         } else {
-            "Rate Your Experience"
+            getString(R.string.rate_your_experience)
         }
     }
 

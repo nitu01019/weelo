@@ -113,6 +113,29 @@
     <!-- RatingBottomSheetFragment / item_rating_driver_card -->
     <string name="vehicle">Vehicle</string>
 
+    <!-- Rating hints -->
+    <string name="rating_poor">Poor</string>
+    <string name="rating_fair">Fair</string>
+    <string name="rating_good">Good</string>
+    <string name="rating_very_good">Very Good</string>
+    <string name="rating_excellent">Excellent!</string>
+    <string name="rating_tap_to_rate">Tap to rate</string>
+
+    <!-- Rating tags -->
+    <string name="tag_polite">Polite</string>
+    <string name="tag_on_time">On Time</string>
+    <string name="tag_safe_driving">Safe Driving</string>
+    <string name="tag_good_vehicle">Good Vehicle</string>
+    <string name="tag_professional">Professional</string>
+    <string name="tag_helpful">Helpful</string>
+    <string name="tag_rude">Rude</string>
+    <string name="tag_late">Late</string>
+    <string name="tag_rash_driving">Rash Driving</string>
+
+    <!-- Rating title -->
+    <string name="rate_driver_of">Rate Driver %1$d of %2$d</string>
+    <string name="rate_your_experience">Rate Your Experience</string>
+
     <!-- MyBookingsActivity -->
     <string name="my_trips">My Trips</string>
     <string name="empty_bookings">No bookings yet.\nBook a truck to get started!</string>

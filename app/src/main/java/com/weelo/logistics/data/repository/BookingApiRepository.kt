@@ -93,7 +93,7 @@ class BookingApiRepository @Inject constructor(
      */
     private fun <T> parseErrorMessage(
         response: retrofit2.Response<T>,
-        fallback: String = "Failed to create order. Please try again."
+        fallback: String = "Request failed. Please try again."
     ): String {
         try {
             // Try to parse error body JSON
