@@ -97,13 +97,15 @@ class MainActivity : AppCompatActivity() {
             com.weelo.logistics.data.remote.WeeloFirebaseService.TYPE_TRIP_STATUS_UPDATE,
             com.weelo.logistics.data.remote.WeeloFirebaseService.TYPE_TRIP_UPDATE -> {
                 // Route using bookingId when available, fall back to tripId for trip-only updates
+                // Only route with bookingId — tripId is not a valid substitute for API calls
                 val routingId = bookingId?.takeIf { it.isNotBlank() }
-                    ?: tripId?.takeIf { it.isNotBlank() }
                 Timber.d("Routing trip notification: type=$notificationType bookingId=$routingId tripStatus=$tripStatus")
                 if (routingId != null) {
                     val trackIntent = com.weelo.logistics.presentation.booking.BookingTrackingActivity
                         .newIntent(this, routingId)
                     startActivity(trackIntent)
+                } else {
+                    Timber.w("Trip notification received without bookingId — cannot route to tracking screen")
                 }
             }
             com.weelo.logistics.data.remote.WeeloFirebaseService.TYPE_TRIP_COMPLETED -> {

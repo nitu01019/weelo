@@ -115,7 +115,7 @@ class MyBookingsActivity : AppCompatActivity() {
         lifecycleScope.launch {
             try {
                 val token = tokenManager.getAccessToken() ?: run {
-                    Toast.makeText(this@MyBookingsActivity, "Session expired", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this@MyBookingsActivity, getString(R.string.session_expired), Toast.LENGTH_SHORT).show()
                     return@launch
                 }
 

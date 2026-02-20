@@ -112,7 +112,8 @@
                 app:backgroundTint="@color/primary_blue"
                 android:textColor="@color/white"
                 android:paddingHorizontal="20dp"
-                android:visibility="visible" />
+                android:visibility="visible"
+                android:contentDescription="@string/btn_track_or_rate_desc" />
 
         </LinearLayout>
 

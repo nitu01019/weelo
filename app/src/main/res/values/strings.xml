@@ -144,7 +144,9 @@
     <string name="failed_to_load_ratings">Failed to load rating data</string>
     <string name="rating_new_driver">New</string>
     <string name="cancel_booking">Cancel Booking</string>
-    <string name="tracking_n_trucks">Tracking %d trucks</string>
+    <string name="tracking_n_trucks">Tracking %d trucks</string><!-- kept for fallback; use plurals below -->
+    <string name="session_expired">Session expired. Please log in again.</string>
+    <string name="btn_track_or_rate_desc">Track or rate this booking</string>
     <string name="tracking_your_truck">Tracking your truck</string>
     <string name="waiting_for_truck">Waiting for truck assignment…</string>
     <string name="unable_to_load_tracking">Unable to load tracking data</string>
@@ -191,4 +193,8 @@
     <string name="cancel_go_back">GO BACK</string>
     <string name="cancel_confirm">CONFIRM CANCEL</string>
     <string name="cancel_cancelling">CANCELLING\u2026</string>
+    <plurals name="tracking_trucks_count">
+        <item quantity="one">Tracking 1 truck</item>
+        <item quantity="other">Tracking %d trucks</item>
+    </plurals>
 </resources>

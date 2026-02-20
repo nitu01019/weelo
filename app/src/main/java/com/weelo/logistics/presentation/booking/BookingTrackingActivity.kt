@@ -454,6 +454,7 @@ class BookingTrackingActivity : AppCompatActivity(), OnMapReadyCallback {
 
     /** Handler for periodic ETA refresh */
     private val etaHandler = Handler(Looper.getMainLooper())
+    private var etaPollingActive = false
     private val etaRefreshIntervalMs = 60_000L // 60 seconds
 
     /** Cached real ETAs keyed by tripId */
@@ -464,6 +465,8 @@ class BookingTrackingActivity : AppCompatActivity(), OnMapReadyCallback {
      * Called once after initial data loads.
      */
     private fun startRealEtaRefresh() {
+        if (etaPollingActive) return // Guard against multiple overlapping loops
+        etaPollingActive = true
         fetchRealETA()
         etaHandler.postDelayed(object : Runnable {
             override fun run() {
@@ -635,11 +638,11 @@ class BookingTrackingActivity : AppCompatActivity(), OnMapReadyCallback {
                     }
 
                     // Update tracking status header
-                    binding.tvTrackingStatus.text = if (assignedTrucks.size > 1) {
-                        getString(R.string.tracking_n_trucks, assignedTrucks.size)
-                    } else {
-                        getString(R.string.tracking_your_truck)
-                    }
+                    binding.tvTrackingStatus.text = resources.getQuantityString(
+                        R.plurals.tracking_trucks_count,
+                        assignedTrucks.size,
+                        assignedTrucks.size
+                    )
                 } else {
                     // No trucks assigned yet — show waiting state
                     binding.tvTrackingStatus.text = getString(R.string.waiting_for_truck)
@@ -671,7 +674,7 @@ class BookingTrackingActivity : AppCompatActivity(), OnMapReadyCallback {
                 startRealEtaRefresh()
 
             } catch (e: Exception) {
-                Timber.e("$TAG: Failed to load tracking data: ${e.message}")
+                Timber.e(e, "$TAG: Failed to load tracking data")
 
                 if (!isFinishing && !isDestroyed) {
                     hideLoading()
@@ -1043,7 +1046,7 @@ class BookingTrackingActivity : AppCompatActivity(), OnMapReadyCallback {
         cancelSheet.onCancellationConfirmed = { reason ->
             lifecycleScope.launch {
                 try {
-                    val result = bookingApiRepository.cancelOrder(orderId, reason)
+                    val result = bookingApiRepository.cancelBooking(orderId, reason)
                     when (result) {
                         is com.weelo.logistics.core.common.Result.Success -> {
                             cancelSheet.onCancelComplete(true)
