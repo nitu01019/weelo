@@ -68,6 +68,7 @@ class WebSocketService @Inject constructor(
     // Connection state management
     private val _connectionState = MutableStateFlow(ConnectionState.DISCONNECTED)
     val connectionState: StateFlow<ConnectionState> = _connectionState.asStateFlow()
+    private val _socketEpoch = MutableStateFlow(0)
     
     // Reconnection tracking
     private val reconnectAttempts = AtomicInteger(0)
@@ -140,6 +141,7 @@ class WebSocketService @Inject constructor(
             }
 
             socket = IO.socket(ApiConfig.SOCKET_URL, options)
+            bumpSocketEpoch()
             setupSocketListeners()
             socket?.connect()
             
@@ -243,6 +245,7 @@ class WebSocketService @Inject constructor(
                 socket?.disconnect()
                 socket?.off()
                 socket = null
+                bumpSocketEpoch()
                 
                 // Attempt reconnection
                 connect()
@@ -306,6 +309,7 @@ class WebSocketService @Inject constructor(
         socket?.disconnect()
         socket?.off()
         socket = null
+        bumpSocketEpoch()
     }
     
     /**
@@ -319,8 +323,13 @@ class WebSocketService @Inject constructor(
         socket?.disconnect()
         socket?.off()
         socket = null
+        bumpSocketEpoch()
         
         connect()
+    }
+
+    private fun bumpSocketEpoch() {
+        _socketEpoch.value = _socketEpoch.value + 1
     }
 
     /**
@@ -350,6 +359,81 @@ class WebSocketService @Inject constructor(
         
         socket?.emit(Events.LEAVE_BOOKING, bookingId)
         Timber.d("$TAG: Left booking room: $bookingId")
+    }
+
+    /**
+     * Resolve order id with alias fallback for backend compatibility.
+     * Fallback chain: orderId -> bookingId -> broadcastId
+     */
+    private fun resolveOrderId(data: JSONObject): String {
+        val orderId = data.optString("orderId", "").trim()
+        if (orderId.isNotEmpty()) return orderId
+
+        val bookingId = data.optString("bookingId", "").trim()
+        if (bookingId.isNotEmpty()) return bookingId
+
+        return data.optString("broadcastId", "").trim()
+    }
+
+    /**
+     * Resolve trucksNeeded across payload variants.
+     */
+    private fun resolveTrucksNeeded(data: JSONObject): Int {
+        return when {
+            data.has("trucksNeeded") -> data.optInt("trucksNeeded", 0)
+            data.has("totalTrucks") -> data.optInt("totalTrucks", 0)
+            else -> data.optInt("trucksRemaining", 0) + data.optInt("trucksFilled", 0)
+        }
+    }
+
+    /**
+     * Reconnect-safe Socket.IO event Flow.
+     *
+     * IMPORTANT:
+     * - When forceNew=true reconnect creates a NEW Socket instance.
+     * - callbackFlow listeners attached to old socket won't receive new events.
+     * - This helper tracks socket swaps and re-binds listener deterministically.
+     */
+    private fun <T> reconnectSafeEventFlow(
+        eventName: String,
+        parseErrorTag: String,
+        parseEvent: (JSONObject) -> T?,
+        onEvent: ((T) -> Unit)? = null
+    ): Flow<T> = callbackFlow {
+        val listener = Emitter.Listener { args ->
+            try {
+                val data = args.getOrNull(0) as? JSONObject ?: return@Listener
+                val event = parseEvent(data) ?: return@Listener
+                trySend(event)
+                onEvent?.invoke(event)
+            } catch (e: Exception) {
+                Timber.e(e, "$TAG: Error parsing $parseErrorTag")
+            }
+        }
+
+        var attachedSocket: Socket? = null
+
+        fun bindToLatestSocket() {
+            val latestSocket = socket
+            if (attachedSocket === latestSocket) return
+
+            attachedSocket?.off(eventName, listener)
+            attachedSocket = latestSocket
+            attachedSocket?.on(eventName, listener)
+        }
+
+        bindToLatestSocket()
+
+        val rebindJob = launch {
+            combine(connectionState, _socketEpoch) { _, _ -> Unit }.collect {
+                bindToLatestSocket()
+            }
+        }
+
+        awaitClose {
+            rebindJob.cancel()
+            attachedSocket?.off(eventName, listener)
+        }
     }
 
     /**
@@ -474,154 +558,132 @@ class WebSocketService @Inject constructor(
      * Emitted when ALL trucks in a booking have completed delivery.
      * Used to auto-show the rating bottom sheet.
      */
-    fun onBookingCompleted(): kotlinx.coroutines.flow.Flow<BookingCompletedEvent> = kotlinx.coroutines.flow.callbackFlow {
-        val listener = io.socket.emitter.Emitter.Listener { args ->
-            try {
-                val data = args.getOrNull(0) as? org.json.JSONObject ?: return@Listener
-                val event = BookingCompletedEvent(
-                    bookingId = data.optString("bookingId", "")
-                )
-                if (event.bookingId.isNotEmpty()) {
-                    trySend(event)
-                    Timber.i("$TAG: booking_completed received for ${event.bookingId}")
-                }
-            } catch (e: Exception) {
-                Timber.e(e, "$TAG: Error parsing booking_completed")
-            }
+    fun onBookingCompleted(): Flow<BookingCompletedEvent> = reconnectSafeEventFlow(
+        eventName = Events.BOOKING_COMPLETED,
+        parseErrorTag = "booking_completed",
+        parseEvent = { data ->
+            val bookingId = resolveOrderId(data)
+            if (bookingId.isEmpty()) null else BookingCompletedEvent(bookingId = bookingId)
+        },
+        onEvent = { event ->
+            Timber.i("$TAG: booking_completed received for ${event.bookingId}")
         }
-
-        socket?.on(Events.BOOKING_COMPLETED, listener)
-
-        awaitClose {
-            socket?.off(Events.BOOKING_COMPLETED, listener)
-        }
-    }
+    )
 
     /**
      * Listen for order_expired events.
      * Backend emits this when 120s timer fires and no transporter responded.
      * Customer app shows TimeoutBottomSheet with Retry + Cancel buttons.
      */
-    fun onOrderExpired(): kotlinx.coroutines.flow.Flow<OrderExpiredEvent> = kotlinx.coroutines.flow.callbackFlow {
-        val listener = io.socket.emitter.Emitter.Listener { args ->
-            try {
-                val data = args.getOrNull(0) as? org.json.JSONObject ?: return@Listener
-                val event = OrderExpiredEvent(
-                    orderId = data.optString("orderId", ""),
+    fun onOrderExpired(): Flow<OrderExpiredEvent> = reconnectSafeEventFlow(
+        eventName = Events.ORDER_EXPIRED,
+        parseErrorTag = "order_expired",
+        parseEvent = { data ->
+            val resolvedOrderId = resolveOrderId(data)
+            if (resolvedOrderId.isEmpty()) {
+                null
+            } else {
+                OrderExpiredEvent(
+                    orderId = resolvedOrderId,
                     status = data.optString("status", "expired"),
                     expiredAt = data.optString("expiredAt", ""),
                     totalTrucks = data.optInt("totalTrucks", 0),
                     trucksFilled = data.optInt("trucksFilled", 0)
                 )
-                if (event.orderId.isNotEmpty()) {
-                    trySend(event)
-                    Timber.i("$TAG: order_expired received for ${event.orderId}")
-                }
-            } catch (e: Exception) {
-                Timber.e(e, "$TAG: Error parsing order_expired")
             }
+        },
+        onEvent = { event ->
+            Timber.i("$TAG: order_expired received for ${event.orderId}")
         }
-        socket?.on(Events.ORDER_EXPIRED, listener)
-        awaitClose { socket?.off(Events.ORDER_EXPIRED, listener) }
-    }
+    )
 
     /**
      * Listen for order_cancelled events.
      * Backend emits this when customer's own cancel is confirmed server-side.
      * Customer app shows CancelSuccessSheet with Search Again + Go Back buttons.
      */
-    fun onOrderCancelled(): kotlinx.coroutines.flow.Flow<OrderCancelledEvent> = kotlinx.coroutines.flow.callbackFlow {
-        val listener = io.socket.emitter.Emitter.Listener { args ->
-            try {
-                val data = args.getOrNull(0) as? org.json.JSONObject ?: return@Listener
-                val event = OrderCancelledEvent(
-                    orderId = data.optString("orderId", ""),
+    fun onOrderCancelled(): Flow<OrderCancelledEvent> = reconnectSafeEventFlow(
+        eventName = Events.ORDER_CANCELLED,
+        parseErrorTag = "order_cancelled",
+        parseEvent = { data ->
+            val resolvedOrderId = resolveOrderId(data)
+            if (resolvedOrderId.isEmpty()) {
+                null
+            } else {
+                OrderCancelledEvent(
+                    orderId = resolvedOrderId,
                     status = data.optString("status", "cancelled"),
                     reason = data.optString("reason", ""),
                     cancelledAt = data.optString("cancelledAt", "")
                 )
-                if (event.orderId.isNotEmpty()) {
-                    trySend(event)
-                    Timber.i("$TAG: order_cancelled received for ${event.orderId}")
-                }
-            } catch (e: Exception) {
-                Timber.e(e, "$TAG: Error parsing order_cancelled")
             }
+        },
+        onEvent = { event ->
+            Timber.i("$TAG: order_cancelled received for ${event.orderId}")
         }
-        socket?.on(Events.ORDER_CANCELLED, listener)
-        awaitClose { socket?.off(Events.ORDER_CANCELLED, listener) }
-    }
+    )
 
     /**
      * Listen for broadcast_state_changed events.
      * Backend emits as order moves through created → broadcasting → active lifecycle.
      */
-    fun onBroadcastStateChanged(): kotlinx.coroutines.flow.Flow<BroadcastStateChangedEvent> = kotlinx.coroutines.flow.callbackFlow {
-        val listener = io.socket.emitter.Emitter.Listener { args ->
-            try {
-                val data = args.getOrNull(0) as? org.json.JSONObject ?: return@Listener
-                val event = BroadcastStateChangedEvent(
-                    orderId = data.optString("orderId", ""),
+    fun onBroadcastStateChanged(): Flow<BroadcastStateChangedEvent> = reconnectSafeEventFlow(
+        eventName = Events.BROADCAST_STATE_CHANGED,
+        parseErrorTag = "broadcast_state_changed",
+        parseEvent = { data ->
+            val resolvedOrderId = resolveOrderId(data)
+            if (resolvedOrderId.isEmpty()) {
+                null
+            } else {
+                BroadcastStateChangedEvent(
+                    orderId = resolvedOrderId,
                     status = data.optString("status", "")
                 )
-                if (event.orderId.isNotEmpty()) {
-                    trySend(event)
-                }
-            } catch (e: Exception) {
-                Timber.e(e, "$TAG: Error parsing broadcast_state_changed")
             }
         }
-        socket?.on(Events.BROADCAST_STATE_CHANGED, listener)
-        awaitClose { socket?.off(Events.BROADCAST_STATE_CHANGED, listener) }
-    }
+    )
 
     /**
      * Listen for trucks_remaining_update events.
      * Backend emits as each truck gets assigned — customer sees live progress bar.
      */
-    fun onTrucksRemainingUpdate(): kotlinx.coroutines.flow.Flow<TrucksRemainingUpdateEvent> = kotlinx.coroutines.flow.callbackFlow {
-        val listener = io.socket.emitter.Emitter.Listener { args ->
-            try {
-                val data = args.getOrNull(0) as? org.json.JSONObject ?: return@Listener
-                val event = TrucksRemainingUpdateEvent(
-                    orderId = data.optString("orderId", ""),
-                    trucksNeeded = data.optInt("trucksNeeded", 0),
+    fun onTrucksRemainingUpdate(): Flow<TrucksRemainingUpdateEvent> = reconnectSafeEventFlow(
+        eventName = Events.TRUCKS_REMAINING_UPDATE,
+        parseErrorTag = "trucks_remaining_update",
+        parseEvent = { data ->
+            val resolvedOrderId = resolveOrderId(data)
+            if (resolvedOrderId.isEmpty()) {
+                null
+            } else {
+                TrucksRemainingUpdateEvent(
+                    orderId = resolvedOrderId,
+                    trucksNeeded = resolveTrucksNeeded(data),
                     trucksFilled = data.optInt("trucksFilled", 0)
                 )
-                if (event.orderId.isNotEmpty()) {
-                    trySend(event)
-                }
-            } catch (e: Exception) {
-                Timber.e(e, "$TAG: Error parsing trucks_remaining_update")
             }
         }
-        socket?.on(Events.TRUCKS_REMAINING_UPDATE, listener)
-        awaitClose { socket?.off(Events.TRUCKS_REMAINING_UPDATE, listener) }
-    }
+    )
 
     /**
      * Listen for booking_fully_filled events.
      * Backend emits when ALL trucks in order have been assigned.
      * Customer app navigates to BookingTrackingActivity.
      */
-    fun onBookingFullyFilled(): kotlinx.coroutines.flow.Flow<BookingFullyFilledEvent> = kotlinx.coroutines.flow.callbackFlow {
-        val listener = io.socket.emitter.Emitter.Listener { args ->
-            try {
-                val data = args.getOrNull(0) as? org.json.JSONObject ?: return@Listener
-                val event = BookingFullyFilledEvent(
-                    orderId = data.optString("orderId", "")
-                )
-                if (event.orderId.isNotEmpty()) {
-                    trySend(event)
-                    Timber.i("$TAG: booking_fully_filled received for ${event.orderId}")
-                }
-            } catch (e: Exception) {
-                Timber.e(e, "$TAG: Error parsing booking_fully_filled")
+    fun onBookingFullyFilled(): Flow<BookingFullyFilledEvent> = reconnectSafeEventFlow(
+        eventName = Events.BOOKING_FULLY_FILLED,
+        parseErrorTag = "booking_fully_filled",
+        parseEvent = { data ->
+            val resolvedOrderId = resolveOrderId(data)
+            if (resolvedOrderId.isEmpty()) {
+                null
+            } else {
+                BookingFullyFilledEvent(orderId = resolvedOrderId)
             }
+        },
+        onEvent = { event ->
+            Timber.i("$TAG: booking_fully_filled received for ${event.orderId}")
         }
-        socket?.on(Events.BOOKING_FULLY_FILLED, listener)
-        awaitClose { socket?.off(Events.BOOKING_FULLY_FILLED, listener) }
-    }
+    )
 
     /**
      * Get current connection state

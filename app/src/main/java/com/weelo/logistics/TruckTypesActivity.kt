@@ -46,6 +46,7 @@ import com.weelo.logistics.adapters.SubtypeItem
 import com.weelo.logistics.adapters.TruckTypePickerAdapter
 import com.weelo.logistics.adapters.TruckTypePickerItem
 import com.weelo.logistics.presentation.booking.BookingConfirmationActivity
+import com.weelo.logistics.presentation.booking.BookingTrackingActivity
 import com.weelo.logistics.ui.dialogs.SearchingVehiclesDialog
 import com.weelo.logistics.adapters.SubtypeWithQuantityAdapter
 import com.weelo.logistics.adapters.SubtypeQuantityItem
@@ -1567,36 +1568,48 @@ class TruckTypesActivity : AppCompatActivity() {
             )
             
             // Set callbacks
+            // Store active order ID so retry/cancel flows work correctly
+            var activeOrderId: String? = null
+
             searchDialog.setOnBookingCreatedListener(object : SearchingVehiclesDialog.OnBookingCreatedListener {
                 override fun onBookingCreated(bookingId: String) {
-                    Timber.d( "Booking created: $bookingId")
+                    Timber.d("Order created: $bookingId")
+                    activeOrderId = bookingId
                 }
             })
-            
+
+            // [Cancel] on timeout bottom sheet OR manual cancel success → go back to map/booking screen
             searchDialog.setOnSearchCancelledListener(object : SearchingVehiclesDialog.OnSearchCancelledListener {
                 override fun onSearchCancelled() {
-                    Timber.d( "Search cancelled by user")
-                    Toast.makeText(this@TruckTypesActivity, "Search cancelled", Toast.LENGTH_SHORT).show()
+                    Timber.d("Search cancelled — returning to map. orderId=$activeOrderId")
+                    activeOrderId = null
+                    // Finish TruckTypesActivity so customer lands back on the map/booking screen
+                    finish()
                 }
             })
-            
+
+            // Timeout is handled fully inside SearchingVehiclesDialog (Retry/Cancel buttons).
+            // This callback fires only if the dialog is dismissed without retry — go back to map.
             searchDialog.setOnSearchTimeoutListener(object : SearchingVehiclesDialog.OnSearchTimeoutListener {
                 override fun onSearchTimeout(bookingId: String?) {
-                    Timber.d( "Search timed out, bookingId: $bookingId")
-                    Toast.makeText(this@TruckTypesActivity, "No drivers found. Please try again.", Toast.LENGTH_LONG).show()
+                    Timber.d("Search timed out, orderId=$bookingId — returning to map")
+                    activeOrderId = null
+                    finish()
                 }
             })
-            
+
+            // All trucks filled (booking_fully_filled) → navigate to BookingTrackingActivity
             searchDialog.setOnDriverFoundListener(object : SearchingVehiclesDialog.OnDriverFoundListener {
                 override fun onDriverFound(bookingId: String, driverName: String, vehicleNumber: String) {
-                    Timber.d( "Driver found: $driverName ($vehicleNumber)")
-                    // Navigate to booking confirmation
-                    val intent = Intent(this@TruckTypesActivity, BookingConfirmationActivity::class.java)
-                    intent.putExtra("booking_id", bookingId)
-                    intent.putExtra("driver_name", driverName)
-                    intent.putExtra("vehicle_number", vehicleNumber)
+                    Timber.d("Booking fully filled: orderId=$bookingId")
+                    val intent = Intent(this@TruckTypesActivity, BookingTrackingActivity::class.java).apply {
+                        putExtra("booking_id", bookingId)
+                        // Clear back-stack so customer cannot go back to the truck-selection screen
+                        flags = Intent.FLAG_ACTIVITY_CLEAR_TOP
+                    }
                     startActivity(intent)
                     searchDialog.dismiss()
+                    finish()
                 }
             })
             
