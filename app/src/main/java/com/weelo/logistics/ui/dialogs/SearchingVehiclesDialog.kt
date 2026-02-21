@@ -100,6 +100,9 @@ class SearchingVehiclesDialog : com.google.android.material.bottomsheet.BottomSh
     @Inject
     lateinit var bookingRepository: BookingApiRepository
 
+    @Inject
+    lateinit var webSocketService: com.weelo.logistics.data.remote.WebSocketService
+
     // UI Components
     private lateinit var animationView: LottieAnimationView
     private lateinit var statusTitle: TextView
@@ -374,8 +377,14 @@ class SearchingVehiclesDialog : com.google.android.material.bottomsheet.BottomSh
         // EASY UNDERSTANDING: Clear behavior based on dialog state
         cancelButton.setOnClickListener {
             when (currentStatus) {
-                SearchStatus.ERROR, SearchStatus.TIMEOUT -> {
-                    // When error or timeout, just close the dialog
+                SearchStatus.ERROR -> {
+                    // Error state — just close
+                    dismiss()
+                }
+                SearchStatus.TIMEOUT -> {
+                    // PRD 4.1: On timeout, Cancel button = go back to map screen (no new order)
+                    // Retry Search button handles the retry flow separately
+                    retrySearchButton.visibility = View.GONE
                     dismiss()
                 }
                 else -> {
@@ -395,6 +404,39 @@ class SearchingVehiclesDialog : com.google.android.material.bottomsheet.BottomSh
         boost100Button.setOnClickListener { applyBoost(100) }
         boost150Button.setOnClickListener { applyBoost(150) }
         boost200Button.setOnClickListener { applyBoost(200) }
+
+        // PRD 4.2: Listen for backend order_expired event — triggers timeout UI
+        // Backend fires this when 120s timer runs out server-side.
+        // This ensures UI matches backend state even if local CountDownTimer is slightly off.
+        lifecycleScope.launch {
+            webSocketService.onOrderExpired().collect { event ->
+                val activeOrderId = createdBookingId
+                if (!activeOrderId.isNullOrEmpty() && event.orderId == activeOrderId) {
+                    timber.log.Timber.i("SearchingVehiclesDialog: order_expired received from backend for $activeOrderId")
+                    if (currentStatus == SearchStatus.SEARCHING || currentStatus == SearchStatus.BOOKING_CREATED) {
+                        handleTimeout()
+                    }
+                }
+            }
+        }
+
+        // PRD 4.2: Listen for backend order_cancelled event — backend confirmed cancel
+        // Shows cancel success state (already handled by executeCancelWithReason callback,
+        // but this handles edge case where cancel was triggered from another device/session)
+        lifecycleScope.launch {
+            webSocketService.onOrderCancelled().collect { event ->
+                val activeOrderId = createdBookingId
+                if (!activeOrderId.isNullOrEmpty() && event.orderId == activeOrderId) {
+                    timber.log.Timber.i("SearchingVehiclesDialog: order_cancelled confirmed by backend for $activeOrderId")
+                    if (currentStatus == SearchStatus.SEARCHING || currentStatus == SearchStatus.BOOKING_CREATED) {
+                        // Backend confirmed — clear state and dismiss
+                        ActiveOrderPrefs.clear(requireContext())
+                        onSearchCancelledListener?.onSearchCancelled()
+                        dismiss()
+                    }
+                }
+            }
+        }
     }
     
     private fun showTripDetails() {
@@ -821,9 +863,20 @@ class SearchingVehiclesDialog : com.google.android.material.bottomsheet.BottomSh
                             "Order created with ${orderResult.totalTrucks} trucks! Broadcasting..."
                         )
                         
+                        // PRD 4.2: Connect WebSocket and join order room so we receive
+                        // order_expired / order_cancelled events from backend in real-time
+                        try {
+                            webSocketService.connect()
+                            webSocketService.joinBookingRoom(orderResult.orderId)
+                            Timber.i("SearchingVehiclesDialog: WebSocket connected, joined room ${orderResult.orderId}")
+                        } catch (e: Exception) {
+                            Timber.w("SearchingVehiclesDialog: WebSocket connect failed (non-critical): ${e.message}")
+                            // Non-critical — local CountDownTimer still handles timeout
+                        }
+
                         // Notify listener
                         onBookingCreatedListener?.onBookingCreated(orderResult.orderId)
-                        
+
                         Timber.d( "Order created: ${orderResult.orderId}, expires in ${expiresIn}s")
                     }
                     Result.Loading -> {
@@ -889,8 +942,9 @@ class SearchingVehiclesDialog : com.google.android.material.bottomsheet.BottomSh
                 skipWaitCard.visibility = View.GONE
             }
             SearchStatus.TIMEOUT -> {
+                // PRD 4.1: TIMEOUT uses handleTimeout() directly — do NOT set button text here
+                // retrySearchButton + cancelButton are managed by handleTimeout()
                 animationView.pauseAnimation()
-                cancelButton.text = "CLOSE"
                 timerText.visibility = View.GONE
                 progressBar.visibility = View.GONE
             }
@@ -1124,6 +1178,15 @@ class SearchingVehiclesDialog : com.google.android.material.bottomsheet.BottomSh
         countDownTimer?.cancel()
         skipWaitTimer?.cancel()
         bookingJob?.cancel()
+        // Leave WebSocket room on dismiss — clean up subscription
+        val orderId = createdBookingId
+        if (!orderId.isNullOrEmpty()) {
+            try {
+                webSocketService.leaveBookingRoom(orderId)
+            } catch (e: Exception) {
+                timber.log.Timber.w("SearchingVehiclesDialog: leaveBookingRoom failed: ${e.message}")
+            }
+        }
         super.onDestroyView()
     }
 }
