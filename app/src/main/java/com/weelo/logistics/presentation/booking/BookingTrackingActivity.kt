@@ -376,7 +376,8 @@ class BookingTrackingActivity : AppCompatActivity(), OnMapReadyCallback {
 
         val existingMarker = driverMarkers[tripId]
         if (existingMarker != null) {
-            // Update marker icon color if status changed
+            // Keep marker position fresh on re-fetches, not only WebSocket updates.
+            existingMarker.position = position
             existingMarker.setIcon(BitmapDescriptorFactory.defaultMarker(hue))
         } else {
             // Create new marker
