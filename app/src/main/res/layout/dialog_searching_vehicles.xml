@@ -340,6 +340,22 @@
         android:layout_height="0dp"
         android:visibility="gone" />
 
+    <!-- Retry Search Button (PRD 4.1) — shown only on TIMEOUT state -->
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/retrySearchButton"
+        style="@style/Widget.MaterialComponents.Button"
+        android:layout_width="match_parent"
+        android:layout_height="52dp"
+        android:layout_marginHorizontal="16dp"
+        android:layout_marginBottom="8dp"
+        android:text="Retry Search"
+        android:textColor="#1A1A1A"
+        android:textSize="15sp"
+        android:textStyle="bold"
+        android:visibility="gone"
+        app:backgroundTint="#FDD835"
+        app:cornerRadius="26dp" />
+
     <!-- Cancel Button -->
     <com.google.android.material.button.MaterialButton
         android:id="@+id/cancelButton"

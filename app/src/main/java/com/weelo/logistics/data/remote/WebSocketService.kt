@@ -101,6 +101,12 @@ class WebSocketService @Inject constructor(
         const val BOOKING_COMPLETED = "booking_completed"
         const val PONG = "pong"
         const val ERROR = "error"
+        // Order lifecycle events (PRD 4.2)
+        const val ORDER_CANCELLED = "order_cancelled"
+        const val ORDER_EXPIRED = "order_expired"
+        const val BROADCAST_STATE_CHANGED = "broadcast_state_changed"
+        const val TRUCKS_REMAINING_UPDATE = "trucks_remaining_update"
+        const val BOOKING_FULLY_FILLED = "booking_fully_filled"
     }
 
     /**
@@ -492,6 +498,132 @@ class WebSocketService @Inject constructor(
     }
 
     /**
+     * Listen for order_expired events.
+     * Backend emits this when 120s timer fires and no transporter responded.
+     * Customer app shows TimeoutBottomSheet with Retry + Cancel buttons.
+     */
+    fun onOrderExpired(): kotlinx.coroutines.flow.Flow<OrderExpiredEvent> = kotlinx.coroutines.flow.callbackFlow {
+        val listener = io.socket.emitter.Emitter.Listener { args ->
+            try {
+                val data = args.getOrNull(0) as? org.json.JSONObject ?: return@Listener
+                val event = OrderExpiredEvent(
+                    orderId = data.optString("orderId", ""),
+                    status = data.optString("status", "expired"),
+                    expiredAt = data.optString("expiredAt", ""),
+                    totalTrucks = data.optInt("totalTrucks", 0),
+                    trucksFilled = data.optInt("trucksFilled", 0)
+                )
+                if (event.orderId.isNotEmpty()) {
+                    trySend(event)
+                    Timber.i("$TAG: order_expired received for ${event.orderId}")
+                }
+            } catch (e: Exception) {
+                Timber.e(e, "$TAG: Error parsing order_expired")
+            }
+        }
+        socket?.on(Events.ORDER_EXPIRED, listener)
+        awaitClose { socket?.off(Events.ORDER_EXPIRED, listener) }
+    }
+
+    /**
+     * Listen for order_cancelled events.
+     * Backend emits this when customer's own cancel is confirmed server-side.
+     * Customer app shows CancelSuccessSheet with Search Again + Go Back buttons.
+     */
+    fun onOrderCancelled(): kotlinx.coroutines.flow.Flow<OrderCancelledEvent> = kotlinx.coroutines.flow.callbackFlow {
+        val listener = io.socket.emitter.Emitter.Listener { args ->
+            try {
+                val data = args.getOrNull(0) as? org.json.JSONObject ?: return@Listener
+                val event = OrderCancelledEvent(
+                    orderId = data.optString("orderId", ""),
+                    status = data.optString("status", "cancelled"),
+                    reason = data.optString("reason", ""),
+                    cancelledAt = data.optString("cancelledAt", "")
+                )
+                if (event.orderId.isNotEmpty()) {
+                    trySend(event)
+                    Timber.i("$TAG: order_cancelled received for ${event.orderId}")
+                }
+            } catch (e: Exception) {
+                Timber.e(e, "$TAG: Error parsing order_cancelled")
+            }
+        }
+        socket?.on(Events.ORDER_CANCELLED, listener)
+        awaitClose { socket?.off(Events.ORDER_CANCELLED, listener) }
+    }
+
+    /**
+     * Listen for broadcast_state_changed events.
+     * Backend emits as order moves through created → broadcasting → active lifecycle.
+     */
+    fun onBroadcastStateChanged(): kotlinx.coroutines.flow.Flow<BroadcastStateChangedEvent> = kotlinx.coroutines.flow.callbackFlow {
+        val listener = io.socket.emitter.Emitter.Listener { args ->
+            try {
+                val data = args.getOrNull(0) as? org.json.JSONObject ?: return@Listener
+                val event = BroadcastStateChangedEvent(
+                    orderId = data.optString("orderId", ""),
+                    status = data.optString("status", "")
+                )
+                if (event.orderId.isNotEmpty()) {
+                    trySend(event)
+                }
+            } catch (e: Exception) {
+                Timber.e(e, "$TAG: Error parsing broadcast_state_changed")
+            }
+        }
+        socket?.on(Events.BROADCAST_STATE_CHANGED, listener)
+        awaitClose { socket?.off(Events.BROADCAST_STATE_CHANGED, listener) }
+    }
+
+    /**
+     * Listen for trucks_remaining_update events.
+     * Backend emits as each truck gets assigned — customer sees live progress bar.
+     */
+    fun onTrucksRemainingUpdate(): kotlinx.coroutines.flow.Flow<TrucksRemainingUpdateEvent> = kotlinx.coroutines.flow.callbackFlow {
+        val listener = io.socket.emitter.Emitter.Listener { args ->
+            try {
+                val data = args.getOrNull(0) as? org.json.JSONObject ?: return@Listener
+                val event = TrucksRemainingUpdateEvent(
+                    orderId = data.optString("orderId", ""),
+                    trucksNeeded = data.optInt("trucksNeeded", 0),
+                    trucksFilled = data.optInt("trucksFilled", 0)
+                )
+                if (event.orderId.isNotEmpty()) {
+                    trySend(event)
+                }
+            } catch (e: Exception) {
+                Timber.e(e, "$TAG: Error parsing trucks_remaining_update")
+            }
+        }
+        socket?.on(Events.TRUCKS_REMAINING_UPDATE, listener)
+        awaitClose { socket?.off(Events.TRUCKS_REMAINING_UPDATE, listener) }
+    }
+
+    /**
+     * Listen for booking_fully_filled events.
+     * Backend emits when ALL trucks in order have been assigned.
+     * Customer app navigates to BookingTrackingActivity.
+     */
+    fun onBookingFullyFilled(): kotlinx.coroutines.flow.Flow<BookingFullyFilledEvent> = kotlinx.coroutines.flow.callbackFlow {
+        val listener = io.socket.emitter.Emitter.Listener { args ->
+            try {
+                val data = args.getOrNull(0) as? org.json.JSONObject ?: return@Listener
+                val event = BookingFullyFilledEvent(
+                    orderId = data.optString("orderId", "")
+                )
+                if (event.orderId.isNotEmpty()) {
+                    trySend(event)
+                    Timber.i("$TAG: booking_fully_filled received for ${event.orderId}")
+                }
+            } catch (e: Exception) {
+                Timber.e(e, "$TAG: Error parsing booking_fully_filled")
+            }
+        }
+        socket?.on(Events.BOOKING_FULLY_FILLED, listener)
+        awaitClose { socket?.off(Events.BOOKING_FULLY_FILLED, listener) }
+    }
+
+    /**
      * Get current connection state
      */
     fun isConnected(): Boolean = _connectionState.value == ConnectionState.CONNECTED
@@ -545,4 +677,35 @@ data class AssignmentStatusEvent(
 
 data class BookingCompletedEvent(
     val bookingId: String
+)
+
+// PRD 4.2 — Order lifecycle events
+data class OrderExpiredEvent(
+    val orderId: String,
+    val status: String,       // "expired" or "partially_filled"
+    val expiredAt: String,
+    val totalTrucks: Int,
+    val trucksFilled: Int
+)
+
+data class OrderCancelledEvent(
+    val orderId: String,
+    val status: String,       // "cancelled"
+    val reason: String,
+    val cancelledAt: String
+)
+
+data class BroadcastStateChangedEvent(
+    val orderId: String,
+    val status: String        // "created" | "broadcasting" | "active"
+)
+
+data class TrucksRemainingUpdateEvent(
+    val orderId: String,
+    val trucksNeeded: Int,
+    val trucksFilled: Int
+)
+
+data class BookingFullyFilledEvent(
+    val orderId: String
 )

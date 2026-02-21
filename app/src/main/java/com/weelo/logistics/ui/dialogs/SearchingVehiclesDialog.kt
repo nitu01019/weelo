@@ -111,6 +111,7 @@ class SearchingVehiclesDialog : com.google.android.material.bottomsheet.BottomSh
     private lateinit var selectedTrucksText: TextView
     private lateinit var totalPriceText: TextView
     private lateinit var cancelButton: MaterialButton
+    private lateinit var retrySearchButton: MaterialButton
     
     // New UI Components for Rapido-style design
     private lateinit var tripDetailsButton: MaterialButton
@@ -307,6 +308,7 @@ class SearchingVehiclesDialog : com.google.android.material.bottomsheet.BottomSh
         selectedTrucksText = view.findViewById(R.id.selectedTrucksText)
         totalPriceText = view.findViewById(R.id.totalPriceText)
         cancelButton = view.findViewById(R.id.cancelButton)
+        retrySearchButton = view.findViewById(R.id.retrySearchButton)
         
         // New Rapido-style components
         tripDetailsButton = view.findViewById(R.id.tripDetailsButton)
@@ -901,20 +903,74 @@ class SearchingVehiclesDialog : com.google.android.material.bottomsheet.BottomSh
     private fun handleTimeout() {
         currentStatus = SearchStatus.TIMEOUT
         countDownTimer?.cancel()
-        
+
         // SCALABILITY: Clear persisted order state
         ActiveOrderPrefs.clear(requireContext())
-        
-        statusTitle.text = "No Drivers Found"
-        statusSubtitle.text = "No transporters available right now. Try again later."
+
+        // PRD 4.1: Timeout UI — show Retry + Cancel dual buttons
+        statusTitle.text = "⏰ No trucks found nearby"
+        statusSubtitle.text = "We couldn't find available trucks for your route right now. Try again or change your pickup/drop."
         animationView.pauseAnimation()
-        cancelButton.text = "CLOSE"
-        
+
         // Hide timer and progress
         timerText.visibility = View.GONE
         progressBar.visibility = View.GONE
-        
+
+        // Show Retry Search button (primary — brand yellow)
+        retrySearchButton.visibility = View.VISIBLE
+        retrySearchButton.isEnabled = true
+        retrySearchButton.text = "Retry Search"
+
+        // Cancel button becomes secondary text ("Cancel")
+        cancelButton.text = "Cancel"
+
+        // Wire Retry button — PRD Retry flow: cancel old order → create fresh order same params
+        retrySearchButton.setOnClickListener {
+            retrySearchButton.isEnabled = false
+            retrySearchButton.text = "Searching..."
+            executeRetrySearch()
+        }
+
         onSearchTimeoutListener?.onSearchTimeout(createdBookingId)
+    }
+
+    /**
+     * Retry search — PRD 4.1 Retry flow:
+     * 1. Cancel previous expired order (idempotent — already expired server-side)
+     * 2. Generate fresh UUID idempotency key (NEVER reuse old one)
+     * 3. Call POST /orders with same params + fresh key
+     * 4. On success: reset timer → show searching UI again
+     */
+    private fun executeRetrySearch() {
+        Timber.i("SearchingVehiclesDialog: Executing retry search")
+
+        lifecycleScope.launch {
+            // Step 1: Cancel old order if it exists (idempotent — backend handles already-expired)
+            val oldOrderId = createdBookingId
+            if (oldOrderId != null) {
+                try {
+                    bookingRepository.cancelOrder(oldOrderId, "retry_after_timeout")
+                } catch (e: Exception) {
+                    Timber.w("Retry: cancel old order failed (non-critical): ${e.message}")
+                    // Non-critical — order may already be expired server-side
+                }
+            }
+
+            // Step 2: Reset UI to searching state
+            createdBookingId = null
+            currentStatus = SearchStatus.SEARCHING
+            retrySearchButton.visibility = View.GONE
+            cancelButton.text = "CANCEL"
+            statusTitle.text = "Searching for trucks..."
+            statusSubtitle.text = "Finding available transporters near you"
+            animationView.resumeAnimation()
+            timerText.visibility = View.VISIBLE
+            progressBar.visibility = View.VISIBLE
+            ActiveOrderPrefs.clear(requireContext())
+
+            // Step 3: Create fresh order with new idempotency key (same params)
+            startBookingProcess()
+        }
     }
 
     /**
