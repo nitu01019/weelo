@@ -46,8 +46,8 @@ class TruckTypePickerAdapter(
     fun updateItems(newItems: List<TruckTypePickerItem>) {
         truckTypes = newItems
         // Always use notifyDataSetChanged() for filter swaps:
-        // notifyItemRangeChanged with no payload skips rebind for same-position items,
-        // causing stale visuals when filtering changes item content but not count.
+        // when filtering changes item identity but not count, notifyItemRangeChanged
+        // semantically signals "same items updated" and can cause visual glitches.
         notifyDataSetChanged()
     }
 
