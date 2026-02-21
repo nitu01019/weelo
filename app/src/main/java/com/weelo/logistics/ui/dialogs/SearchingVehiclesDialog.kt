@@ -1239,6 +1239,7 @@ class SearchingVehiclesDialog : com.google.android.material.bottomsheet.BottomSh
                 try {
                     bookingRepository.cancelOrder(oldOrderId, "retry_after_timeout")
                 } catch (e: Exception) {
+                    if (e is kotlinx.coroutines.CancellationException) throw e
                     Timber.w("Retry: cancel old order failed (non-critical): ${e.message}")
                     // Non-critical — order may already be expired server-side
                 }

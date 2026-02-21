@@ -131,6 +131,10 @@ class BookingTrackingActivity : AppCompatActivity(), OnMapReadyCallback {
     private var driverPhone: String? = null
     private var pickupLatLng: LatLng? = null
     private var dropLatLng: LatLng? = null
+    private var pickupAddressFromIntent: String? = null
+    private var dropAddressFromIntent: String? = null
+    private var hasPickupAddressExtra: Boolean = false
+    private var hasDropAddressExtra: Boolean = false
 
     /** Handler for auto-dismissing status banner */
     private val bannerHandler = Handler(Looper.getMainLooper())
@@ -212,6 +216,10 @@ class BookingTrackingActivity : AppCompatActivity(), OnMapReadyCallback {
     private fun extractIntentData() {
         bookingId = intent.getStringExtra(EXTRA_BOOKING_ID)
         driverPhone = intent.getStringExtra(EXTRA_DRIVER_PHONE)
+        pickupAddressFromIntent = intent.getStringExtra(EXTRA_PICKUP_ADDRESS)
+        dropAddressFromIntent = intent.getStringExtra(EXTRA_DROP_ADDRESS)
+        hasPickupAddressExtra = !pickupAddressFromIntent.isNullOrBlank()
+        hasDropAddressExtra = !dropAddressFromIntent.isNullOrBlank()
 
         val pickupLat = intent.getDoubleExtra(EXTRA_PICKUP_LAT, 0.0)
         val pickupLng = intent.getDoubleExtra(EXTRA_PICKUP_LNG, 0.0)
@@ -235,8 +243,8 @@ class BookingTrackingActivity : AppCompatActivity(), OnMapReadyCallback {
             tvDriverName.text = intent.getStringExtra(EXTRA_DRIVER_NAME) ?: "Driver"
             tvVehicleNumber.text = intent.getStringExtra(EXTRA_VEHICLE_NUMBER) ?: "Vehicle"
             tvVehicleType.text = intent.getStringExtra(EXTRA_VEHICLE_TYPE) ?: "Truck"
-            tvPickupAddress.text = intent.getStringExtra(EXTRA_PICKUP_ADDRESS) ?: "Pickup Location"
-            tvDropAddress.text = intent.getStringExtra(EXTRA_DROP_ADDRESS) ?: "Drop Location"
+            tvPickupAddress.text = pickupAddressFromIntent ?: getString(R.string.pickup_location_placeholder)
+            tvDropAddress.text = dropAddressFromIntent ?: getString(R.string.drop_location_placeholder)
 
             btnBack.setOnClickListener {
                 finish()
@@ -632,9 +640,9 @@ class BookingTrackingActivity : AppCompatActivity(), OnMapReadyCallback {
                                     dropLatLng = com.google.android.gms.maps.model.LatLng(c.latitude, c.longitude)
                             }
                             // Update address labels if missing from intent
-                            if (binding.tvPickupAddress.text.isBlank() || binding.tvPickupAddress.text == "Pickup Location")
+                            if (!hasPickupAddressExtra)
                                 bookingResp?.pickup?.address?.let { binding.tvPickupAddress.text = it }
-                            if (binding.tvDropAddress.text.isBlank() || binding.tvDropAddress.text == "Drop Location")
+                            if (!hasDropAddressExtra)
                                 bookingResp?.drop?.address?.let { binding.tvDropAddress.text = it }
                         }
                     } catch (e: Exception) {
@@ -876,15 +884,15 @@ class BookingTrackingActivity : AppCompatActivity(), OnMapReadyCallback {
             trackingRepository.connectionState.collectLatest { state ->
                 when (state) {
                     WebSocketService.ConnectionState.CONNECTED -> {
-                        binding.chipLive.text = "LIVE"
+                        binding.chipLive.text = getString(R.string.tracking_connection_live)
                         binding.chipLive.setChipBackgroundColorResource(R.color.success_green)
                     }
                     WebSocketService.ConnectionState.RECONNECTING -> {
-                        binding.chipLive.text = "RECONNECTING..."
+                        binding.chipLive.text = getString(R.string.tracking_connection_reconnecting)
                         binding.chipLive.setChipBackgroundColorResource(R.color.warning_orange)
                     }
                     WebSocketService.ConnectionState.FAILED -> {
-                        binding.chipLive.text = "OFFLINE"
+                        binding.chipLive.text = getString(R.string.tracking_connection_offline)
                         binding.chipLive.setChipBackgroundColorResource(R.color.error_red)
                     }
                     else -> { /* CONNECTING, DISCONNECTED — no change */ }
@@ -936,13 +944,13 @@ class BookingTrackingActivity : AppCompatActivity(), OnMapReadyCallback {
      */
     private fun getStatusMessage(status: String, vehicleNumber: String): String {
         return when (status.lowercase(java.util.Locale.ROOT)) {
-            "heading_to_pickup", "driver_accepted" -> "\uD83D\uDE9B Driver is heading to pickup"
-            "at_pickup" -> "\uD83D\uDE9B Driver arrived at pickup"
-            "loading_complete" -> "\uD83D\uDCE6 Loading complete, trip starting"
-            "in_transit" -> "\uD83D\uDE9B Truck $vehicleNumber is on the way!"
-            "arrived_at_drop" -> "\uD83D\uDCCD Driver arrived at destination"
-            "completed" -> "✅ Delivery complete for $vehicleNumber"
-            "driver_declined" -> "⚠️ Driver declined — reassigning..."
+            "heading_to_pickup", "driver_accepted" -> getString(R.string.tracking_status_heading_to_pickup)
+            "at_pickup" -> getString(R.string.tracking_status_at_pickup)
+            "loading_complete" -> getString(R.string.tracking_status_loading_complete)
+            "in_transit" -> getString(R.string.tracking_status_in_transit, vehicleNumber)
+            "arrived_at_drop" -> getString(R.string.tracking_status_arrived_at_drop)
+            "completed" -> getString(R.string.tracking_status_completed, vehicleNumber)
+            "driver_declined" -> getString(R.string.tracking_status_driver_declined)
             else -> ""
         }
     }

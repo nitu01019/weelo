@@ -214,6 +214,18 @@
 
     <!-- BookingTrackingActivity -->
     <string name="back_to_all_trucks">All Trucks</string>
+    <string name="pickup_location_placeholder">Pickup Location</string>
+    <string name="drop_location_placeholder">Drop Location</string>
+    <string name="tracking_connection_live">LIVE</string>
+    <string name="tracking_connection_reconnecting">RECONNECTING...</string>
+    <string name="tracking_connection_offline">OFFLINE</string>
+    <string name="tracking_status_heading_to_pickup">🚛 Driver is heading to pickup</string>
+    <string name="tracking_status_at_pickup">🚛 Driver arrived at pickup</string>
+    <string name="tracking_status_loading_complete">📦 Loading complete, trip starting</string>
+    <string name="tracking_status_in_transit">🚛 Truck %1$s is on the way!</string>
+    <string name="tracking_status_arrived_at_drop">📍 Driver arrived at destination</string>
+    <string name="tracking_status_completed">✅ Delivery complete for %1$s</string>
+    <string name="tracking_status_driver_declined">⚠️ Driver declined — reassigning...</string>
 
     <!-- MyBookingsActivity / Booking item -->
     <string name="action_track">Track</string>
