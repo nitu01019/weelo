@@ -104,6 +104,10 @@ class BookingTrackingActivity : AppCompatActivity(), OnMapReadyCallback {
     /** Driver markers keyed by tripId — O(1) lookup per location update */
     private val driverMarkers = mutableMapOf<String, Marker>()
 
+    /** Static route markers (pickup/drop) updated when coordinates are hydrated later. */
+    private var pickupMarker: Marker? = null
+    private var dropMarker: Marker? = null
+
     /** Route polylines keyed by tripId — for deep dive show/hide */
     private val routePolylines = mutableMapOf<String, Polyline>()
 
@@ -280,6 +284,7 @@ class BookingTrackingActivity : AppCompatActivity(), OnMapReadyCallback {
 
     override fun onMapReady(map: GoogleMap) {
         googleMap = map
+        isMapReady = true
         startLocationUpdates() // Safe to start now — map is initialized
 
         try {
@@ -289,37 +294,7 @@ class BookingTrackingActivity : AppCompatActivity(), OnMapReadyCallback {
                 isCompassEnabled = true
             }
 
-            // Pickup marker (green)
-            pickupLatLng?.let { pickup ->
-                googleMap?.addMarker(
-                    MarkerOptions()
-                        .position(pickup)
-                        .title("Pickup")
-                        .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_GREEN))
-                )
-            }
-
-            // Drop marker (red)
-            dropLatLng?.let { drop ->
-                googleMap?.addMarker(
-                    MarkerOptions()
-                        .position(drop)
-                        .title("Drop")
-                        .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED))
-                )
-            }
-
-            // Route polyline (pickup → drop) — stored so drawRoutePolyline() can replace it
-            if (pickupLatLng != null && dropLatLng != null) {
-                val polyline = googleMap?.addPolyline(
-                    PolylineOptions()
-                        .add(pickupLatLng, dropLatLng)
-                        .width(8f)
-                        .color(getColor(R.color.primary_blue))
-                        .geodesic(true)
-                )
-                polyline?.let { routePolylines["main"] = it }
-            }
+            refreshPickupDropOverlays(refitCamera = false)
 
             fitCameraToAllMarkers()
 
@@ -329,8 +304,59 @@ class BookingTrackingActivity : AppCompatActivity(), OnMapReadyCallback {
         }
 
         // Map is ready — now safe to add markers. Fetch initial data here.
-        isMapReady = true
         fetchInitialData()
+    }
+
+    /**
+     * Rebind pickup/drop markers and fallback straight-line route.
+     * Called on map init and again if backend coordinates arrive after launch.
+     */
+    private fun refreshPickupDropOverlays(refitCamera: Boolean = true) {
+        val map = googleMap ?: return
+        if (!isMapReady) return
+
+        pickupMarker?.remove()
+        dropMarker?.remove()
+        pickupMarker = null
+        dropMarker = null
+
+        pickupLatLng?.let { pickup ->
+            pickupMarker = map.addMarker(
+                MarkerOptions()
+                    .position(pickup)
+                    .title("Pickup")
+                    .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_GREEN))
+            )
+        }
+
+        dropLatLng?.let { drop ->
+            dropMarker = map.addMarker(
+                MarkerOptions()
+                    .position(drop)
+                    .title("Drop")
+                    .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED))
+            )
+        }
+
+        routePolylines["main"]?.remove()
+        val pickup = pickupLatLng
+        val drop = dropLatLng
+        if (pickup != null && drop != null) {
+            val polyline = map.addPolyline(
+                PolylineOptions()
+                    .add(pickup, drop)
+                    .width(8f)
+                    .color(getColor(R.color.primary_blue))
+                    .geodesic(true)
+            )
+            routePolylines["main"] = polyline
+        } else {
+            routePolylines.remove("main")
+        }
+
+        if (refitCamera) {
+            fitCameraToAllMarkers()
+        }
     }
 
     // =========================================================================
@@ -586,6 +612,8 @@ class BookingTrackingActivity : AppCompatActivity(), OnMapReadyCallback {
                 // Fetch assigned trucks (driver info, status) and tracking data (positions)
                 val assignedTrucks = trackingRepository.getAssignedTrucks(id)
                 val trackingData = trackingRepository.getBookingTracking(id)
+                val previousPickup = pickupLatLng
+                val previousDrop = dropLatLng
 
                 // If launched from FCM (only bookingId in intent, no coords), fetch them from backend
                 if (pickupLatLng == null || dropLatLng == null) {
@@ -613,6 +641,11 @@ class BookingTrackingActivity : AppCompatActivity(), OnMapReadyCallback {
                         if (e is kotlinx.coroutines.CancellationException) throw e
                         Timber.w("$TAG: Could not fetch booking coords from backend: ${e.message}")
                     }
+                }
+
+                val pickupDropChanged = previousPickup != pickupLatLng || previousDrop != dropLatLng
+                if (pickupDropChanged && isMapReady) {
+                    refreshPickupDropOverlays(refitCamera = true)
                 }
 
                 // Guard: if activity is finishing/destroyed, skip UI updates
