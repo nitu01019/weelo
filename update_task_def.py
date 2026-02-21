@@ -1,9 +1,11 @@
 import json
+import os
 import subprocess
 import sys
 
-TASK_DEF_ARN = "arn:aws:ecs:ap-south-1:318774499084:task-definition/weelobackendtask:14"
-API_KEY = "AIzaSyA-tS_joFEm5OnsZBxtRY6LA_xf1VSjczQ"
+TASK_DEF_ARN = os.getenv("TASK_DEF_ARN", "")
+API_KEY = os.getenv("GOOGLE_MAPS_API_KEY", "")
+AWS_REGION = os.getenv("AWS_REGION", "ap-south-1")
 
 def run_command(command):
     result = subprocess.run(command, shell=True, capture_output=True, text=True)
@@ -14,7 +16,16 @@ def run_command(command):
     return result.stdout
 
 print(f"Fetching task definition: {TASK_DEF_ARN}")
-json_output = run_command(f"aws ecs describe-task-definition --task-definition {TASK_DEF_ARN} --region ap-south-1")
+if not TASK_DEF_ARN:
+    print("TASK_DEF_ARN is required. Example: arn:aws:ecs:region:acct:task-definition/name:rev")
+    sys.exit(1)
+if not API_KEY:
+    print("GOOGLE_MAPS_API_KEY is required. Export it before running this script.")
+    sys.exit(1)
+
+json_output = run_command(
+    f"aws ecs describe-task-definition --task-definition {TASK_DEF_ARN} --region {AWS_REGION}"
+)
 data = json.loads(json_output)
 
 task_def = data['taskDefinition']
