@@ -439,119 +439,71 @@ class WebSocketService @Inject constructor(
     /**
      * Listen for booking updates as Flow
      */
-    fun bookingUpdates(): Flow<BookingUpdateEvent> = callbackFlow {
-        val listener = Emitter.Listener { args ->
-            try {
-                val data = args.firstOrNull() as? JSONObject
-                if (data != null) {
-                    val event = BookingUpdateEvent(
-                        bookingId = data.optString("bookingId"),
-                        status = data.optString("status"),
-                        trucksFilled = data.optInt("trucksFilled", -1),
-                        trucksNeeded = data.optInt("trucksNeeded", -1)
-                    )
-                    trySend(event)
-                }
-            } catch (e: Exception) {
-                Timber.e(e, "$TAG: Error parsing booking update")
-            }
+    fun bookingUpdates(): Flow<BookingUpdateEvent> = reconnectSafeEventFlow(
+        eventName = Events.BOOKING_UPDATED,
+        parseErrorTag = "booking_updated",
+        parseEvent = { data ->
+            BookingUpdateEvent(
+                bookingId = data.optString("bookingId"),
+                status = data.optString("status"),
+                trucksFilled = data.optInt("trucksFilled", -1),
+                trucksNeeded = data.optInt("trucksNeeded", -1)
+            )
         }
-
-        socket?.on(Events.BOOKING_UPDATED, listener)
-
-        awaitClose {
-            socket?.off(Events.BOOKING_UPDATED, listener)
-        }
-    }
+    )
 
     /**
      * Listen for truck assignments as Flow
      */
-    fun truckAssignments(): Flow<TruckAssignedEvent> = callbackFlow {
-        val listener = Emitter.Listener { args ->
-            try {
-                val data = args.firstOrNull() as? JSONObject
-                if (data != null) {
-                    val assignment = data.optJSONObject("assignment")
-                    val event = TruckAssignedEvent(
-                        bookingId = data.optString("bookingId"),
-                        assignmentId = assignment?.optString("id") ?: "",
-                        vehicleNumber = assignment?.optString("vehicleNumber") ?: "",
-                        driverName = assignment?.optString("driverName") ?: "",
-                        status = assignment?.optString("status") ?: ""
-                    )
-                    trySend(event)
-                }
-            } catch (e: Exception) {
-                Timber.e(e, "$TAG: Error parsing truck assignment")
-            }
+    fun truckAssignments(): Flow<TruckAssignedEvent> = reconnectSafeEventFlow(
+        eventName = Events.TRUCK_ASSIGNED,
+        parseErrorTag = "truck_assigned",
+        parseEvent = { data ->
+            val assignment = data.optJSONObject("assignment")
+            TruckAssignedEvent(
+                bookingId = data.optString("bookingId"),
+                assignmentId = assignment?.optString("id") ?: "",
+                vehicleNumber = assignment?.optString("vehicleNumber") ?: "",
+                driverName = assignment?.optString("driverName") ?: "",
+                status = assignment?.optString("status") ?: ""
+            )
         }
-
-        socket?.on(Events.TRUCK_ASSIGNED, listener)
-
-        awaitClose {
-            socket?.off(Events.TRUCK_ASSIGNED, listener)
-        }
-    }
+    )
 
     /**
      * Listen for location updates as Flow
      */
-    fun locationUpdates(): Flow<LocationUpdateEvent> = callbackFlow {
-        val listener = Emitter.Listener { args ->
-            try {
-                val data = args.firstOrNull() as? JSONObject
-                if (data != null) {
-                    val event = LocationUpdateEvent(
-                        tripId = data.optString("tripId"),
-                        driverId = data.optString("driverId"),
-                        latitude = data.optDouble("latitude"),
-                        longitude = data.optDouble("longitude"),
-                        speed = data.optDouble("speed").toFloat(),
-                        bearing = data.optDouble("bearing").toFloat(),
-                        timestamp = data.optString("timestamp")
-                    )
-                    trySend(event)
-                }
-            } catch (e: Exception) {
-                Timber.e(e, "$TAG: Error parsing location update")
-            }
+    fun locationUpdates(): Flow<LocationUpdateEvent> = reconnectSafeEventFlow(
+        eventName = Events.LOCATION_UPDATED,
+        parseErrorTag = "location_updated",
+        parseEvent = { data ->
+            LocationUpdateEvent(
+                tripId = data.optString("tripId"),
+                driverId = data.optString("driverId"),
+                latitude = data.optDouble("latitude"),
+                longitude = data.optDouble("longitude"),
+                speed = data.optDouble("speed").toFloat(),
+                bearing = data.optDouble("bearing").toFloat(),
+                timestamp = data.optString("timestamp")
+            )
         }
-
-        socket?.on(Events.LOCATION_UPDATED, listener)
-
-        awaitClose {
-            socket?.off(Events.LOCATION_UPDATED, listener)
-        }
-    }
+    )
 
     /**
      * Listen for assignment status changes as Flow
      */
-    fun assignmentStatusChanges(): Flow<AssignmentStatusEvent> = callbackFlow {
-        val listener = Emitter.Listener { args ->
-            try {
-                val data = args.firstOrNull() as? JSONObject
-                if (data != null) {
-                    val event = AssignmentStatusEvent(
-                        assignmentId = data.optString("assignmentId"),
-                        tripId = data.optString("tripId"),
-                        status = data.optString("status"),
-                        vehicleNumber = data.optString("vehicleNumber")
-                    )
-                    trySend(event)
-                }
-            } catch (e: Exception) {
-                Timber.e(e, "$TAG: Error parsing assignment status")
-            }
+    fun assignmentStatusChanges(): Flow<AssignmentStatusEvent> = reconnectSafeEventFlow(
+        eventName = Events.ASSIGNMENT_STATUS_CHANGED,
+        parseErrorTag = "assignment_status_changed",
+        parseEvent = { data ->
+            AssignmentStatusEvent(
+                assignmentId = data.optString("assignmentId"),
+                tripId = data.optString("tripId"),
+                status = data.optString("status"),
+                vehicleNumber = data.optString("vehicleNumber")
+            )
         }
-
-        socket?.on(Events.ASSIGNMENT_STATUS_CHANGED, listener)
-
-        awaitClose {
-            socket?.off(Events.ASSIGNMENT_STATUS_CHANGED, listener)
-        }
-    }
+    )
 
     /**
      * Listen for booking_completed events.

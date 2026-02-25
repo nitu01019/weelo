@@ -5,9 +5,9 @@ import androidx.lifecycle.viewModelScope
 import com.weelo.logistics.core.common.Result
 import com.weelo.logistics.data.models.Location
 import com.weelo.logistics.data.models.SelectedTruckItem
-import com.weelo.logistics.data.remote.api.CoordinatesRequest
-import com.weelo.logistics.data.remote.api.LocationRequest
 import com.weelo.logistics.data.repository.BookingApiRepository
+import com.weelo.logistics.data.repository.TruckSelection
+import com.weelo.logistics.domain.model.LocationModel
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -105,39 +105,43 @@ class BookingConfirmationViewModel @Inject constructor(
             try {
                 _uiState.value = BookingConfirmationUiState.Creating
 
-                // Get first selected truck type for booking (backend handles multiple)
-                val firstTruck = selectedTrucks.first()
-                val totalTrucks = selectedTrucks.sumOf { it.quantity }
-                val pricePerTruck = (distanceKm * 50).coerceAtLeast(500)
-                
-                // SCALABILITY: Generate idempotency key for this booking request
-                // Prevents duplicate bookings if user taps multiple times
-                val idempotencyKey = java.util.UUID.randomUUID().toString()
+                val pickupModel = LocationModel(
+                    address = from.address,
+                    latitude = from.latitude,
+                    longitude = from.longitude,
+                    city = from.city,
+                    state = from.state
+                )
+                val dropModel = LocationModel(
+                    address = to.address,
+                    latitude = to.latitude,
+                    longitude = to.longitude,
+                    city = to.city,
+                    state = to.state
+                )
+                val basePricePerTruck = (distanceKm * 50).coerceAtLeast(500)
+                val truckSelections = selectedTrucks
+                    .groupBy { "${it.truckTypeId}__${it.specification}" }
+                    .values
+                    .map { group ->
+                        val first = group.first()
+                        TruckSelection(
+                            vehicleType = first.truckTypeId,
+                            vehicleSubtype = first.specification,
+                            quantity = group.sumOf { it.quantity },
+                            pricePerTruck = basePricePerTruck
+                        )
+                    }
 
-                when (val result = bookingRepository.createBookingSimple(
-                    pickup = LocationRequest(
-                        coordinates = CoordinatesRequest(
-                            latitude = from.latitude,
-                            longitude = from.longitude
-                        ),
-                        address = from.address
-                    ),
-                    drop = LocationRequest(
-                        coordinates = CoordinatesRequest(
-                            latitude = to.latitude,
-                            longitude = to.longitude
-                        ),
-                        address = to.address
-                    ),
-                    vehicleType = firstTruck.truckTypeId,
-                    vehicleSubtype = firstTruck.specification,
-                    trucksNeeded = totalTrucks,
+                when (val result = bookingRepository.createOrder(
+                    pickup = pickupModel,
+                    drop = dropModel,
                     distanceKm = distanceKm,
-                    pricePerTruck = pricePerTruck,
-                    idempotencyKey = idempotencyKey
+                    trucks = truckSelections,
+                    goodsType = "General"
                 )) {
                     is Result.Success -> {
-                        _uiState.value = BookingConfirmationUiState.Success(result.data)
+                        _uiState.value = BookingConfirmationUiState.Success(result.data.orderId)
                     }
                     is Result.Error -> {
                         _uiState.value = BookingConfirmationUiState.Error(

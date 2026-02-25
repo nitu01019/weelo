@@ -126,6 +126,18 @@ class BookingApiRepository @Inject constructor(
         return fallback
     }
 
+    private fun shouldFallbackToLegacyOrdersRoute(
+        responseCode: Int,
+        errorCode: String? = null,
+        errorMessage: String? = null
+    ): Boolean {
+        if (responseCode in setOf(400, 404, 405, 422, 501)) return true
+        val normalized = "${errorCode.orEmpty()} ${errorMessage.orEmpty()}".lowercase()
+        return normalized.contains("bookings/orders") ||
+            normalized.contains("cannot post") ||
+            normalized.contains("not found")
+    }
+
     /**
      * Legacy sync version for backward compatibility
      * Note: This should be avoided - use suspend version instead
@@ -200,7 +212,8 @@ class BookingApiRepository @Inject constructor(
 
     override suspend fun getBookingById(bookingId: String): Result<BookingModel> {
         return try {
-            val response = apiService.getBookingById(getAuthToken(), bookingId)
+            val authToken = getAuthToken()
+            val response = apiService.getBookingById(authToken, bookingId)
 
             if (response.isSuccessful && response.body()?.success == true) {
                 val data = response.body()?.data?.booking
@@ -210,8 +223,15 @@ class BookingApiRepository @Inject constructor(
                     Result.Error(WeeloException.BookingException("Booking not found"))
                 }
             } else {
-                val error = response.body()?.error
-                Result.Error(WeeloException.BookingException(error?.message ?: "Failed to load booking"))
+                // Compatibility bridge: order-first path now returns order IDs to this screen.
+                // If booking route doesn't know this id, fall back to canonical order detail route.
+                val orderResult = getOrderDetails(bookingId)
+                if (orderResult is Result.Success) {
+                    Result.Success(mapOrderDetailToBookingModel(orderResult.data))
+                } else {
+                    val error = response.body()?.error
+                    Result.Error(WeeloException.BookingException(error?.message ?: "Failed to load booking"))
+                }
             }
         } catch (e: Exception) {
             Timber.e(e, "Get booking error")
@@ -242,14 +262,24 @@ class BookingApiRepository @Inject constructor(
 
     override suspend fun cancelBooking(bookingId: String): Result<Unit> {
         return try {
-            val response = apiService.cancelBooking(getAuthToken(), bookingId)
+            val authToken = getAuthToken()
+            val response = apiService.cancelBooking(authToken, bookingId)
 
             if (response.isSuccessful && response.body()?.success == true) {
                 Timber.d("Booking cancelled: $bookingId")
                 Result.Success(Unit)
             } else {
-                val error = response.body()?.error
-                Result.Error(WeeloException.BookingException(error?.message ?: "Failed to cancel booking"))
+                val shouldTryOrderCancel = response.code() in setOf(400, 404, 405, 422, 501)
+                if (shouldTryOrderCancel) {
+                    when (val orderCancel = cancelOrder(bookingId, reason = "customer_cancelled")) {
+                        is Result.Success -> Result.Success(Unit)
+                        is Result.Error -> Result.Error(orderCancel.exception)
+                        Result.Loading -> Result.Error(WeeloException.BookingException("Cancel in progress"))
+                    }
+                } else {
+                    val error = response.body()?.error
+                    Result.Error(WeeloException.BookingException(error?.message ?: "Failed to cancel booking"))
+                }
             }
         } catch (e: Exception) {
             Timber.e(e, "Cancel booking error")
@@ -284,6 +314,10 @@ class BookingApiRepository @Inject constructor(
         idempotencyKey: String
     ): Result<String> {
         return try {
+            Timber.w(
+                "createBookingSimple() using legacy /bookings route (alias path). " +
+                    "Canonical path is /bookings/orders."
+            )
             val request = CreateBookingRequest(
                 pickup = pickup,
                 drop = drop,
@@ -325,14 +359,24 @@ class BookingApiRepository @Inject constructor(
      */
     suspend fun getAssignedTrucks(bookingId: String): Result<List<AssignedTruckData>> {
         return try {
-            val response = apiService.getAssignedTrucks(getAuthToken(), bookingId)
+            val authToken = getAuthToken()
+            val response = apiService.getAssignedTrucks(authToken, bookingId)
 
             if (response.isSuccessful && response.body()?.success == true) {
                 val trucks = response.body()?.data?.trucks ?: emptyList()
                 Result.Success(trucks)
             } else {
-                val error = response.body()?.error
-                Result.Error(WeeloException.BookingException(error?.message ?: "Failed to load trucks"))
+                // Fallback for order-based flow where booking endpoint doesn't contain assignments.
+                when (val orderDetails = getOrderDetails(bookingId)) {
+                    is Result.Success -> {
+                        Result.Success(mapOrderRequestsToAssignedTrucks(orderDetails.data))
+                    }
+                    is Result.Error -> {
+                        val error = response.body()?.error
+                        Result.Error(WeeloException.BookingException(error?.message ?: orderDetails.exception.message ?: "Failed to load trucks"))
+                    }
+                    Result.Loading -> Result.Error(WeeloException.BookingException("Loading trucks"))
+                }
             }
         } catch (e: Exception) {
             Timber.e(e, "Get assigned trucks error")
@@ -496,7 +540,24 @@ class BookingApiRepository @Inject constructor(
 
             Timber.d("Creating order with ${trucks.sumOf { it.quantity }} trucks, ${intermediateStops.size} stops")
             
-            val response = apiService.createOrder(getAuthToken(), request)
+            val authToken = getAuthToken()
+            val primaryResponse = apiService.createOrderViaBookings(authToken, request)
+            val response = if (
+                primaryResponse.isSuccessful ||
+                !shouldFallbackToLegacyOrdersRoute(
+                    responseCode = primaryResponse.code(),
+                    errorCode = primaryResponse.body()?.error?.code,
+                    errorMessage = primaryResponse.body()?.error?.message
+                )
+            ) {
+                primaryResponse
+            } else {
+                Timber.w(
+                    "createOrder fallback to legacy /orders route (code=%d)",
+                    primaryResponse.code()
+                )
+                apiService.createOrder(authToken, request)
+            }
             
             val responseBody = response.body()
             val data = responseBody?.data
@@ -556,7 +617,25 @@ class BookingApiRepository @Inject constructor(
      */
     suspend fun getOrderDetails(orderId: String): Result<OrderDetailResult> {
         return try {
-            val response = apiService.getOrderById(getAuthToken(), orderId)
+            val authToken = getAuthToken()
+            val primaryResponse = apiService.getOrderByIdViaBookings(authToken, orderId)
+            val response = if (
+                primaryResponse.isSuccessful ||
+                !shouldFallbackToLegacyOrdersRoute(
+                    responseCode = primaryResponse.code(),
+                    errorCode = primaryResponse.body()?.error?.code,
+                    errorMessage = primaryResponse.body()?.error?.message
+                )
+            ) {
+                primaryResponse
+            } else {
+                Timber.w(
+                    "getOrderDetails fallback to legacy /orders route (orderId=%s code=%d)",
+                    orderId,
+                    primaryResponse.code()
+                )
+                apiService.getOrderById(authToken, orderId)
+            }
             
             val responseBody = response.body()
             val data = responseBody?.data
@@ -565,6 +644,19 @@ class BookingApiRepository @Inject constructor(
                     OrderDetailResult(
                         orderId = data.order.id,
                         status = data.order.status,
+                        pickup = LocationModel(
+                            address = data.order.pickup.address,
+                            latitude = data.order.pickup.coordinates.latitude,
+                            longitude = data.order.pickup.coordinates.longitude
+                        ),
+                        drop = LocationModel(
+                            address = data.order.drop.address,
+                            latitude = data.order.drop.coordinates.latitude,
+                            longitude = data.order.drop.coordinates.longitude
+                        ),
+                        distanceKm = data.order.distanceKm,
+                        totalAmount = data.order.totalAmount,
+                        createdAt = parseTimestamp(data.order.createdAt),
                         totalTrucks = data.summary.totalTrucks,
                         trucksFilled = data.summary.trucksFilled,
                         trucksSearching = data.summary.trucksSearching,
@@ -580,7 +672,8 @@ class BookingApiRepository @Inject constructor(
                                 assignedVehicleNumber = req.assignedVehicleNumber,
                                 assignedDriverName = req.assignedDriverName,
                                 assignedDriverPhone = req.assignedDriverPhone,
-                                tripId = req.tripId
+                                tripId = req.tripId,
+                                assignedAt = req.assignedAt
                             )
                         }
                     )
@@ -613,6 +706,65 @@ class BookingApiRepository @Inject constructor(
         }
     }
 
+    private fun mapOrderDetailToBookingModel(order: OrderDetailResult): BookingModel {
+        val primaryRequest = order.requests.firstOrNull()
+        return BookingModel(
+            id = order.orderId,
+            fromLocation = order.pickup,
+            toLocation = order.drop,
+            vehicle = VehicleModel(
+                id = "",
+                name = primaryRequest?.vehicleSubtype ?: "Vehicle",
+                category = VehicleCategory.fromId(primaryRequest?.vehicleType ?: "open"),
+                capacityTons = "",
+                basePrice = 0,
+                pricePerKm = 0,
+                priceMultiplier = 1.0
+            ),
+            distanceKm = order.distanceKm,
+            pricing = PricingModel(
+                baseFare = 0,
+                distanceCharge = 0,
+                gstAmount = 0,
+                totalAmount = order.totalAmount,
+                distanceKm = order.distanceKm,
+                pricePerKm = 0
+            ),
+            status = mapStatus(order.status),
+            createdAt = order.createdAt,
+            trucksNeeded = order.totalTrucks,
+            trucksFilled = order.trucksFilled,
+            broadcastId = order.orderId
+        )
+    }
+
+    private fun mapOrderRequestsToAssignedTrucks(order: OrderDetailResult): List<AssignedTruckData> {
+        return order.requests
+            .filter { request ->
+                request.assignedVehicleNumber != null ||
+                    request.assignedDriverName != null ||
+                    request.tripId != null ||
+                    request.status.lowercase() in setOf("assigned", "accepted", "in_progress", "completed")
+            }
+            .map { request ->
+                AssignedTruckData(
+                    assignmentId = request.id,
+                    tripId = request.tripId ?: request.id,
+                    vehicleNumber = request.assignedVehicleNumber ?: "Vehicle Pending",
+                    vehicleType = request.vehicleType,
+                    driverName = request.assignedDriverName ?: "Driver Pending",
+                    driverPhone = request.assignedDriverPhone ?: "",
+                    driverProfilePhotoUrl = null,
+                    driverRating = null,
+                    driverTotalRatings = 0,
+                    customerRating = null,
+                    status = request.status,
+                    assignedAt = request.assignedAt ?: formatNowIso(),
+                    currentLocation = null
+                )
+            }
+    }
+
     private fun parseTimestamp(timestamp: String): Long {
         return try {
             // Use SimpleDateFormat for API 24+ compatibility instead of java.time.Instant (API 26+)
@@ -622,6 +774,12 @@ class BookingApiRepository @Inject constructor(
         } catch (e: Exception) {
             System.currentTimeMillis()
         }
+    }
+
+    private fun formatNowIso(): String {
+        val format = java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", java.util.Locale.US)
+        format.timeZone = java.util.TimeZone.getTimeZone("UTC")
+        return format.format(java.util.Date())
     }
 
     private fun calculateHaversineDistance(
@@ -656,7 +814,25 @@ class BookingApiRepository @Inject constructor(
     suspend fun cancelOrder(orderId: String, reason: String? = null): Result<CancelOrderData> {
         return try {
             val request = CancelOrderRequest(reason = reason)
-            val response = apiService.cancelOrder(getAuthToken(), orderId, request)
+            val authToken = getAuthToken()
+            val primaryResponse = apiService.cancelOrderViaBookings(authToken, orderId, request)
+            val response = if (
+                primaryResponse.isSuccessful ||
+                !shouldFallbackToLegacyOrdersRoute(
+                    responseCode = primaryResponse.code(),
+                    errorCode = null,
+                    errorMessage = primaryResponse.body()?.message
+                )
+            ) {
+                primaryResponse
+            } else {
+                Timber.w(
+                    "cancelOrder fallback to legacy /orders route (orderId=%s code=%d)",
+                    orderId,
+                    primaryResponse.code()
+                )
+                apiService.cancelOrder(authToken, orderId, request)
+            }
             
             if (response.isSuccessful && response.body()?.success == true) {
                 val data = response.body()?.data
@@ -691,7 +867,21 @@ class BookingApiRepository @Inject constructor(
      */
     suspend fun getOrderStatus(orderId: String): Result<OrderStatusData> {
         return try {
-            val response = apiService.getOrderStatus(getAuthToken(), orderId)
+            val authToken = getAuthToken()
+            val primaryResponse = apiService.getOrderStatusViaBookings(authToken, orderId)
+            val response = if (
+                primaryResponse.isSuccessful ||
+                !shouldFallbackToLegacyOrdersRoute(responseCode = primaryResponse.code())
+            ) {
+                primaryResponse
+            } else {
+                Timber.w(
+                    "getOrderStatus fallback to legacy /orders route (orderId=%s code=%d)",
+                    orderId,
+                    primaryResponse.code()
+                )
+                apiService.getOrderStatus(authToken, orderId)
+            }
             
             if (response.isSuccessful && response.body()?.success == true) {
                 val data = response.body()?.data
@@ -774,6 +964,11 @@ data class BroadcastGroupResult(
 data class OrderDetailResult(
     val orderId: String,
     val status: String,
+    val pickup: LocationModel,
+    val drop: LocationModel,
+    val distanceKm: Int,
+    val totalAmount: Int,
+    val createdAt: Long,
     val totalTrucks: Int,
     val trucksFilled: Int,
     val trucksSearching: Int,
@@ -791,5 +986,6 @@ data class TruckRequestDetailResult(
     val assignedVehicleNumber: String?,
     val assignedDriverName: String?,
     val assignedDriverPhone: String?,
-    val tripId: String?
+    val tripId: String?,
+    val assignedAt: String?
 )

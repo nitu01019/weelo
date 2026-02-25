@@ -128,6 +128,16 @@ interface WeeloApiService {
      * - 2 requests go to transporters with Open trucks
      * - 3 requests go to transporters with Container trucks
      */
+    @POST("bookings/orders")
+    suspend fun createOrderViaBookings(
+        @Header("Authorization") token: String,
+        @Body request: CreateOrderRequest
+    ): Response<CreateOrderResponse>
+
+    /**
+     * Legacy compatibility alias for older backends.
+     * Use `createOrderViaBookings` as primary.
+     */
     @POST("orders")
     suspend fun createOrder(
         @Header("Authorization") token: String,
@@ -136,6 +146,17 @@ interface WeeloApiService {
 
     /**
      * Get customer's orders with pagination
+     */
+    @GET("bookings/orders")
+    suspend fun getMyOrdersViaBookings(
+        @Header("Authorization") token: String,
+        @Query("page") page: Int = 1,
+        @Query("limit") limit: Int = 20
+    ): Response<OrdersListResponse>
+
+    /**
+     * Legacy compatibility alias for older backends.
+     * Use `getMyOrdersViaBookings` as primary.
      */
     @GET("orders")
     suspend fun getMyOrders(
@@ -146,6 +167,16 @@ interface WeeloApiService {
 
     /**
      * Get order details with all truck requests
+     */
+    @GET("bookings/orders/{orderId}")
+    suspend fun getOrderByIdViaBookings(
+        @Header("Authorization") token: String,
+        @Path("orderId") orderId: String
+    ): Response<OrderDetailResponse>
+
+    /**
+     * Legacy compatibility alias for older backends.
+     * Use `getOrderByIdViaBookings` as primary.
      */
     @GET("orders/{orderId}")
     suspend fun getOrderById(
@@ -160,6 +191,17 @@ interface WeeloApiService {
      * EASY UNDERSTANDING: Customer can cancel search before driver accepts
      * MODULARITY: Uses POST with body for reason (not DELETE which can't have body)
      */
+    @POST("bookings/orders/{orderId}/cancel")
+    suspend fun cancelOrderViaBookings(
+        @Header("Authorization") token: String,
+        @Path("orderId") orderId: String,
+        @Body request: CancelOrderRequest
+    ): Response<CancelOrderResponse>
+
+    /**
+     * Legacy compatibility alias for older backends.
+     * Use `cancelOrderViaBookings` as primary.
+     */
     @POST("orders/{orderId}/cancel")
     suspend fun cancelOrder(
         @Header("Authorization") token: String,
@@ -173,6 +215,16 @@ interface WeeloApiService {
      * SCALABILITY: Used when app resumes to check if order still active
      * EASY UNDERSTANDING: Backend returns exact remaining seconds
      * MODULARITY: Backend is source of truth for timer
+     */
+    @GET("bookings/orders/{orderId}/status")
+    suspend fun getOrderStatusViaBookings(
+        @Header("Authorization") token: String,
+        @Path("orderId") orderId: String
+    ): Response<OrderStatusResponse>
+
+    /**
+     * Legacy compatibility alias for older backends.
+     * Use `getOrderStatusViaBookings` as primary.
      */
     @GET("orders/{orderId}/status")
     suspend fun getOrderStatus(

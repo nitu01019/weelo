@@ -213,6 +213,18 @@ class BookingTrackingActivity : AppCompatActivity(), OnMapReadyCallback {
         // location updates are not silently dropped before the map is ready.
     }
 
+    override fun onStart() {
+        super.onStart()
+        isInForeground = true
+        rescheduleEtaRefresh(immediate = false)
+    }
+
+    override fun onStop() {
+        super.onStop()
+        isInForeground = false
+        etaHandler.removeCallbacks(etaPollRunnable)
+    }
+
     private fun extractIntentData() {
         bookingId = intent.getStringExtra(EXTRA_BOOKING_ID)
         driverPhone = intent.getStringExtra(EXTRA_DRIVER_PHONE)
@@ -490,7 +502,16 @@ class BookingTrackingActivity : AppCompatActivity(), OnMapReadyCallback {
     /** Handler for periodic ETA refresh */
     private val etaHandler = Handler(Looper.getMainLooper())
     private var etaPollingActive = false
-    private val etaRefreshIntervalMs = 60_000L // 60 seconds
+    private var latestSocketState: WebSocketService.ConnectionState = WebSocketService.ConnectionState.DISCONNECTED
+    private var isInForeground = false
+    private var etaFetchInFlight = false
+    private val etaPollRunnable = object : Runnable {
+        override fun run() {
+            if (!etaPollingActive || !isInForeground || isFinishing || isDestroyed) return
+            fetchRealETA()
+            etaHandler.postDelayed(this, resolveEtaRefreshIntervalMs())
+        }
+    }
 
     /** Cached real ETAs keyed by tripId */
     private val realEtaMap = mutableMapOf<String, String>()
@@ -500,17 +521,41 @@ class BookingTrackingActivity : AppCompatActivity(), OnMapReadyCallback {
      * Called once after initial data loads.
      */
     private fun startRealEtaRefresh() {
-        if (etaPollingActive) return // Guard against multiple overlapping loops
+        if (etaPollingActive) {
+            rescheduleEtaRefresh(immediate = true)
+            return
+        }
         etaPollingActive = true
-        fetchRealETA()
-        etaHandler.postDelayed(object : Runnable {
-            override fun run() {
-                if (!isFinishing && !isDestroyed) {
-                    fetchRealETA()
-                    etaHandler.postDelayed(this, etaRefreshIntervalMs)
-                }
-            }
-        }, etaRefreshIntervalMs)
+        rescheduleEtaRefresh(immediate = true)
+    }
+
+    private fun resolveEtaRefreshIntervalMs(): Long {
+        val baseIntervalMs = when (latestSocketState) {
+            WebSocketService.ConnectionState.CONNECTED -> 60_000L
+            WebSocketService.ConnectionState.CONNECTING -> 90_000L
+            WebSocketService.ConnectionState.RECONNECTING -> 90_000L
+            WebSocketService.ConnectionState.DISCONNECTED -> 120_000L
+            WebSocketService.ConnectionState.FAILED -> 120_000L
+        }
+        return applyEtaPollingJitter(baseIntervalMs)
+    }
+
+    private fun applyEtaPollingJitter(baseIntervalMs: Long): Long {
+        val bookingHash = ((bookingId?.hashCode() ?: 0).toLong() and 0x7fffffffL)
+        val bucket = (bookingHash % 11L) - 5L // -5..+5
+        val maxJitterMs = (baseIntervalMs / 10L).coerceAtMost(10_000L)
+        val offsetMs = if (maxJitterMs <= 0L) 0L else (bucket * maxJitterMs) / 5L
+        return (baseIntervalMs + offsetMs).coerceAtLeast(30_000L)
+    }
+
+    private fun rescheduleEtaRefresh(immediate: Boolean = false) {
+        etaHandler.removeCallbacks(etaPollRunnable)
+        if (!etaPollingActive || !isInForeground || isFinishing || isDestroyed) return
+        if (immediate) {
+            etaPollRunnable.run()
+            return
+        }
+        etaHandler.postDelayed(etaPollRunnable, resolveEtaRefreshIntervalMs())
     }
 
     /**
@@ -520,6 +565,8 @@ class BookingTrackingActivity : AppCompatActivity(), OnMapReadyCallback {
     private fun fetchRealETA() {
         val id = bookingId ?: return
         val token = trackingRepository.getToken() ?: return
+        if (etaFetchInFlight) return
+        etaFetchInFlight = true
 
         lifecycleScope.launch {
             try {
@@ -549,6 +596,8 @@ class BookingTrackingActivity : AppCompatActivity(), OnMapReadyCallback {
                 }
             } catch (e: Exception) {
                 Timber.w("$TAG: Real ETA fetch failed, using fallback: ${e.message}")
+            } finally {
+                etaFetchInFlight = false
             }
         }
     }
@@ -882,20 +931,26 @@ class BookingTrackingActivity : AppCompatActivity(), OnMapReadyCallback {
         // Monitor connection state for "Reconnecting..." indicator
         lifecycleScope.launch {
             trackingRepository.connectionState.collectLatest { state ->
+                latestSocketState = state
                 when (state) {
                     WebSocketService.ConnectionState.CONNECTED -> {
                         binding.chipLive.text = getString(R.string.tracking_connection_live)
                         binding.chipLive.setChipBackgroundColorResource(R.color.success_green)
+                        rescheduleEtaRefresh(immediate = true)
                     }
                     WebSocketService.ConnectionState.RECONNECTING -> {
                         binding.chipLive.text = getString(R.string.tracking_connection_reconnecting)
                         binding.chipLive.setChipBackgroundColorResource(R.color.warning_orange)
+                        rescheduleEtaRefresh(immediate = false)
                     }
                     WebSocketService.ConnectionState.FAILED -> {
                         binding.chipLive.text = getString(R.string.tracking_connection_offline)
                         binding.chipLive.setChipBackgroundColorResource(R.color.error_red)
+                        rescheduleEtaRefresh(immediate = false)
                     }
-                    else -> { /* CONNECTING, DISCONNECTED — no change */ }
+                    else -> {
+                        rescheduleEtaRefresh(immediate = false)
+                    }
                 }
             }
         }
@@ -1200,6 +1255,7 @@ class BookingTrackingActivity : AppCompatActivity(), OnMapReadyCallback {
 
         // Remove banner + ETA callbacks
         bannerHandler.removeCallbacksAndMessages(null)
+        etaPollingActive = false
         etaHandler.removeCallbacksAndMessages(null)
 
         Timber.d("$TAG: Activity destroyed, tracking stopped")
