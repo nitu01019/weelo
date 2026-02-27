@@ -390,13 +390,37 @@ class BookingApiRepository @Inject constructor(
         toLat: Double,
         toLng: Double
     ): Result<Int> {
-        // Use local calculation for now
-        // Could integrate with Google Maps API via backend
         return try {
-            val distance = calculateHaversineDistance(fromLat, fromLng, toLat, toLng)
-            Result.Success(distance)
+            // Try backend road distance API first (AWS Location Service / Google Directions)
+            val request = RouteCalculationRequest(
+                from = RouteCoordinates(latitude = fromLat, longitude = fromLng),
+                to = RouteCoordinates(latitude = toLat, longitude = toLng),
+                truckMode = true
+            )
+            val response = apiService.calculateRoute(request)
+            if (response.isSuccessful && response.body()?.success == true) {
+                val roadDistance = response.body()?.data?.distanceKm ?: 0
+                if (roadDistance > 0) {
+                    Timber.d("Road distance: ${roadDistance} km (source: ${response.body()?.data?.source})")
+                    Result.Success(roadDistance)
+                } else {
+                    // API returned 0 — fallback to Haversine
+                    Timber.w("Route API returned 0, falling back to Haversine")
+                    Result.Success(calculateHaversineDistance(fromLat, fromLng, toLat, toLng))
+                }
+            } else {
+                // API failed — fallback to Haversine
+                Timber.w("Route API failed (${response.code()}), falling back to Haversine")
+                Result.Success(calculateHaversineDistance(fromLat, fromLng, toLat, toLng))
+            }
         } catch (e: Exception) {
-            Result.Error(WeeloException.BookingException("Failed to calculate distance"))
+            // Network error — fallback to Haversine
+            Timber.w(e, "Route API error, falling back to Haversine")
+            try {
+                Result.Success(calculateHaversineDistance(fromLat, fromLng, toLat, toLng))
+            } catch (he: Exception) {
+                Result.Error(WeeloException.BookingException("Failed to calculate distance"))
+            }
         }
     }
 

@@ -372,12 +372,10 @@ class MapBookingActivity : AppCompatActivity(), OnMapReadyCallback {
         timber.log.Timber.d("Route: From ${userLatLng.latitude},${userLatLng.longitude} to ${destinationLatLng.latitude},${destinationLatLng.longitude}")
         timber.log.Timber.d("Route: ${intermediateStopsLatLng.size} intermediate stops")
 
-        // Always draw straight line first (instant feedback)
-        drawStraightLineRoute()
-
         // Check network first
         if (!NetworkUtils.isNetworkAvailable(this)) {
             timber.log.Timber.w("No network - using straight line route")
+            drawStraightLineRoute()
             return
         }
 
@@ -447,8 +445,8 @@ class MapBookingActivity : AppCompatActivity(), OnMapReadyCallback {
                     }
                 }
             } catch (e: Exception) {
-                timber.log.Timber.e(e, "Error fetching route from backend - no fallback line")
-                // Don't draw straight line on error
+                timber.log.Timber.e(e, "Error fetching route from backend - falling back to straight line")
+                withContext(Dispatchers.Main) { drawStraightLineRoute() }
             }
         }
     }
