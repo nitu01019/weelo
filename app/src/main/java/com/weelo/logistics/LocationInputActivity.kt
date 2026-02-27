@@ -155,6 +155,7 @@ class LocationInputActivity : AppCompatActivity() {
     // Search state
     private var searchJob: Job? = null
     private var currentSearchField: AutoCompleteTextView? = null
+    private var searchRequestVersion: Long = 0L
     
     // Crash recovery: saves booking draft across force-kill/crash
     private lateinit var draftManager: BookingDraftManager
@@ -191,7 +192,7 @@ class LocationInputActivity : AppCompatActivity() {
     override fun onDestroy() {
         super.onDestroy()
         tutorialCoordinator = null
-        searchJob?.cancel()
+        cancelActiveSearch("activity_destroyed")
         placesHelper.cleanup()
     }
 
@@ -339,22 +340,24 @@ class LocationInputActivity : AppCompatActivity() {
                 fusedLocationClient.lastLocation.addOnSuccessListener { location ->
                     currentUserLocation = location
                     location?.let {
-                        // GPS accuracy check — warn if > 100m (cell-tower only, unreliable)
-                        if (it.hasAccuracy() && it.accuracy > 100f) {
+                        // GPS accuracy check — avoid persisting/auto-filling low-accuracy locations
+                        val isLowAccuracy = it.hasAccuracy() && it.accuracy > LOW_ACCURACY_THRESHOLD_METERS
+                        if (isLowAccuracy) {
                             Timber.w("GPS accuracy is low: ${it.accuracy}m")
                             Toast.makeText(
                                 this@LocationInputActivity,
                                 "GPS accuracy is low. Move to an open area for better results.",
                                 Toast.LENGTH_LONG
                             ).show()
+                            return@let
                         }
                         Timber.d("Current location obtained: ${it.latitude}, ${it.longitude}")
                         // Update bias for search results distance
                         placesAdapter.updateBias(it.latitude, it.longitude)
-                        
+
                         // Save as last known location for offline fallback
                         saveLastKnownLocation(it.latitude, it.longitude)
-                        
+
                         // Auto-fill pickup with current location if empty
                         autoFillCurrentLocation(it.latitude, it.longitude)
                     } ?: run {
@@ -573,8 +576,10 @@ class LocationInputActivity : AppCompatActivity() {
             fromLocationInput.setText("")
             isSettingTextProgrammatically = false
             selectedFromLocation = null
+            draftManager.clearPickup()
             fromClearButton.visibility = View.GONE
             fromLocationInput.requestFocus()
+            cancelActiveSearch("from_clear_clicked")
             showRecentLocations()
         }
         
@@ -583,8 +588,10 @@ class LocationInputActivity : AppCompatActivity() {
             toLocationInput.setText("")
             isSettingTextProgrammatically = false
             selectedToLocation = null
+            draftManager.clearDrop()
             toClearButton.visibility = View.GONE
             toLocationInput.requestFocus()
+            cancelActiveSearch("to_clear_clicked")
             showRecentLocations()
         }
     }
@@ -624,6 +631,7 @@ class LocationInputActivity : AppCompatActivity() {
         if (bookingMode == "CUSTOM") {
             // Custom mode: Only FROM field
             selectedFromLocation = placeResult
+            draftManager.savePickup(placeResult)
             fromLocationInput.setText(location.address)
             fromLocationInput.setSelection(location.address.length)
             fromLocationInput.clearFocus()
@@ -631,11 +639,13 @@ class LocationInputActivity : AppCompatActivity() {
             // Instant mode: Fill the focused field
             if (isToFocused) {
                 selectedToLocation = placeResult
+                draftManager.saveDrop(placeResult)
                 toLocationInput.setText(location.address)
                 toLocationInput.setSelection(location.address.length)
                 toLocationInput.clearFocus()
             } else if (isFromFocused || selectedFromLocation == null) {
                 selectedFromLocation = placeResult
+                draftManager.savePickup(placeResult)
                 fromLocationInput.setText(location.address)
                 fromLocationInput.setSelection(location.address.length)
                 
@@ -647,6 +657,7 @@ class LocationInputActivity : AppCompatActivity() {
                 }
             } else {
                 selectedToLocation = placeResult
+                draftManager.saveDrop(placeResult)
                 toLocationInput.setText(location.address)
                 toLocationInput.setSelection(location.address.length)
                 toLocationInput.clearFocus()
@@ -787,10 +798,12 @@ class LocationInputActivity : AppCompatActivity() {
                 if (isSettingTextProgrammatically) return
                 
                 val query = s?.toString()?.trim() ?: ""
+                invalidateSelectionIfTextEdited(isFromField = true, currentText = query)
                 if (query.length >= 2) {
                     currentSearchField = fromLocationInput
                     performPlacesSearch(query)
                 } else {
+                    cancelActiveSearch("from_query_too_short")
                     showRecentLocations()
                 }
             }
@@ -819,10 +832,12 @@ class LocationInputActivity : AppCompatActivity() {
                 if (isSettingTextProgrammatically) return
                 
                 val query = s?.toString()?.trim() ?: ""
+                invalidateSelectionIfTextEdited(isFromField = false, currentText = query)
                 if (query.length >= 2) {
                     currentSearchField = toLocationInput
                     performPlacesSearch(query)
                 } else {
+                    cancelActiveSearch("to_query_too_short")
                     showRecentLocations()
                 }
             }
@@ -889,11 +904,14 @@ class LocationInputActivity : AppCompatActivity() {
      * CODING STANDARDS: Follows coroutine best practices
      */
     private fun performPlacesSearch(query: String) {
-        // Cancel previous search
-        searchJob?.cancel()
+        val field = currentSearchField ?: return
+        // Cancel previous search and invalidate stale responses
+        cancelActiveSearch("new_query")
+        val requestVersion = ++searchRequestVersion
+        val normalizedQuery = query.trim()
         
         // CHECK COORDINATES FIRST (instant, no API call needed)
-        val coordLocation = parseCoordinatesInput(query)
+        val coordLocation = parseCoordinatesInput(normalizedQuery)
         if (coordLocation != null) {
             Timber.d("Coordinate input detected: ${coordLocation.label}")
             hideSkeletonLoading()
@@ -907,15 +925,20 @@ class LocationInputActivity : AppCompatActivity() {
         // Debounce: Wait 150ms before API call (fast but prevents excessive calls)
         searchJob = lifecycleScope.launch {
             delay(150)
+            if (!isSearchRequestCurrent(requestVersion, field, normalizedQuery)) {
+                Timber.d("Dropping stale search before API call: '$normalizedQuery'")
+                return@launch
+            }
             
             try {
-                val normalizedQuery = query.lowercase().trim()
+                val cacheKey = normalizedQuery.lowercase()
                 
                 // Check local cache first (INSTANT response for cached queries)
-                val cached = searchCache[normalizedQuery]
+                val cached = searchCache[cacheKey]
                 if (cached != null && System.currentTimeMillis() - cached.first < CACHE_TTL_MS) {
-                    Timber.d("Search cache HIT: '$query' (${cached.second.size} results)")
+                    Timber.d("Search cache HIT: '$normalizedQuery' (${cached.second.size} results)")
                     withContext(Dispatchers.Main) {
+                        if (!isSearchRequestCurrent(requestVersion, field, normalizedQuery)) return@withContext
                         hideSkeletonLoading()
                         placesAdapter.updatePlaces(cached.second)
                     }
@@ -924,34 +947,69 @@ class LocationInputActivity : AppCompatActivity() {
                 
                 // Cache miss - perform API call
                 val results = withContext(Dispatchers.IO) {
-                    placesHelper.searchPlaces(query, maxResults = 8)
+                    placesHelper.searchPlaces(normalizedQuery, maxResults = 8)
                 }
                 
                 // Store in cache for future instant access
                 if (results.isNotEmpty()) {
-                    searchCache[normalizedQuery] = Pair(System.currentTimeMillis(), results)
-                    Timber.d("Search cached: '$query' (${results.size} results)")
+                    searchCache[cacheKey] = Pair(System.currentTimeMillis(), results)
+                    Timber.d("Search cached: '$normalizedQuery' (${results.size} results)")
                 }
                 
                 // Hide skeleton, show results
                 withContext(Dispatchers.Main) {
+                    if (!isSearchRequestCurrent(requestVersion, field, normalizedQuery)) return@withContext
                     hideSkeletonLoading()
                     
                     if (results.isNotEmpty()) {
                         placesAdapter.updatePlaces(results)
-                        Timber.d("Places search: Found ${results.size} results for '$query'")
+                        Timber.d("Places search: Found ${results.size} results for '$normalizedQuery'")
                     } else {
                         placesAdapter.clear()
-                        Timber.d("Places search: No results for '$query'")
+                        Timber.d("Places search: No results for '$normalizedQuery'")
                     }
                 }
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                throw e
             } catch (e: Exception) {
-                if (e is kotlinx.coroutines.CancellationException) throw e
                 Timber.e(e, "Places search error")
                 withContext(Dispatchers.Main) {
+                    if (!isSearchRequestCurrent(requestVersion, field, normalizedQuery)) return@withContext
                     hideSkeletonLoading()
                     placesAdapter.clear()
                 }
+            }
+        }
+    }
+
+    private fun cancelActiveSearch(reason: String) {
+        searchRequestVersion++
+        searchJob?.cancel()
+        searchJob = null
+        Timber.d("Search cancelled: $reason")
+    }
+
+    private fun isSearchRequestCurrent(
+        requestVersion: Long,
+        field: AutoCompleteTextView,
+        query: String
+    ): Boolean {
+        if (isFinishing || isDestroyed) return false
+        if (requestVersion != searchRequestVersion) return false
+        if (currentSearchField !== field) return false
+        return field.text?.toString()?.trim().orEmpty() == query
+    }
+
+    private fun invalidateSelectionIfTextEdited(isFromField: Boolean, currentText: String) {
+        val selected = if (isFromField) selectedFromLocation else selectedToLocation
+        val selectedLabel = selected?.label?.trim().orEmpty()
+        if (selected != null && selectedLabel != currentText) {
+            if (isFromField) {
+                selectedFromLocation = null
+                draftManager.clearPickup()
+            } else {
+                selectedToLocation = null
+                draftManager.clearDrop()
             }
         }
     }
@@ -1225,6 +1283,7 @@ class LocationInputActivity : AppCompatActivity() {
                 if (bookingMode == "CUSTOM") {
                     // Custom mode: Always fill FROM
                     selectedFromLocation = placeResult
+                    draftManager.savePickup(placeResult)
                     fromLocationInput.setText(selectedLoc.address)
                     fromLocationInput.setSelection(selectedLoc.address.length)
                     Timber.d("Map selection set to FROM (Custom): ${selectedLoc.address}")
@@ -1233,18 +1292,21 @@ class LocationInputActivity : AppCompatActivity() {
                     if (isToFocused) {
                         // TO field was focused - fill TO
                         selectedToLocation = placeResult
+                        draftManager.saveDrop(placeResult)
                         toLocationInput.setText(selectedLoc.address)
                         toLocationInput.setSelection(selectedLoc.address.length)
                         Timber.d("Map selection set to TO: ${selectedLoc.address}")
                     } else if (isFromFocused || selectedFromLocation == null) {
                         // FROM field was focused OR FROM is empty - fill FROM
                         selectedFromLocation = placeResult
+                        draftManager.savePickup(placeResult)
                         fromLocationInput.setText(selectedLoc.address)
                         fromLocationInput.setSelection(selectedLoc.address.length)
                         Timber.d("Map selection set to FROM: ${selectedLoc.address}")
                     } else {
                         // Neither focused, FROM has value - fill TO
                         selectedToLocation = placeResult
+                        draftManager.saveDrop(placeResult)
                         toLocationInput.setText(selectedLoc.address)
                         toLocationInput.setSelection(selectedLoc.address.length)
                         Timber.d("Map selection set to TO (auto): ${selectedLoc.address}")
@@ -1452,6 +1514,7 @@ class LocationInputActivity : AppCompatActivity() {
     }
     
     companion object {
+        private const val LOW_ACCURACY_THRESHOLD_METERS = 100f
         private const val MAX_RECENT_LOCATIONS = 5
         private const val KEY_BOOKING_MODE = "BOOKING_MODE"
         private const val KEY_FROM_LOCATION = "FROM_LOCATION"

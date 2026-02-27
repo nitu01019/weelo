@@ -78,6 +78,7 @@ class ConfirmPickupActivity : AppCompatActivity(), OnMapReadyCallback {
         private const val DEFAULT_ZOOM = 17f
         private const val MIN_ZOOM = 10f
         private const val MAX_ZOOM = 20f
+        private const val LOW_ACCURACY_THRESHOLD_METERS = 100f
         
         // Geocoding - debounce to prevent API spam (critical for millions of users)
         private const val GEOCODE_DEBOUNCE_MS = 500L
@@ -410,12 +411,13 @@ class ConfirmPickupActivity : AppCompatActivity(), OnMapReadyCallback {
         fusedLocationClient.lastLocation.addOnSuccessListener { location ->
             location?.let {
                 // GPS accuracy check — warn if > 100m (cell-tower only, unreliable)
-                if (it.hasAccuracy() && it.accuracy > 100f) {
+                if (it.hasAccuracy() && it.accuracy > LOW_ACCURACY_THRESHOLD_METERS) {
                     Toast.makeText(
                         this,
-                        "GPS accuracy is low. Move to an open area for better results.",
+                        "GPS accuracy is low. Move to an open area and try again.",
                         Toast.LENGTH_LONG
                     ).show()
+                    return@let
                 }
                 val latLng = LatLng(it.latitude, it.longitude)
                 googleMap?.animateCamera(CameraUpdateFactory.newLatLngZoom(latLng, DEFAULT_ZOOM))

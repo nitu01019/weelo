@@ -5,6 +5,7 @@ import android.widget.AutoCompleteTextView
 import com.weelo.logistics.adapters.WeeloPlacesAdapter
 import com.weelo.logistics.core.util.Constants
 import com.weelo.logistics.data.remote.api.WeeloApiService
+import kotlinx.coroutines.CancellationException
 import okhttp3.OkHttpClient
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
@@ -153,6 +154,8 @@ class LocationPlacesHelper(private val context: Context) {
             } else {
                 emptyList()
             }
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             Timber.e(e, "Error searching places")
             emptyList()
@@ -194,6 +197,8 @@ class LocationPlacesHelper(private val context: Context) {
             } else {
                 null
             }
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             Timber.e(e, "Error reverse geocoding")
             null
@@ -226,4 +231,3 @@ class LocationPlacesHelper(private val context: Context) {
         }
     }
 }
-

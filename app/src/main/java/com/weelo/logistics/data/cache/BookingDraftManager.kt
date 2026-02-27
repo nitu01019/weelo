@@ -173,6 +173,54 @@ class BookingDraftManager(context: Context) {
     }
 
     /**
+     * Clear only pickup fields from draft while preserving drop/vehicle selections.
+     */
+    fun clearPickup() {
+        val hasDrop = prefs.getString(KEY_DROP_LABEL, null) != null
+        val hasVehicle = prefs.getString(KEY_VEHICLE_TYPE, null) != null
+        val hasQuantity = prefs.getInt(KEY_QUANTITY, 0) > 0
+        val hasRemainingData = hasDrop || hasVehicle || hasQuantity
+
+        val editor = prefs.edit()
+            .remove(KEY_PICKUP_LABEL)
+            .remove(KEY_PICKUP_LAT)
+            .remove(KEY_PICKUP_LNG)
+            .remove(KEY_PICKUP_PLACE_ID)
+
+        if (hasRemainingData) {
+            editor.putLong(KEY_TIMESTAMP, System.currentTimeMillis())
+        } else {
+            editor.remove(KEY_TIMESTAMP)
+        }
+        editor.apply()
+        Timber.d("$TAG: Pickup cleared from draft")
+    }
+
+    /**
+     * Clear only drop fields from draft while preserving pickup/vehicle selections.
+     */
+    fun clearDrop() {
+        val hasPickup = prefs.getString(KEY_PICKUP_LABEL, null) != null
+        val hasVehicle = prefs.getString(KEY_VEHICLE_TYPE, null) != null
+        val hasQuantity = prefs.getInt(KEY_QUANTITY, 0) > 0
+        val hasRemainingData = hasPickup || hasVehicle || hasQuantity
+
+        val editor = prefs.edit()
+            .remove(KEY_DROP_LABEL)
+            .remove(KEY_DROP_LAT)
+            .remove(KEY_DROP_LNG)
+            .remove(KEY_DROP_PLACE_ID)
+
+        if (hasRemainingData) {
+            editor.putLong(KEY_TIMESTAMP, System.currentTimeMillis())
+        } else {
+            editor.remove(KEY_TIMESTAMP)
+        }
+        editor.apply()
+        Timber.d("$TAG: Drop cleared from draft")
+    }
+
+    /**
      * Check if a non-expired draft exists
      */
     fun hasDraft(): Boolean {
