@@ -26,6 +26,7 @@ import com.weelo.logistics.adapters.WeeloPlacesRecyclerAdapter
 import com.weelo.logistics.core.util.gone
 import com.weelo.logistics.core.util.showToast
 import com.weelo.logistics.core.util.visible
+import com.weelo.logistics.data.cache.BookingDraftManager
 import com.weelo.logistics.core.util.TransitionHelper
 import com.weelo.logistics.data.models.Location
 import com.weelo.logistics.data.remote.api.PlaceResult
@@ -155,6 +156,9 @@ class LocationInputActivity : AppCompatActivity() {
     private var searchJob: Job? = null
     private var currentSearchField: AutoCompleteTextView? = null
     
+    // Crash recovery: saves booking draft across force-kill/crash
+    private lateinit var draftManager: BookingDraftManager
+    
     // Selected locations (for single selection)
     private var selectedFromLocation: PlaceResult? = null
     private var selectedToLocation: PlaceResult? = null
@@ -197,6 +201,7 @@ class LocationInputActivity : AppCompatActivity() {
 
     private fun initializeHelpers() {
         placesHelper = LocationPlacesHelper.getInstance(this)
+        draftManager = BookingDraftManager(this)
         placesHelper.initialize()
         
         // Initialize location client for distance calculation
@@ -334,6 +339,15 @@ class LocationInputActivity : AppCompatActivity() {
                 fusedLocationClient.lastLocation.addOnSuccessListener { location ->
                     currentUserLocation = location
                     location?.let {
+                        // GPS accuracy check — warn if > 100m (cell-tower only, unreliable)
+                        if (it.hasAccuracy() && it.accuracy > 100f) {
+                            Timber.w("GPS accuracy is low: ${it.accuracy}m")
+                            Toast.makeText(
+                                this@LocationInputActivity,
+                                "GPS accuracy is low. Move to an open area for better results.",
+                                Toast.LENGTH_LONG
+                            ).show()
+                        }
                         Timber.d("Current location obtained: ${it.latitude}, ${it.longitude}")
                         // Update bias for search results distance
                         placesAdapter.updateBias(it.latitude, it.longitude)
@@ -965,6 +979,7 @@ class LocationInputActivity : AppCompatActivity() {
         when (currentSearchField) {
             fromLocationInput -> {
                 selectedFromLocation = place
+                draftManager.savePickup(place) // Crash recovery: persist pickup
                 // Set text and keep cursor at end
                 fromLocationInput.setText(place.label)
                 fromLocationInput.setSelection(place.label.length)
@@ -981,6 +996,7 @@ class LocationInputActivity : AppCompatActivity() {
             }
             toLocationInput -> {
                 selectedToLocation = place
+                draftManager.saveDrop(place) // Crash recovery: persist drop
                 // Set text and keep cursor at end
                 toLocationInput.setText(place.label)
                 toLocationInput.setSelection(place.label.length)
@@ -1040,6 +1056,23 @@ class LocationInputActivity : AppCompatActivity() {
         @Suppress("DEPRECATION")
         intent.getParcelableExtra<Location>("TO_LOCATION")?.let {
             toLocationInput.setText(it.address)
+        }
+
+        // Crash recovery: Restore draft if no intent data and draft exists
+        if (fromLocationInput.text.isNullOrBlank() && toLocationInput.text.isNullOrBlank()) {
+            draftManager.getDraft()?.let { draft ->
+                Timber.d("Restoring booking draft from crash recovery")
+                isSettingTextProgrammatically = true
+                draft.pickup?.let {
+                    selectedFromLocation = it
+                    fromLocationInput.setText(it.label)
+                }
+                draft.drop?.let {
+                    selectedToLocation = it
+                    toLocationInput.setText(it.label)
+                }
+                isSettingTextProgrammatically = false
+            }
         }
 
         // Restore intermediate stops
@@ -1133,6 +1166,8 @@ class LocationInputActivity : AppCompatActivity() {
             navigateToMap(fromLoc, toLoc)
         }
         
+        // Clear draft on successful continue — booking is committed
+        draftManager.clearDraft()
         continueButton.isEnabled = true
     }
 

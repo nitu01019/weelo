@@ -409,6 +409,14 @@ class ConfirmPickupActivity : AppCompatActivity(), OnMapReadyCallback {
 
         fusedLocationClient.lastLocation.addOnSuccessListener { location ->
             location?.let {
+                // GPS accuracy check — warn if > 100m (cell-tower only, unreliable)
+                if (it.hasAccuracy() && it.accuracy > 100f) {
+                    Toast.makeText(
+                        this,
+                        "GPS accuracy is low. Move to an open area for better results.",
+                        Toast.LENGTH_LONG
+                    ).show()
+                }
                 val latLng = LatLng(it.latitude, it.longitude)
                 googleMap?.animateCamera(CameraUpdateFactory.newLatLngZoom(latLng, DEFAULT_ZOOM))
             } ?: run {
