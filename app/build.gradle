@@ -43,6 +43,7 @@ android {
             MAPS_API_KEY: mapsApiKey
         ]
         buildConfigField "String", "MAPS_API_KEY", "\"${mapsApiKey}\""
+        buildConfigField "boolean", "FF_ORDER_CREATE_PENDING_QUEUE", "true"
     }
 
     // Signing configuration for release builds

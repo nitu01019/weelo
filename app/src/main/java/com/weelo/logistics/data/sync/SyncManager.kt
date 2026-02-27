@@ -7,7 +7,7 @@ import com.weelo.logistics.data.local.dao.PendingOperationDao
 import com.weelo.logistics.data.local.entity.OperationStatus
 import com.weelo.logistics.data.local.entity.OperationType
 import com.weelo.logistics.data.local.entity.PendingOperationEntity
-import com.weelo.logistics.data.remote.api.WeeloApiService
+import com.weelo.logistics.data.remote.api.*
 import com.weelo.logistics.data.remote.TokenManager
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
@@ -79,6 +79,13 @@ class SyncManager @Inject constructor(
     
     private val gson = Gson()
     private val syncScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
+
+    private data class QueuedOrderCreatePayload(
+        val kind: String = "order_create",
+        val idempotencyKey: String,
+        val payloadHash: String,
+        val request: CreateOrderRequest
+    )
     
     // Sync status
     private val _syncStatus = MutableStateFlow(SyncStatus.IDLE)
@@ -242,19 +249,76 @@ class SyncManager @Inject constructor(
      */
     @Suppress("UNUSED_VARIABLE") // Variables reserved for future API implementation
     private suspend fun processCreateBooking(operation: PendingOperationEntity): Boolean {
-        val payload = parsePayload<Map<String, Any?>>(operation.payload) ?: return false
-        
-        val token = tokenManager.getAccessToken() ?: return false
-        
-        // Build request from payload
-        // Note: This should match your actual API request format
-        val result = resilientExecutor.executeOnce("CreateBooking") {
-            // apiService.createBooking(token, request)
-            // For now, just return success since we don't have the exact request format
-            true
+        val queuedOrderPayload = parsePayload<QueuedOrderCreatePayload>(operation.payload)
+        if (queuedOrderPayload != null && queuedOrderPayload.kind == "order_create") {
+            val token = tokenManager.getAccessToken() ?: return false
+            val authHeader = "Bearer $token"
+            val idempotencyKey = queuedOrderPayload.idempotencyKey
+
+            val result = resilientExecutor.executeOnce("CreateOrder") {
+                val primary = apiService.createOrderViaBookings(
+                    token = authHeader,
+                    request = queuedOrderPayload.request,
+                    idempotencyKey = idempotencyKey
+                )
+                val response = if (
+                    primary.isSuccessful ||
+                    !shouldFallbackToLegacyOrdersRoute(primary.code(), primary.body()?.error?.code, primary.body()?.error?.message)
+                ) {
+                    primary
+                } else {
+                    apiService.createOrder(
+                        token = authHeader,
+                        request = queuedOrderPayload.request,
+                        idempotencyKey = idempotencyKey
+                    )
+                }
+
+                response.isSuccessful && response.body()?.success == true
+            }
+
+            return result.getOrNull() == true
         }
-        
-        return result.isSuccess
+
+        val legacyPayload = parsePayload<Map<String, Any?>>(operation.payload) ?: return false
+        val token = tokenManager.getAccessToken() ?: return false
+
+        val legacyResult = resilientExecutor.executeOnce("CreateBookingLegacy") {
+            val vehicleType = legacyPayload["vehicleType"] as? String ?: return@executeOnce false
+            val vehicleSubtype = legacyPayload["vehicleSubtype"] as? String ?: return@executeOnce false
+            val quantity = (legacyPayload["quantity"] as? Number)?.toInt() ?: return@executeOnce false
+            val pickupAddress = legacyPayload["pickupLocation"] as? String ?: return@executeOnce false
+            val dropAddress = legacyPayload["dropLocation"] as? String ?: return@executeOnce false
+            val pickupLat = (legacyPayload["pickupLat"] as? Number)?.toDouble() ?: return@executeOnce false
+            val pickupLng = (legacyPayload["pickupLng"] as? Number)?.toDouble() ?: return@executeOnce false
+            val dropLat = (legacyPayload["dropLat"] as? Number)?.toDouble() ?: return@executeOnce false
+            val dropLng = (legacyPayload["dropLng"] as? Number)?.toDouble() ?: return@executeOnce false
+
+            val request = CreateBookingRequest(
+                pickup = LocationRequest(
+                    coordinates = CoordinatesRequest(pickupLat, pickupLng),
+                    address = pickupAddress
+                ),
+                drop = LocationRequest(
+                    coordinates = CoordinatesRequest(dropLat, dropLng),
+                    address = dropAddress
+                ),
+                vehicleType = vehicleType,
+                vehicleSubtype = vehicleSubtype,
+                trucksNeeded = quantity,
+                distanceKm = 0,
+                pricePerTruck = 0
+            )
+
+            val response = apiService.createBooking(
+                authorization = "Bearer $token",
+                request = request,
+                idempotencyKey = operation.id
+            )
+            response.isSuccessful && response.body()?.success == true
+        }
+
+        return legacyResult.getOrNull() == true
     }
     
     /**
@@ -324,6 +388,18 @@ class SyncManager @Inject constructor(
             null
         }
     }
+
+    private fun shouldFallbackToLegacyOrdersRoute(
+        responseCode: Int,
+        errorCode: String? = null,
+        errorMessage: String? = null
+    ): Boolean {
+        if (responseCode in setOf(400, 404, 405, 422, 501)) return true
+        val normalized = "${errorCode.orEmpty()} ${errorMessage.orEmpty()}".lowercase()
+        return normalized.contains("bookings/orders") ||
+            normalized.contains("cannot post") ||
+            normalized.contains("not found")
+    }
     
     /**
      * Queue a new operation
@@ -339,6 +415,30 @@ class SyncManager @Inject constructor(
                 syncPendingOperations()
             }
         }
+    }
+
+    suspend fun queueOrderCreateOperation(
+        request: CreateOrderRequest,
+        idempotencyKey: String,
+        payloadHash: String
+    ) {
+        val payload = gson.toJson(
+            QueuedOrderCreatePayload(
+                kind = "order_create",
+                idempotencyKey = idempotencyKey,
+                payloadHash = payloadHash,
+                request = request
+            )
+        )
+        val operation = PendingOperationEntity(
+            id = "order_create_$idempotencyKey",
+            operationType = OperationType.CREATE_BOOKING,
+            payload = payload,
+            maxRetries = 6,
+            priority = 1,
+            relatedEntityId = idempotencyKey
+        )
+        queueOperation(operation)
     }
     
     /**

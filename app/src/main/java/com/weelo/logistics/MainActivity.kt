@@ -7,14 +7,20 @@ import android.widget.LinearLayout
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.cardview.widget.CardView
+import androidx.lifecycle.lifecycleScope
 import com.weelo.logistics.core.util.showToast
 import com.weelo.logistics.core.util.TransitionHelper
+import com.weelo.logistics.core.common.Result
+import com.weelo.logistics.data.repository.BookingApiRepository
 import com.weelo.logistics.presentation.home.HomeNavigationEvent
 import com.weelo.logistics.presentation.home.HomeViewModel
 import com.weelo.logistics.presentation.profile.ProfileActivity
 import com.weelo.logistics.tutorial.OnboardingManager
 import com.weelo.logistics.tutorial.TutorialCoordinator
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.launch
+import javax.inject.Inject
 
 /**
  * MainActivity - Home/Landing Screen
@@ -40,6 +46,9 @@ import dagger.hilt.android.AndroidEntryPoint
 @AndroidEntryPoint
 class MainActivity : AppCompatActivity() {
 
+    @Inject
+    lateinit var bookingRepository: BookingApiRepository
+
     // ViewModel injected by Hilt
     private val viewModel: HomeViewModel by viewModels()
     
@@ -50,6 +59,8 @@ class MainActivity : AppCompatActivity() {
     
     // Tutorial
     private var tutorialCoordinator: TutorialCoordinator? = null
+    private var reconcileActiveOrderJob: Job? = null
+    private var activeOrderRoutedThisSession: Boolean = false
 
     // ========================================
     // Lifecycle Methods
@@ -120,7 +131,13 @@ class MainActivity : AppCompatActivity() {
     
     override fun onDestroy() {
         super.onDestroy()
+        reconcileActiveOrderJob?.cancel()
         tutorialCoordinator = null
+    }
+
+    override fun onResume() {
+        super.onResume()
+        reconcileActiveOrderOnResume()
     }
     
     // ========================================
@@ -263,5 +280,32 @@ class MainActivity : AppCompatActivity() {
         val intent = com.weelo.logistics.presentation.booking.MyBookingsActivity.newIntent(this)
         startActivity(intent)
         TransitionHelper.applySlideInLeftTransition(this)
+    }
+
+    private fun reconcileActiveOrderOnResume() {
+        if (activeOrderRoutedThisSession) return
+        reconcileActiveOrderJob?.cancel()
+        reconcileActiveOrderJob = lifecycleScope.launch {
+            try {
+                val activeResult = bookingRepository.checkActiveOrder()
+                val activeOrderId = when (activeResult) {
+                    is Result.Success -> activeResult.data?.orderId
+                    else -> null
+                } ?: return@launch
+
+                val statusResult = bookingRepository.getOrderStatus(activeOrderId)
+                val isActive = (statusResult as? Result.Success)?.data?.isActive == true
+                if (!isActive) return@launch
+
+                activeOrderRoutedThisSession = true
+                Timber.i("MainActivity: restoring active order flow for $activeOrderId")
+                startActivity(
+                    com.weelo.logistics.presentation.booking.BookingTrackingActivity
+                        .newIntent(this@MainActivity, activeOrderId)
+                )
+            } catch (e: Exception) {
+                Timber.w(e, "MainActivity: active order reconcile failed")
+            }
+        }
     }
 }

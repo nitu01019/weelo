@@ -131,7 +131,8 @@ interface WeeloApiService {
     @POST("bookings/orders")
     suspend fun createOrderViaBookings(
         @Header("Authorization") token: String,
-        @Body request: CreateOrderRequest
+        @Body request: CreateOrderRequest,
+        @Header("X-Idempotency-Key") idempotencyKey: String? = null
     ): Response<CreateOrderResponse>
 
     /**
@@ -141,7 +142,8 @@ interface WeeloApiService {
     @POST("orders")
     suspend fun createOrder(
         @Header("Authorization") token: String,
-        @Body request: CreateOrderRequest
+        @Body request: CreateOrderRequest,
+        @Header("X-Idempotency-Key") idempotencyKey: String? = null
     ): Response<CreateOrderResponse>
 
     /**
@@ -231,6 +233,14 @@ interface WeeloApiService {
         @Header("Authorization") token: String,
         @Path("orderId") orderId: String
     ): Response<OrderStatusResponse>
+
+    /**
+     * Check if customer already has an active order (legacy canonical path)
+     */
+    @GET("orders/check-active")
+    suspend fun checkActiveOrder(
+        @Header("Authorization") token: String
+    ): Response<CheckActiveOrderResponse>
 
     // ============================================================
     // CUSTOM BOOKING (Long-term contracts - weeks/months)
@@ -919,7 +929,29 @@ data class OrderStatusData(
     val status: String,
     val remainingSeconds: Int,
     val isActive: Boolean,
-    val expiresAt: String
+    val expiresAt: String,
+    val dispatchState: String? = null,
+    val dispatchAttempts: Int = 0,
+    val notifiedTransporters: Int = 0,
+    val onlineCandidates: Int = 0,
+    val reasonCode: String? = null,
+    val serverTimeMs: Long? = null
+)
+
+data class CheckActiveOrderResponse(
+    val success: Boolean,
+    val data: CheckActiveOrderData? = null
+)
+
+data class CheckActiveOrderData(
+    val hasActiveOrder: Boolean,
+    val activeOrder: ActiveOrderSummary? = null
+)
+
+data class ActiveOrderSummary(
+    val orderId: String,
+    val status: String,
+    val createdAt: String
 )
 
 /**
@@ -1047,7 +1079,14 @@ data class CreateOrderData(
     val order: OrderData,
     val truckRequests: List<TruckRequestData>,
     val broadcastSummary: BroadcastSummary,
-    val timeoutSeconds: Int
+    val timeoutSeconds: Int,
+    val dispatchState: String? = null,
+    val dispatchAttempts: Int = 0,
+    val onlineCandidates: Int = 0,
+    val notifiedTransporters: Int = 0,
+    val reasonCode: String? = null,
+    val recoveryHint: String? = null,
+    val serverTimeMs: Long? = null
 )
 
 /**

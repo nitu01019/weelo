@@ -491,9 +491,13 @@ class BookingApiRepository @Inject constructor(
         goodsType: String? = null,
         @Suppress("UNUSED_PARAMETER") weight: String? = null, // Reserved for future use
         @Suppress("UNUSED_PARAMETER") notes: String? = null, // Reserved for future use
-        intermediateStops: List<LocationModel> = emptyList()  // NEW: Intermediate stops
+        intermediateStops: List<LocationModel> = emptyList(),  // NEW: Intermediate stops
+        idempotencyKey: String? = null
     ): Result<OrderResult> {
         return try {
+            val effectiveIdempotencyKey = idempotencyKey?.takeIf { it.isNotBlank() }
+                ?: java.util.UUID.randomUUID().toString()
+
             // Build routePoints array if we have intermediate stops
             val routePoints: List<RoutePointRequest>? = if (intermediateStops.isNotEmpty()) {
                 mutableListOf<RoutePointRequest>().apply {
@@ -565,7 +569,11 @@ class BookingApiRepository @Inject constructor(
             Timber.d("Creating order with ${trucks.sumOf { it.quantity }} trucks, ${intermediateStops.size} stops")
             
             val authToken = getAuthToken()
-            val primaryResponse = apiService.createOrderViaBookings(authToken, request)
+            val primaryResponse = apiService.createOrderViaBookings(
+                authToken,
+                request,
+                effectiveIdempotencyKey
+            )
             val response = if (
                 primaryResponse.isSuccessful ||
                 !shouldFallbackToLegacyOrdersRoute(
@@ -580,7 +588,7 @@ class BookingApiRepository @Inject constructor(
                     "createOrder fallback to legacy /orders route (code=%d)",
                     primaryResponse.code()
                 )
-                apiService.createOrder(authToken, request)
+                apiService.createOrder(authToken, request, effectiveIdempotencyKey)
             }
             
             val responseBody = response.body()
@@ -596,6 +604,11 @@ class BookingApiRepository @Inject constructor(
                         totalTrucks = data.order.totalTrucks,
                         totalAmount = data.order.totalAmount,
                         status = data.order.status,
+                        dispatchState = data.dispatchState ?: "queued",
+                        dispatchAttempts = data.dispatchAttempts,
+                        onlineCandidates = data.onlineCandidates,
+                        notifiedTransporters = data.notifiedTransporters,
+                        dispatchReasonCode = data.reasonCode,
                         expiresIn = data.order.expiresIn,  // NEW: Get TTL from backend
                         truckRequests = data.truckRequests.map { req ->
                             TruckRequestResult(
@@ -929,6 +942,29 @@ class BookingApiRepository @Inject constructor(
             Result.Error(WeeloException.NetworkException("Network error. Please try again."))
         }
     }
+
+    suspend fun checkActiveOrder(): Result<ActiveOrderSummary?> {
+        return try {
+            val authToken = getAuthToken()
+            val response = apiService.checkActiveOrder(authToken)
+            if (response.isSuccessful && response.body()?.success == true) {
+                val payload = response.body()?.data
+                if (payload?.hasActiveOrder == true) {
+                    Result.Success(payload.activeOrder)
+                } else {
+                    Result.Success(null)
+                }
+            } else {
+                val errorMsg = parseErrorMessage(response, fallback = "Failed to check active order.")
+                Result.Error(WeeloException.BookingException(errorMsg))
+            }
+        } catch (e: WeeloException.AuthException) {
+            Result.Error(e)
+        } catch (e: Exception) {
+            if (e is kotlinx.coroutines.CancellationException) throw e
+            Result.Error(WeeloException.NetworkException("Network error. Please try again."))
+        }
+    }
 }
 
 // ============================================================
@@ -953,6 +989,11 @@ data class OrderResult(
     val totalTrucks: Int,
     val totalAmount: Int,
     val status: String,
+    val dispatchState: String,
+    val dispatchAttempts: Int,
+    val onlineCandidates: Int,
+    val notifiedTransporters: Int,
+    val dispatchReasonCode: String? = null,
     val truckRequests: List<TruckRequestResult>,
     val broadcastSummary: BroadcastSummaryResult,
     val timeoutSeconds: Int,

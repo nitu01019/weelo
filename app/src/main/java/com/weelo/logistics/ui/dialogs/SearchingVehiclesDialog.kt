@@ -15,16 +15,23 @@ import androidx.fragment.app.DialogFragment
 import androidx.lifecycle.lifecycleScope
 import com.airbnb.lottie.LottieAnimationView
 import com.google.android.material.button.MaterialButton
+import com.weelo.logistics.BuildConfig
 import com.weelo.logistics.R
 import com.weelo.logistics.core.common.Result
+import com.weelo.logistics.core.common.WeeloException
 import com.weelo.logistics.core.util.getParcelableCompat
 import com.weelo.logistics.core.util.getParcelableArrayListCompat
 import com.weelo.logistics.data.models.Location
 import com.weelo.logistics.data.models.SelectedTruckItem
 import com.weelo.logistics.data.repository.BookingApiRepository
+import com.weelo.logistics.data.sync.SyncManager
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import java.security.MessageDigest
+import java.util.Locale
+import kotlin.random.Random
 import javax.inject.Inject
 
 /**
@@ -97,8 +104,47 @@ class SearchingVehiclesDialog : com.google.android.material.bottomsheet.BottomSh
         }
     }
 
+    private object OrderCreateAttemptPrefs {
+        private const val PREFS_NAME = "weelo_order_create_attempt"
+        private const val KEY_IDEMPOTENCY_KEY = "idempotency_key"
+        private const val KEY_CREATED_AT_MS = "created_at_ms"
+        private const val KEY_PAYLOAD_HASH = "payload_hash"
+        private const val ATTEMPT_TTL_MS = 15 * 60 * 1000L
+
+        fun getOrCreate(context: android.content.Context, payloadHash: String): String {
+            val prefs = context.getSharedPreferences(PREFS_NAME, android.content.Context.MODE_PRIVATE)
+            val existingKey = prefs.getString(KEY_IDEMPOTENCY_KEY, null)
+            val createdAt = prefs.getLong(KEY_CREATED_AT_MS, 0L)
+            val existingPayloadHash = prefs.getString(KEY_PAYLOAD_HASH, null)
+            val now = System.currentTimeMillis()
+            if (!existingKey.isNullOrBlank() &&
+                now - createdAt <= ATTEMPT_TTL_MS &&
+                existingPayloadHash == payloadHash
+            ) {
+                return existingKey
+            }
+            val fresh = java.util.UUID.randomUUID().toString()
+            prefs.edit()
+                .putString(KEY_IDEMPOTENCY_KEY, fresh)
+                .putLong(KEY_CREATED_AT_MS, now)
+                .putString(KEY_PAYLOAD_HASH, payloadHash)
+                .apply()
+            return fresh
+        }
+
+        fun clear(context: android.content.Context) {
+            context.getSharedPreferences(PREFS_NAME, android.content.Context.MODE_PRIVATE)
+                .edit()
+                .clear()
+                .apply()
+        }
+    }
+
     @Inject
     lateinit var bookingRepository: BookingApiRepository
+
+    @Inject
+    lateinit var syncManager: SyncManager
 
     @Inject
     lateinit var webSocketService: com.weelo.logistics.data.remote.WebSocketService
@@ -177,6 +223,7 @@ class SearchingVehiclesDialog : com.google.android.material.bottomsheet.BottomSh
     }
     private var currentStatus = SearchStatus.SEARCHING
     private var currentStep = 1
+    private val retryBackoffMs = longArrayOf(1_000L, 2_000L, 4_000L, 8_000L, 16_000L, 30_000L)
 
     // Callbacks
     private var onBookingCreatedListener: OnBookingCreatedListener? = null
@@ -419,6 +466,7 @@ class SearchingVehiclesDialog : com.google.android.material.bottomsheet.BottomSh
                     retrySearchButton.visibility = View.GONE
                     onSearchTimeoutListener?.onSearchTimeout(createdBookingId)
                     ActiveOrderPrefs.clear(requireContext())
+                    OrderCreateAttemptPrefs.clear(requireContext())
                     createdBookingId = null
                     dismiss()
                 }
@@ -789,6 +837,7 @@ class SearchingVehiclesDialog : com.google.android.material.bottomsheet.BottomSh
         countDownTimer?.cancel()
         leaveBookingRoomSafely(createdBookingId)
         ActiveOrderPrefs.clear(requireContext())
+        OrderCreateAttemptPrefs.clear(requireContext())
 
         statusTitle.text = getString(R.string.search_cancelled_title)
         statusSubtitle.text = if (reason.isNotBlank()) {
@@ -817,6 +866,7 @@ class SearchingVehiclesDialog : com.google.android.material.bottomsheet.BottomSh
         countDownTimer?.cancel()
         leaveBookingRoomSafely(orderId)
         ActiveOrderPrefs.clear(requireContext())
+        OrderCreateAttemptPrefs.clear(requireContext())
 
         updateStatus(
             SearchStatus.DRIVER_FOUND,
@@ -988,6 +1038,213 @@ class SearchingVehiclesDialog : com.google.android.material.bottomsheet.BottomSh
         }.start()
     }
 
+    private fun isRetryableOrderCreateError(error: Throwable): Boolean {
+        if (error is WeeloException.NetworkException) return true
+        if (error is WeeloException.NetworkError) return true
+        if (error is WeeloException.Timeout) return true
+        val message = error.message?.lowercase().orEmpty()
+        return message.contains("network") ||
+            message.contains("timeout") ||
+            message.contains("connection") ||
+            message.contains("unable to resolve host")
+    }
+
+    private fun buildOrderCreatePayloadHash(
+        pickupModel: com.weelo.logistics.domain.model.LocationModel,
+        dropModel: com.weelo.logistics.domain.model.LocationModel,
+        truckSelections: List<com.weelo.logistics.data.repository.TruckSelection>,
+        intermediateStopModels: List<com.weelo.logistics.domain.model.LocationModel>
+    ): String {
+        val truckFingerprint = truckSelections
+            .map {
+                "${it.vehicleType.trim().lowercase()}|${it.vehicleSubtype.trim().lowercase()}|${it.quantity}|${it.pricePerTruck}"
+            }
+            .sorted()
+            .joinToString(";")
+
+        val stopsFingerprint = intermediateStopModels
+            .map { stop ->
+                "${String.format(Locale.US, "%.5f", stop.latitude)}|${String.format(Locale.US, "%.5f", stop.longitude)}|${stop.address.trim().lowercase()}"
+            }
+            .joinToString(";")
+
+        val raw = listOf(
+            pickupModel.address.trim().lowercase(),
+            String.format(Locale.US, "%.5f", pickupModel.latitude),
+            String.format(Locale.US, "%.5f", pickupModel.longitude),
+            dropModel.address.trim().lowercase(),
+            String.format(Locale.US, "%.5f", dropModel.latitude),
+            String.format(Locale.US, "%.5f", dropModel.longitude),
+            distanceKm.toString(),
+            truckFingerprint,
+            stopsFingerprint
+        ).joinToString("::")
+
+        val digest = MessageDigest.getInstance("SHA-256").digest(raw.toByteArray(Charsets.UTF_8))
+        return digest.joinToString("") { "%02x".format(it) }
+    }
+
+    private suspend fun tryRecoverExistingActiveOrder(): Boolean {
+        val ctx = context ?: return false
+        val (savedOrderId, _) = ActiveOrderPrefs.get(ctx)
+        val candidateOrderId = savedOrderId ?: run {
+            when (val active = bookingRepository.checkActiveOrder()) {
+                is Result.Success -> active.data?.orderId
+                else -> null
+            }
+        }
+        if (candidateOrderId.isNullOrBlank()) return false
+
+        return when (val statusResult = bookingRepository.getOrderStatus(candidateOrderId)) {
+            is Result.Success -> {
+                val statusData = statusResult.data
+                if (!statusData.isActive || statusData.status.equals("cancelled", ignoreCase = true) || statusData.status.equals("expired", ignoreCase = true)) {
+                    ActiveOrderPrefs.clear(ctx)
+                    false
+                } else {
+                    createdBookingId = statusData.orderId
+                    val expiresAtMs = System.currentTimeMillis() + (statusData.remainingSeconds.coerceAtLeast(1) * 1000L)
+                    ActiveOrderPrefs.save(ctx, statusData.orderId, expiresAtMs)
+                    startCountdownTimer(statusData.remainingSeconds.coerceAtLeast(1))
+                    updateStatus(
+                        SearchStatus.BOOKING_CREATED,
+                        getString(R.string.search_order_created_title),
+                        getString(R.string.search_order_created_subtitle, selectedTrucks?.sumOf { it.quantity } ?: 1)
+                    )
+                    try {
+                        webSocketService.connect()
+                        webSocketService.joinBookingRoom(statusData.orderId)
+                        startOrderWebSocketCollectorsIfPossible()
+                        startReconnectOrderStatusPoll()
+                    } catch (_: Exception) {
+                    }
+                    true
+                }
+            }
+            else -> false
+        }
+    }
+
+    private suspend fun createOrderWithBoundedRetry(
+        pickupModel: com.weelo.logistics.domain.model.LocationModel,
+        dropModel: com.weelo.logistics.domain.model.LocationModel,
+        truckSelections: List<com.weelo.logistics.data.repository.TruckSelection>,
+        intermediateStopModels: List<com.weelo.logistics.domain.model.LocationModel>,
+        idempotencyKey: String
+    ): Result<com.weelo.logistics.data.repository.OrderResult> {
+        var lastError: Result.Error? = null
+        for (attempt in 0..retryBackoffMs.size) {
+            val result = bookingRepository.createOrder(
+                pickup = pickupModel,
+                drop = dropModel,
+                trucks = truckSelections,
+                distanceKm = distanceKm,
+                goodsType = "General",
+                intermediateStops = intermediateStopModels,
+                idempotencyKey = idempotencyKey
+            )
+            when (result) {
+                is Result.Success -> return result
+                Result.Loading -> Unit
+                is Result.Error -> {
+                    lastError = result
+                    if (!isRetryableOrderCreateError(result.exception) || attempt >= retryBackoffMs.size) {
+                        return result
+                    }
+                    val backoffMs = retryBackoffMs[attempt] + Random.nextLong(150L, 500L)
+                    statusSubtitle.text = "Network is slow. Retrying in ${backoffMs / 1000}s..."
+                    delay(backoffMs)
+                }
+            }
+        }
+        return lastError ?: Result.Error(IllegalStateException("Unknown order create failure"))
+    }
+
+    private suspend fun queueOrderCreateForBackgroundRetry(
+        pickupModel: com.weelo.logistics.domain.model.LocationModel,
+        dropModel: com.weelo.logistics.domain.model.LocationModel,
+        truckSelections: List<com.weelo.logistics.data.repository.TruckSelection>,
+        intermediateStopModels: List<com.weelo.logistics.domain.model.LocationModel>,
+        idempotencyKey: String,
+        payloadHash: String
+    ): Boolean {
+        if (!BuildConfig.FF_ORDER_CREATE_PENDING_QUEUE) return false
+        return try {
+            val routePoints = mutableListOf<com.weelo.logistics.data.remote.api.RoutePointRequest>().apply {
+                add(
+                    com.weelo.logistics.data.remote.api.RoutePointRequest(
+                        type = "PICKUP",
+                        latitude = pickupModel.latitude,
+                        longitude = pickupModel.longitude,
+                        address = pickupModel.address,
+                        city = pickupModel.city.ifBlank { null },
+                        state = pickupModel.state.ifBlank { null }
+                    )
+                )
+                intermediateStopModels.forEach { stop ->
+                    add(
+                        com.weelo.logistics.data.remote.api.RoutePointRequest(
+                            type = "STOP",
+                            latitude = stop.latitude,
+                            longitude = stop.longitude,
+                            address = stop.address,
+                            city = stop.city.ifBlank { null },
+                            state = stop.state.ifBlank { null }
+                        )
+                    )
+                }
+                add(
+                    com.weelo.logistics.data.remote.api.RoutePointRequest(
+                        type = "DROP",
+                        latitude = dropModel.latitude,
+                        longitude = dropModel.longitude,
+                        address = dropModel.address,
+                        city = dropModel.city.ifBlank { null },
+                        state = dropModel.state.ifBlank { null }
+                    )
+                )
+            }
+
+            val createOrderRequest = com.weelo.logistics.data.remote.api.CreateOrderRequest(
+                routePoints = routePoints,
+                pickup = com.weelo.logistics.data.remote.api.OrderLocationRequest(
+                    latitude = pickupModel.latitude,
+                    longitude = pickupModel.longitude,
+                    address = pickupModel.address,
+                    city = pickupModel.city.ifBlank { null },
+                    state = pickupModel.state.ifBlank { null }
+                ),
+                drop = com.weelo.logistics.data.remote.api.OrderLocationRequest(
+                    latitude = dropModel.latitude,
+                    longitude = dropModel.longitude,
+                    address = dropModel.address,
+                    city = dropModel.city.ifBlank { null },
+                    state = dropModel.state.ifBlank { null }
+                ),
+                distanceKm = distanceKm,
+                vehicleRequirements = truckSelections.map { truck ->
+                    com.weelo.logistics.data.remote.api.VehicleRequirementRequest(
+                        vehicleType = truck.vehicleType,
+                        vehicleSubtype = truck.vehicleSubtype,
+                        quantity = truck.quantity,
+                        pricePerTruck = truck.pricePerTruck
+                    )
+                },
+                goodsType = "General"
+            )
+
+            syncManager.queueOrderCreateOperation(
+                request = createOrderRequest,
+                idempotencyKey = idempotencyKey,
+                payloadHash = payloadHash
+            )
+            true
+        } catch (e: Exception) {
+            Timber.w(e, "Failed to queue order create for background retry")
+            false
+        }
+    }
+
     private fun createBooking() {
         bookingJob = lifecycleScope.launch {
             try {
@@ -1003,6 +1260,11 @@ class SearchingVehiclesDialog : com.google.android.material.bottomsheet.BottomSh
                     )
                     return@launch
                 }
+
+                // Crash/force-close recovery: if backend still has an active order, resume it
+                if (createdBookingId.isNullOrBlank() && tryRecoverExistingActiveOrder()) {
+                    return@launch
+                }
                 
                 updateStatus(
                     SearchStatus.SEARCHING,
@@ -1011,7 +1273,16 @@ class SearchingVehiclesDialog : com.google.android.material.bottomsheet.BottomSh
                 )
                 
                 // Convert selectedTrucks to TruckSelection list for multi-truck order
-                val trucksCount = selectedTrucks?.sumOf { it.quantity } ?: 1
+                val trucksCount = selectedTrucks?.sumOf { it.quantity } ?: 0
+                if (trucksCount <= 0) {
+                    updateStatus(
+                        SearchStatus.ERROR,
+                        getString(R.string.search_booking_failed_title),
+                        "Please select at least one truck before booking."
+                    )
+                    cancelButton.text = getString(R.string.search_close)
+                    return@launch
+                }
                 val avgPricePerTruck = if (trucksCount > 0) totalPrice / trucksCount else 0
                 
                 val truckSelections = selectedTrucks?.map { truck ->
@@ -1052,19 +1323,25 @@ class SearchingVehiclesDialog : com.google.android.material.bottomsheet.BottomSh
                 }
                 
                 Timber.d( "Creating order with ${intermediateStopModels.size} intermediate stops")
-                
-                // Use createOrder for multi-truck support (each subtype is separate)
-                val result = bookingRepository.createOrder(
-                    pickup = pickupModel,
-                    drop = dropModel,
-                    trucks = truckSelections,
-                    distanceKm = distanceKm,
-                    goodsType = "General", // TODO: Get from user selection
-                    intermediateStops = intermediateStopModels  // CRITICAL: Pass stops to API
+                val ctx = context ?: return@launch
+                val payloadHash = buildOrderCreatePayloadHash(
+                    pickupModel = pickupModel,
+                    dropModel = dropModel,
+                    truckSelections = truckSelections,
+                    intermediateStopModels = intermediateStopModels
+                )
+                val idempotencyKey = OrderCreateAttemptPrefs.getOrCreate(ctx, payloadHash)
+                val result = createOrderWithBoundedRetry(
+                    pickupModel = pickupModel,
+                    dropModel = dropModel,
+                    truckSelections = truckSelections,
+                    intermediateStopModels = intermediateStopModels,
+                    idempotencyKey = idempotencyKey
                 )
                 
                 when (result) {
                     is Result.Success -> {
+                        OrderCreateAttemptPrefs.clear(ctx)
                         val orderResult = result.data
                         createdBookingId = orderResult.orderId
                         
@@ -1074,7 +1351,6 @@ class SearchingVehiclesDialog : com.google.android.material.bottomsheet.BottomSh
                         
                         // MODULARITY: Persist order state for app resume
                         val expiresAtMs = System.currentTimeMillis() + (expiresIn * 1000L)
-                        val ctx = context ?: return@launch  // Guard: dialog may be detached
                         ActiveOrderPrefs.save(ctx, orderResult.orderId, expiresAtMs)
                         
                         // Start timer with backend duration
@@ -1111,9 +1387,33 @@ class SearchingVehiclesDialog : com.google.android.material.bottomsheet.BottomSh
                         Timber.d( "Unexpected Loading state")
                     }
                     is Result.Error -> {
+                        // If network result was uncertain, backend may already have created order.
+                        if (isRetryableOrderCreateError(result.exception) && tryRecoverExistingActiveOrder()) {
+                            return@launch
+                        }
+                        val queuedForRetry = if (isRetryableOrderCreateError(result.exception)) {
+                            queueOrderCreateForBackgroundRetry(
+                                pickupModel = pickupModel,
+                                dropModel = dropModel,
+                                truckSelections = truckSelections,
+                                intermediateStopModels = intermediateStopModels,
+                                idempotencyKey = idempotencyKey,
+                                payloadHash = payloadHash
+                            )
+                        } else {
+                            false
+                        }
+                        if (!isRetryableOrderCreateError(result.exception)) {
+                            OrderCreateAttemptPrefs.clear(ctx)
+                        }
                         // EASY UNDERSTANDING: Show user-friendly error messages
                         // SCALABILITY: Handles different error types gracefully
                         val errorMessage = result.exception.message ?: "Failed to create booking"
+                        val displayMessage = if (queuedForRetry) {
+                            "$errorMessage\n\nWe queued your request and will retry automatically when the network is stable."
+                        } else {
+                            errorMessage
+                        }
                         
                         // Check if it's an active order error
                         val isActiveOrderError = errorMessage.contains("active order", ignoreCase = true) ||
@@ -1126,7 +1426,7 @@ class SearchingVehiclesDialog : com.google.android.material.bottomsheet.BottomSh
                             } else {
                                 getString(R.string.search_booking_failed_title)
                             },
-                            errorMessage
+                            displayMessage
                         )
                         cancelButton.text = getString(R.string.search_close)
                         
@@ -1199,6 +1499,7 @@ class SearchingVehiclesDialog : com.google.android.material.bottomsheet.BottomSh
 
         // SCALABILITY: Clear persisted order state
         ActiveOrderPrefs.clear(requireContext())
+        OrderCreateAttemptPrefs.clear(requireContext())
 
         // PRD 4.1: Timeout UI — show Retry + Cancel dual buttons
         statusTitle.text = getString(R.string.search_timeout_title)
@@ -1256,6 +1557,7 @@ class SearchingVehiclesDialog : com.google.android.material.bottomsheet.BottomSh
             timerText.visibility = View.VISIBLE
             progressBar.visibility = View.VISIBLE
             ActiveOrderPrefs.clear(requireContext())
+            OrderCreateAttemptPrefs.clear(requireContext())
 
             // Step 3: Create fresh order with new idempotency key (same params)
             startBookingProcess()
@@ -1328,6 +1630,7 @@ class SearchingVehiclesDialog : com.google.android.material.bottomsheet.BottomSh
                         // Backend confirmed — clear everything
                         leaveBookingRoomSafely(orderId)
                         ActiveOrderPrefs.clear(context?.applicationContext ?: requireContext())
+                        OrderCreateAttemptPrefs.clear(context?.applicationContext ?: requireContext())
                         
                         Timber.d("Order cancelled: $orderId, reason: $reason, " +
                             "${result.data.transportersNotified} transporters, " +

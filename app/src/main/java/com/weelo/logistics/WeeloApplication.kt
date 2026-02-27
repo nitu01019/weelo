@@ -8,6 +8,7 @@ import com.google.firebase.crashlytics.FirebaseCrashlytics
 import com.weelo.logistics.core.security.SecurityManager
 import com.weelo.logistics.core.util.OfflineHandler
 import com.weelo.logistics.core.util.ThemeManager
+import com.weelo.logistics.data.sync.SyncManager
 import dagger.hilt.android.HiltAndroidApp
 import timber.log.Timber
 import javax.inject.Inject
@@ -29,6 +30,9 @@ class WeeloApplication : MultiDexApplication() {
 
     @Inject
     lateinit var securityManager: SecurityManager
+
+    @Inject
+    lateinit var syncManager: SyncManager
 
     override fun onCreate() {
         super.onCreate()
@@ -108,6 +112,7 @@ class WeeloApplication : MultiDexApplication() {
     private fun initializeOfflineHandler() {
         try {
             OfflineHandler.initialize(this)
+            syncManager.startAutoSync()
             Timber.d("Offline handler initialized")
         } catch (e: Exception) {
             Timber.e(e, "Failed to initialize offline handler")
@@ -147,4 +152,3 @@ class WeeloApplication : MultiDexApplication() {
         }
     }
 }
-
