@@ -112,6 +112,8 @@
     <string name="search_cancel_button">Cancel</string>
     <string name="search_timeout_title">No trucks found nearby</string>
     <string name="search_timeout_subtitle">We could not find available trucks for your route right now. Try again or change your pickup/drop.</string>
+    <string name="search_timeout_subtitle_no_transporters_nearby">Oops, no transporters are available nearby in your search range right now. You can search again or cancel.</string>
+    <string name="search_timeout_subtitle_no_acceptance">Transporters received your request, but no one accepted in time. You can search again or cancel.</string>
     <string name="search_cancelled_title">Search cancelled</string>
     <string name="search_cancelled_subtitle_with_reason">Reason: %1$s. You can search again with the same trip details.</string>
     <string name="search_cancelled_subtitle_no_reason">Your search has been cancelled. You can search again with the same trip details.</string>

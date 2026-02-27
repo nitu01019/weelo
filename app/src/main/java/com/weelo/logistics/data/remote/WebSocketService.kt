@@ -540,7 +540,10 @@ class WebSocketService @Inject constructor(
                     status = data.optString("status", "expired"),
                     expiredAt = data.optString("expiredAt", ""),
                     totalTrucks = data.optInt("totalTrucks", 0),
-                    trucksFilled = data.optInt("trucksFilled", 0)
+                    trucksFilled = data.optInt("trucksFilled", 0),
+                    reasonCode = data.optString("reasonCode", ""),
+                    onlineCandidates = data.optInt("onlineCandidates", 0),
+                    notifiedTransporters = data.optInt("notifiedTransporters", 0)
                 )
             }
         },
@@ -699,7 +702,10 @@ data class OrderExpiredEvent(
     val status: String,       // "expired" or "partially_filled"
     val expiredAt: String,
     val totalTrucks: Int,
-    val trucksFilled: Int
+    val trucksFilled: Int,
+    val reasonCode: String = "",
+    val onlineCandidates: Int = 0,
+    val notifiedTransporters: Int = 0
 )
 
 data class OrderCancelledEvent(

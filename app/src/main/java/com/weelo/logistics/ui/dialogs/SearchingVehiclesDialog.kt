@@ -223,6 +223,7 @@ class SearchingVehiclesDialog : com.google.android.material.bottomsheet.BottomSh
     }
     private var currentStatus = SearchStatus.SEARCHING
     private var currentStep = 1
+    private var lastTimeoutReasonCode: String? = null
     private val retryBackoffMs = longArrayOf(1_000L, 2_000L, 4_000L, 8_000L, 16_000L, 30_000L)
 
     // Callbacks
@@ -461,8 +462,8 @@ class SearchingVehiclesDialog : com.google.android.material.bottomsheet.BottomSh
                     dismiss()
                 }
                 SearchStatus.TIMEOUT -> {
-                    // PRD 4.1: On timeout, secondary action = go back to map screen (no new order)
-                    // Retry Search button handles the retry flow separately
+                    // On timeout, secondary action closes/cancels this search flow.
+                    // Retry Search button handles fresh retry flow separately.
                     retrySearchButton.visibility = View.GONE
                     onSearchTimeoutListener?.onSearchTimeout(createdBookingId)
                     ActiveOrderPrefs.clear(requireContext())
@@ -891,8 +892,9 @@ class SearchingVehiclesDialog : com.google.android.material.bottomsheet.BottomSh
                 val activeOrderId = createdBookingId
                 if (!activeOrderId.isNullOrEmpty() && event.orderId == activeOrderId) {
                     Timber.i("SearchingVehiclesDialog: order_expired received from backend for $activeOrderId")
+                    val eventReason = event.reasonCode.takeIf { it.isNotBlank() }
                     if (canTransitionToTimeout()) {
-                        handleTimeout()
+                        handleTimeout(eventReason)
                     }
                 }
             }
@@ -971,8 +973,9 @@ class SearchingVehiclesDialog : com.google.android.material.bottomsheet.BottomSh
                                     val status = statusResult.data.status.lowercase()
                                     if (!statusResult.data.isActive || status == "expired") {
                                         Timber.i("SearchingVehiclesDialog: reconnect poll detected expired order $activeOrderId")
+                                        val reasonFromStatus = statusResult.data.reasonCode.takeIf { !it.isNullOrBlank() }
                                         if (canTransitionToTimeout()) {
-                                            handleTimeout()
+                                            handleTimeout(reasonFromStatus)
                                         }
                                     } else if (status == "cancelled") {
                                         Timber.i("SearchingVehiclesDialog: reconnect poll detected cancelled order $activeOrderId")
@@ -994,6 +997,7 @@ class SearchingVehiclesDialog : com.google.android.material.bottomsheet.BottomSh
 
     private fun startBookingProcess() {
         Timber.d("Starting booking process...")
+        lastTimeoutReasonCode = null
 
         // Create booking first - timer starts when we get response with expiresIn
         createBooking()
@@ -1032,7 +1036,7 @@ class SearchingVehiclesDialog : com.google.android.material.bottomsheet.BottomSh
 
             override fun onFinish() {
                 if (canTransitionToTimeout()) {
-                    handleTimeout()
+                    handleTimeout(lastTimeoutReasonCode)
                 }
             }
         }.start()
@@ -1490,10 +1494,11 @@ class SearchingVehiclesDialog : com.google.android.material.bottomsheet.BottomSh
         }
     }
 
-    private fun handleTimeout() {
+    private fun handleTimeout(reasonCode: String? = null) {
         if (!canTransitionToTimeout()) return
 
         currentStatus = SearchStatus.TIMEOUT
+        lastTimeoutReasonCode = reasonCode?.takeIf { it.isNotBlank() }
         countDownTimer?.cancel()
         leaveBookingRoomSafely(createdBookingId)
 
@@ -1503,7 +1508,7 @@ class SearchingVehiclesDialog : com.google.android.material.bottomsheet.BottomSh
 
         // PRD 4.1: Timeout UI — show Retry + Cancel dual buttons
         statusTitle.text = getString(R.string.search_timeout_title)
-        statusSubtitle.text = getString(R.string.search_timeout_subtitle)
+        statusSubtitle.text = timeoutSubtitleForReason(lastTimeoutReasonCode)
         animationView.pauseAnimation()
 
         // Hide timer and progress
@@ -1515,8 +1520,8 @@ class SearchingVehiclesDialog : com.google.android.material.bottomsheet.BottomSh
         retrySearchButton.isEnabled = true
         retrySearchButton.text = getString(R.string.retry_search)
 
-        // Secondary action: go back
-        cancelButton.text = getString(R.string.go_back)
+        // Secondary action: cancel/close search
+        cancelButton.text = getString(R.string.search_cancel_button)
 
         // Wire Retry button — PRD Retry flow: cancel old order → create fresh order same params
         wireSearchAgainButton()
@@ -1548,6 +1553,7 @@ class SearchingVehiclesDialog : com.google.android.material.bottomsheet.BottomSh
 
             // Step 2: Reset UI to searching state
             createdBookingId = null
+            lastTimeoutReasonCode = null
             currentStatus = SearchStatus.SEARCHING
             retrySearchButton.visibility = View.GONE
             cancelButton.text = getString(R.string.search_cancel_button)
@@ -1561,6 +1567,14 @@ class SearchingVehiclesDialog : com.google.android.material.bottomsheet.BottomSh
 
             // Step 3: Create fresh order with new idempotency key (same params)
             startBookingProcess()
+        }
+    }
+
+    private fun timeoutSubtitleForReason(reasonCode: String?): String {
+        return when (reasonCode?.uppercase(Locale.ROOT)) {
+            "NO_ONLINE_TRANSPORTERS" -> getString(R.string.search_timeout_subtitle_no_transporters_nearby)
+            "NO_TRANSPORTER_ACCEPTANCE" -> getString(R.string.search_timeout_subtitle_no_acceptance)
+            else -> getString(R.string.search_timeout_subtitle)
         }
     }
 
