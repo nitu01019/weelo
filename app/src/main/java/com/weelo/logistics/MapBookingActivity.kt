@@ -432,16 +432,19 @@ class MapBookingActivity : AppCompatActivity(), OnMapReadyCallback {
                                 drawRoutePolyline(roadPoints)
                                 timber.log.Timber.d("Multi-point route drawn: ${routeData.data.distanceKm} km via ${routeData.data.source} (${routePoints.size} points)")
                             } else {
-                                // No valid route points - don't draw straight line, just log
+                                // No valid route points - fallback to straight line
                                 timber.log.Timber.w("Route API returned empty polyline points")
+                                drawStraightLineRoute()
                             }
                         } else {
-                            // No polyline returned - don't draw straight line
+                            // No polyline returned - fallback to straight line
                             timber.log.Timber.w("Route API returned no polyline data")
+                            drawStraightLineRoute()
                         }
                     } else {
-                        // API error - don't draw straight line, just log
+                        // API error - fallback to straight line
                         timber.log.Timber.w("Route API error: ${response.code()}")
+                        drawStraightLineRoute()
                     }
                 }
             } catch (e: Exception) {
