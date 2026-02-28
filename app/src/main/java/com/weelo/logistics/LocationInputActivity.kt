@@ -402,7 +402,7 @@ class LocationInputActivity : AppCompatActivity() {
             return
         }
         
-        // Store REAL coordinates behind the display text
+        // Store REAL coordinates behind the display text (placeholder until geocode completes)
         isSettingTextProgrammatically = true
         selectedFromLocation = PlaceResult(
             placeId = "current_location",
@@ -414,6 +414,38 @@ class LocationInputActivity : AppCompatActivity() {
         isSettingTextProgrammatically = false
         
         Timber.d("Pickup auto-filled: display='📍 Current Location', real coords=($latitude, $longitude)")
+        
+        // Reverse geocode to replace placeholder with real street address
+        lifecycleScope.launch {
+            try {
+                val geocoder = android.location.Geocoder(this@LocationInputActivity, Locale.getDefault())
+                val addresses = withContext(Dispatchers.IO) {
+                    @Suppress("DEPRECATION")
+                    geocoder.getFromLocation(latitude, longitude, 1)
+                }
+                val realAddress = addresses?.firstOrNull()?.let { addr ->
+                    buildString {
+                        for (i in 0..addr.maxAddressLineIndex) {
+                            if (i > 0) append(", ")
+                            append(addr.getAddressLine(i))
+                        }
+                    }
+                }
+                if (!realAddress.isNullOrBlank() && selectedFromLocation?.placeId == "current_location") {
+                    selectedFromLocation = selectedFromLocation?.copy(label = realAddress)
+                    isSettingTextProgrammatically = true
+                    fromLocationInput.setText("📍 $realAddress")
+                    isSettingTextProgrammatically = false
+                    Timber.d("Reverse geocoded current location: $realAddress")
+                }
+            } catch (e: Exception) {
+                Timber.w(e, "Reverse geocode failed, using coordinate fallback")
+                val fallback = String.format(Locale.US, "%.6f, %.6f", latitude, longitude)
+                if (selectedFromLocation?.placeId == "current_location") {
+                    selectedFromLocation = selectedFromLocation?.copy(label = fallback)
+                }
+            }
+        }
     }
     
     /**
@@ -1202,6 +1234,19 @@ class LocationInputActivity : AppCompatActivity() {
             val toSelection = selectedToLocation
             if (toSelection == null || toLocationInput.text.isNullOrBlank()) {
                 showToast("Please select a drop location")
+                continueButton.isEnabled = true
+                return
+            }
+            
+            // Validate: pickup and drop must not be the same location (<100m)
+            val distanceResult = FloatArray(1)
+            android.location.Location.distanceBetween(
+                fromSelection.latitude, fromSelection.longitude,
+                toSelection.latitude, toSelection.longitude,
+                distanceResult
+            )
+            if (distanceResult[0] < 100f) {
+                showToast("Pickup and drop locations cannot be the same")
                 continueButton.isEnabled = true
                 return
             }
