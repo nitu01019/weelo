@@ -332,22 +332,68 @@ class SyncManager @Inject constructor(
     
     /**
      * Process CANCEL_BOOKING operation
-     * TODO: Implement when cancel booking API is available
+     *
+     * Durable offline cancel: queued cancel is only marked done when backend
+     * confirms success OR returns a terminal 4xx (already cancelled / not found).
+     * Network errors → return false → SyncManager retries on next sync cycle.
+     *
+     * IDEMPOTENCY: Uses operation.id as X-Idempotency-Key so duplicate retries
+     * are safe. Backend deduplicates on this key.
      */
     private suspend fun processCancelBooking(operation: PendingOperationEntity): Boolean {
         val payload = parsePayload<Map<String, Any?>>(operation.payload) ?: return false
-        val bookingId = payload["bookingId"] as? String ?: return false
-        
-        // TODO: Implement when cancel booking API is added to WeeloApiService
-        // val token = tokenManager.getAccessToken() ?: return false
-        // val result = resilientExecutor.executeOnce("CancelBooking") {
-        //     val response = apiService.cancelBooking("Bearer $token", bookingId)
-        //     response.isSuccessful
-        // }
-        // return result.getOrDefault(false)
-        
-        Timber.d("$TAG: Cancel booking not yet implemented for $bookingId")
-        return true // Return true to mark as completed for now
+        // Support both "bookingId" (legacy) and "orderId" (new order system)
+        val entityId = (payload["orderId"] as? String)
+            ?: (payload["bookingId"] as? String)
+            ?: return false
+        val reason = payload["reason"] as? String
+        val isOrderCancel = payload.containsKey("orderId")
+
+        val token = tokenManager.getAccessToken() ?: return false
+        val authHeader = "Bearer $token"
+        val idempotencyKey = operation.id // Stable key for safe retries
+
+        val result = resilientExecutor.executeOnce("CancelBooking") {
+            val response = if (isOrderCancel) {
+                // New order system — try canonical path first, fallback to legacy
+                val primary = apiService.cancelOrderViaBookings(
+                    token = authHeader,
+                    orderId = entityId,
+                    request = CancelOrderRequest(reason = reason),
+                    idempotencyKey = idempotencyKey
+                )
+                if (primary.isSuccessful || primary.code() !in setOf(404, 405)) {
+                    primary
+                } else {
+                    apiService.cancelOrder(
+                        token = authHeader,
+                        orderId = entityId,
+                        request = CancelOrderRequest(reason = reason),
+                        idempotencyKey = idempotencyKey
+                    )
+                }
+            } else {
+                // Legacy booking cancel
+                apiService.cancelBooking(authHeader, entityId)
+            }
+
+            when {
+                response.isSuccessful -> true
+                // 4xx terminal states: already cancelled, not found, conflict
+                // Mark as done — retrying won't help
+                response.code() in setOf(400, 404, 409, 410, 422) -> {
+                    Timber.w("$TAG: Cancel $entityId returned ${response.code()}, treating as terminal (idempotent)")
+                    true
+                }
+                // 5xx or other transient → retry
+                else -> {
+                    Timber.w("$TAG: Cancel $entityId failed with ${response.code()}, will retry")
+                    false
+                }
+            }
+        }
+
+        return result.getOrNull() == true
     }
     
     /**
@@ -439,6 +485,36 @@ class SyncManager @Inject constructor(
             relatedEntityId = idempotencyKey
         )
         queueOperation(operation)
+    }
+
+    /**
+     * Queue a cancel-booking operation for offline durability.
+     * Called as fallback when direct cancel API call fails due to network.
+     * processCancelBooking() will pick this up on reconnect.
+     */
+    suspend fun queueCancelBookingOperation(
+        orderId: String,
+        reason: String?,
+        idempotencyKey: String
+    ) {
+        val payload = gson.toJson(
+            mapOf(
+                "kind" to "cancel_booking",
+                "orderId" to orderId,
+                "reason" to (reason ?: "Cancelled by customer"),
+                "idempotencyKey" to idempotencyKey
+            )
+        )
+        val operation = PendingOperationEntity(
+            id = "cancel_booking_$idempotencyKey",
+            operationType = OperationType.CANCEL_BOOKING,
+            payload = payload,
+            maxRetries = 8,
+            priority = 1,
+            relatedEntityId = orderId
+        )
+        queueOperation(operation)
+        Timber.i("$TAG: Queued offline cancel for order=$orderId (key=$idempotencyKey)")
     }
     
     /**

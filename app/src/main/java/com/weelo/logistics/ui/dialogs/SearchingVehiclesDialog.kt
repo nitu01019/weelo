@@ -31,6 +31,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.security.MessageDigest
 import java.util.Locale
+import java.util.UUID
 import kotlin.random.Random
 import javax.inject.Inject
 
@@ -149,6 +150,12 @@ class SearchingVehiclesDialog : com.google.android.material.bottomsheet.BottomSh
     @Inject
     lateinit var webSocketService: com.weelo.logistics.data.remote.WebSocketService
 
+    @Inject
+    lateinit var apiService: com.weelo.logistics.data.remote.api.WeeloApiService
+
+    @Inject
+    lateinit var tokenManager: com.weelo.logistics.data.remote.TokenManager
+
     // UI Components
     private lateinit var animationView: LottieAnimationView
     private lateinit var statusTitle: TextView
@@ -197,6 +204,7 @@ class SearchingVehiclesDialog : com.google.android.material.bottomsheet.BottomSh
     private var skipWaitTimer: CountDownTimer? = null
     private var bookingJob: Job? = null
     private var createdBookingId: String? = null
+    private var pendingCancelIdempotencyKey: String? = null
 
     // WebSocket collectors (must be started only after socket is connected + room joined)
     private var orderExpiredJob: Job? = null
@@ -1595,26 +1603,85 @@ class SearchingVehiclesDialog : com.google.android.material.bottomsheet.BottomSh
             return
         }
         
-        Timber.d("Opening cancellation reason sheet for order: $orderId")
-        
-        // Build vehicle summary for the bottom sheet
-        val vehicleSummary = selectedTrucks?.joinToString(", ") { 
-            "${it.quantity}x ${it.truckTypeName}" 
+        Timber.d("Fetching cancel preview for order: $orderId")
+
+        // Call cancel-preview first to check policy
+        lifecycleScope.launch {
+            try {
+                val accessToken = tokenManager.getAccessToken()
+                if (!accessToken.isNullOrBlank()) {
+                    val previewResponse = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+                        apiService.getCancelPreview("Bearer $accessToken", orderId)
+                    }
+                    if (previewResponse.isSuccessful && previewResponse.body()?.success == true) {
+                        val preview = previewResponse.body()?.data
+                        val decision = preview?.cancelDecision ?: "allowed"
+
+                        when (decision) {
+                            "blocked_dispute_only" -> {
+                                // Show dispute dialog instead of cancel sheet
+                                val ctx = context ?: return@launch
+                                androidx.appcompat.app.AlertDialog.Builder(ctx)
+                                    .setTitle("Cancel Not Available")
+                                    .setMessage("This order cannot be cancelled directly. Please contact support.")
+                                    .setPositiveButton("OK", null)
+                                    .show()
+                                return@launch
+                            }
+                            "allowed_with_penalty" -> {
+                                val penaltyAmount = preview?.pendingPenaltyAmount
+                                val formattedPenalty = if (penaltyAmount != null && penaltyAmount > 0.0)
+                                    "₹${String.format(java.util.Locale.getDefault(), "%,.0f", penaltyAmount)}"
+                                else null
+                                val ctx = context ?: return@launch
+                                val message = buildString {
+                                    append("A cancellation fee")
+                                    if (formattedPenalty != null) append(" of $formattedPenalty")
+                                    append(" will apply.")
+                                }
+                                androidx.appcompat.app.AlertDialog.Builder(ctx)
+                                    .setTitle("Cancellation Fee")
+                                    .setMessage(message)
+                                    .setPositiveButton("Continue to Cancel") { _, _ ->
+                                        showCancelReasonSheet(orderId)
+                                    }
+                                    .setNegativeButton("Go Back", null)
+                                    .show()
+                                return@launch
+                            }
+                            // "allowed" — fall through to show cancel sheet
+                        }
+                    }
+                }
+            } catch (e: Exception) {
+                if (e is kotlinx.coroutines.CancellationException) throw e
+                Timber.w(e, "Cancel preview failed, falling back to direct cancel")
+            }
+
+            // Default: show cancel reason sheet directly
+            showCancelReasonSheet(orderId)
+        }
+    }
+
+    /**
+     * Show CancellationBottomSheet for reason selection (after preview check)
+     */
+    private fun showCancelReasonSheet(orderId: String) {
+        val vehicleSummary = selectedTrucks?.joinToString(", ") {
+            "${it.quantity}x ${it.truckTypeName}"
         } ?: "Vehicle"
-        
-        // Show CancellationBottomSheet for reason selection
+
         val cancelSheet = com.weelo.logistics.ui.bottomsheet.CancellationBottomSheet.newInstance(
             pickupAddress = fromLocation?.address,
             dropAddress = toLocation?.address,
             vehicleSummary = vehicleSummary,
             totalPrice = totalPrice
         )
-        
+
         cancelSheet.onCancellationConfirmed = { reason ->
-            // User confirmed — call backend with reason
             executeCancelWithReason(orderId, reason, cancelSheet)
         }
-        
+
         cancelSheet.show(childFragmentManager, "cancel_reason")
     }
     
@@ -1630,6 +1697,10 @@ class SearchingVehiclesDialog : com.google.android.material.bottomsheet.BottomSh
         reason: String,
         cancelSheet: com.weelo.logistics.ui.bottomsheet.CancellationBottomSheet
     ) {
+        if (pendingCancelIdempotencyKey.isNullOrBlank()) {
+            pendingCancelIdempotencyKey = UUID.randomUUID().toString()
+        }
+        val cancelIdempotencyKey = pendingCancelIdempotencyKey
         val previousStatus = currentStatus
         currentStatus = SearchStatus.CANCELLED
         countDownTimer?.cancel()
@@ -1637,7 +1708,11 @@ class SearchingVehiclesDialog : com.google.android.material.bottomsheet.BottomSh
         
         lifecycleScope.launch {
             try {
-                val result = bookingRepository.cancelOrder(orderId, reason)
+                val result = bookingRepository.cancelOrder(
+                    orderId = orderId,
+                    reason = reason,
+                    idempotencyKey = cancelIdempotencyKey
+                )
                 
                 when (result) {
                     is Result.Success -> {
@@ -1645,6 +1720,7 @@ class SearchingVehiclesDialog : com.google.android.material.bottomsheet.BottomSh
                         leaveBookingRoomSafely(orderId)
                         ActiveOrderPrefs.clear(context?.applicationContext ?: requireContext())
                         OrderCreateAttemptPrefs.clear(context?.applicationContext ?: requireContext())
+                        pendingCancelIdempotencyKey = null
                         
                         Timber.d("Order cancelled: $orderId, reason: $reason, " +
                             "${result.data.transportersNotified} transporters, " +
@@ -1657,28 +1733,41 @@ class SearchingVehiclesDialog : com.google.android.material.bottomsheet.BottomSh
                         Timber.d("Unexpected Loading state during cancel")
                     }
                     is Result.Error -> {
-                        Timber.w("Cancel failed: ${result.exception.message}")
+                        Timber.w("Cancel failed, queueing offline: ${result.exception.message}")
                         
-                        // Rollback
-                        currentStatus = previousStatus
-                        cancelSheet.onCancelComplete(false, result.exception.message)
+                        // Queue for offline retry instead of just rolling back
+                        syncManager.queueCancelBookingOperation(orderId, reason, cancelIdempotencyKey ?: "")
+                        leaveBookingRoomSafely(orderId)
+                        ActiveOrderPrefs.clear(context?.applicationContext ?: requireContext())
+                        OrderCreateAttemptPrefs.clear(context?.applicationContext ?: requireContext())
+                        pendingCancelIdempotencyKey = null
                         
-                        // Restart timer with remaining time
-                        val (_, expiresAtMs) = ActiveOrderPrefs.get(requireContext())
-                        val remainingMs = expiresAtMs - System.currentTimeMillis()
-                        if (remainingMs > 0) {
-                            val remainingSeconds = (remainingMs / 1000).toInt().coerceAtLeast(1)
-                            startCountdownTimer(remainingSeconds)
-                        } else {
-                            handleTimeout()
-                        }
+                        cancelSheet.onCancelComplete(true)
+                        showCancelledConfirmedState(reason)
+                        android.widget.Toast.makeText(
+                            requireContext(),
+                            "Cancel queued — will complete when online.",
+                            android.widget.Toast.LENGTH_SHORT
+                        ).show()
                     }
                 }
             } catch (e: Exception) {
                 if (e is kotlinx.coroutines.CancellationException) throw e
-                Timber.e(e, "Cancel error")
-                currentStatus = previousStatus
-                cancelSheet.onCancelComplete(false, e.message)
+                Timber.e(e, "Cancel error, queueing offline")
+                // Queue for offline retry
+                syncManager.queueCancelBookingOperation(orderId, reason, cancelIdempotencyKey ?: "")
+                leaveBookingRoomSafely(orderId)
+                ActiveOrderPrefs.clear(context?.applicationContext ?: requireContext())
+                OrderCreateAttemptPrefs.clear(context?.applicationContext ?: requireContext())
+                pendingCancelIdempotencyKey = null
+                
+                cancelSheet.onCancelComplete(true)
+                showCancelledConfirmedState(reason)
+                android.widget.Toast.makeText(
+                    requireContext(),
+                    "Cancel queued — will complete when online.",
+                    android.widget.Toast.LENGTH_SHORT
+                ).show()
             }
         }
     }

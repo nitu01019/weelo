@@ -197,7 +197,8 @@ interface WeeloApiService {
     suspend fun cancelOrderViaBookings(
         @Header("Authorization") token: String,
         @Path("orderId") orderId: String,
-        @Body request: CancelOrderRequest
+        @Body request: CancelOrderRequest,
+        @Header("X-Idempotency-Key") idempotencyKey: String? = null
     ): Response<CancelOrderResponse>
 
     /**
@@ -208,8 +209,38 @@ interface WeeloApiService {
     suspend fun cancelOrder(
         @Header("Authorization") token: String,
         @Path("orderId") orderId: String,
-        @Body request: CancelOrderRequest
+        @Body request: CancelOrderRequest,
+        @Header("X-Idempotency-Key") idempotencyKey: String? = null
     ): Response<CancelOrderResponse>
+
+    /**
+     * Get cancel preview — shows penalty, decision, and policy stage
+     * BEFORE the customer actually cancels.
+     *
+     * INDUSTRY STANDARD: Cancel-preview-then-confirm prevents
+     * surprise charges and enables dispute-only blocking.
+     *
+     * @see GET /api/v1/bookings/orders/{orderId}/cancel-preview
+     */
+    @GET("bookings/orders/{orderId}/cancel-preview")
+    suspend fun getCancelPreview(
+        @Header("Authorization") token: String,
+        @Path("orderId") orderId: String,
+        @Query("reason") reason: String? = null
+    ): Response<CancelPreviewResponse>
+
+    /**
+     * Create a dispute for orders in dispute-only stage
+     * (where direct cancel is blocked by policy)
+     *
+     * @see POST /api/v1/bookings/orders/{orderId}/cancel/dispute
+     */
+    @POST("bookings/orders/{orderId}/cancel/dispute")
+    suspend fun createCancelDispute(
+        @Header("Authorization") token: String,
+        @Path("orderId") orderId: String,
+        @Body request: CancelDisputeRequest
+    ): Response<CancelDisputeResponse>
     
     /**
      * Get order status and remaining time
@@ -907,10 +938,63 @@ data class CancelOrderData(
     val status: String? = null,
     val reason: String? = null,
     val message: String? = null,
+    val policyStage: String? = null,
+    val cancelDecision: String? = null,
+    val reasonRequired: Boolean? = null,
+    val reasonCode: String? = null,
+    val penaltyBreakdown: Map<String, Any?>? = null,
+    val driverCompensationBreakdown: Map<String, Any?>? = null,
+    val settlementState: String? = null,
+    val pendingPenaltyAmount: Double? = null,
+    val eventId: String? = null,
+    val eventVersion: Int? = null,
+    val serverTimeMs: Long? = null,
+    val disputeId: String? = null,
     val transportersNotified: Int = 0,
     val driversNotified: Int = 0,
     val assignmentsCancelled: Int = 0,
     val cancelledAt: String? = null
+)
+
+// ============================================================
+// CANCEL PREVIEW & DISPUTE DTOs
+// ============================================================
+
+data class CancelPreviewResponse(
+    val success: Boolean,
+    val data: CancelPreviewData? = null,
+    val error: ApiError? = null
+)
+
+data class CancelPreviewData(
+    val orderId: String? = null,
+    val policyStage: String? = null,         // e.g. "SEARCHING", "DRIVER_ASSIGNED", "EN_ROUTE"
+    val cancelDecision: String? = null,      // "allowed", "allowed_with_penalty", "blocked_dispute_only"
+    val reasonRequired: Boolean = true,
+    val reasonCode: String? = null,
+    val penaltyBreakdown: Map<String, Any?>? = null,
+    val driverCompensationBreakdown: Map<String, Any?>? = null,
+    val settlementState: String? = null,     // "immediate", "deferred", "none"
+    val pendingPenaltyAmount: Double? = null,
+    val eventVersion: Int? = null,
+    val serverTimeMs: Long? = null
+)
+
+data class CancelDisputeRequest(
+    val reasonCode: String? = null,
+    val notes: String? = null
+)
+
+data class CancelDisputeResponse(
+    val success: Boolean,
+    val data: CancelDisputeData? = null,
+    val error: ApiError? = null
+)
+
+data class CancelDisputeData(
+    val disputeId: String? = null,
+    val stage: String? = null,
+    val message: String? = null
 )
 
 /**

@@ -160,7 +160,7 @@ class TrackingRepository @Inject constructor(
      * Real-time location updates as Flow.
      * Each emission = one driver moved.
      *
-     * Payload: { tripId, driverId, latitude, longitude, speed, bearing, timestamp }
+     * Payload: { tripId, driverId, latitude, longitude, speed, bearing, timestamp, isStale, locationAgeMs }
      */
     fun locationUpdates(): Flow<LocationUpdateEvent> = webSocketService.locationUpdates()
 
@@ -177,6 +177,12 @@ class TrackingRepository @Inject constructor(
      * Used to auto-show rating bottom sheet.
      */
     fun bookingCompleted(): Flow<com.weelo.logistics.data.remote.BookingCompletedEvent> = webSocketService.onBookingCompleted()
+
+    /**
+     * Listen for driver_approaching events (~2km from pickup).
+     * Customer app shows in-app banner: "Your driver is almost here!"
+     */
+    fun driverApproaching(): Flow<com.weelo.logistics.data.remote.DriverApproachingEvent> = webSocketService.onDriverApproaching()
 
     /**
      * WebSocket connection state for showing "Reconnecting..." banner.

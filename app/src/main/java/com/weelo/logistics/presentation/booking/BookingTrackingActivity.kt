@@ -84,9 +84,13 @@ class BookingTrackingActivity : AppCompatActivity(), OnMapReadyCallback {
     @Inject lateinit var bookingApiRepository: com.weelo.logistics.data.repository.BookingApiRepository
     @Inject lateinit var apiService: com.weelo.logistics.data.remote.api.WeeloApiService
     @Inject lateinit var tokenManager: com.weelo.logistics.data.remote.TokenManager
+    @Inject lateinit var syncManager: com.weelo.logistics.data.sync.SyncManager
 
     // Rating: prevent showing rating sheet multiple times in same session
     private var ratingSheetShown = false
+
+    // Phase 8C: Track if booking has completed — auto-finish after rating dismiss
+    private var bookingIsComplete = false
 
     // =========================================================================
     // VIEW BINDING & MAP
@@ -453,23 +457,43 @@ class BookingTrackingActivity : AppCompatActivity(), OnMapReadyCallback {
         val marker = driverMarkers[tripId] ?: return
 
         val distance = MarkerAnimationHelper.calculateDistance(marker.position, newPosition)
-        val duration = MarkerAnimationHelper.calculateOptimalDuration(
-            speedMetersPerSec = speed,
-            distanceMeters = distance,
-            updateIntervalMs = 5000L
-        )
+
+        // Phase 8 audit: Client-side GPS teleport filter (defense-in-depth)
+        // Backend already drops unrealistic jumps, but this catches edge cases.
+        // > 10km jump = GPS glitch → ignore entirely (don't move marker)
+        // 5-10km jump = possible relay/overnight → snap instantly (no animation)
+        // < 5km = normal movement → smooth animation
+        if (distance > 10_000f) {
+            Timber.w("$TAG: 🚫 GPS spike ignored for $tripId (${distance.toInt()}m jump)")
+            return
+        }
+
         val newBearing = bearing ?: MarkerAnimationHelper.calculateBearing(marker.position, newPosition)
 
-        runOnUiThread {
-            MarkerAnimationHelper.animateMarkerWithRotation(
-                marker = marker,
-                toPosition = newPosition,
-                toBearing = newBearing,
-                duration = duration
+        if (distance > 5_000f) {
+            // Large but plausible jump — snap instantly, no animation
+            Timber.d("$TAG: ⚡ Large jump for $tripId (${distance.toInt()}m) — snapping")
+            runOnUiThread {
+                marker.position = newPosition
+                marker.rotation = newBearing
+                updateEtaForTruck(tripId, newPosition)
+            }
+        } else {
+            // Normal movement — smooth Ola/Uber style animation
+            val duration = MarkerAnimationHelper.calculateOptimalDuration(
+                speedMetersPerSec = speed,
+                distanceMeters = distance,
+                updateIntervalMs = 5000L
             )
-
-            // Update ETA for this truck
-            updateEtaForTruck(tripId, newPosition)
+            runOnUiThread {
+                MarkerAnimationHelper.animateMarkerWithRotation(
+                    marker = marker,
+                    toPosition = newPosition,
+                    toBearing = newBearing,
+                    duration = duration
+                )
+                updateEtaForTruck(tripId, newPosition)
+            }
         }
 
         Timber.d("$TAG: 📍 Truck $tripId → ($lat, $lng) speed=$speed")
@@ -894,6 +918,19 @@ class BookingTrackingActivity : AppCompatActivity(), OnMapReadyCallback {
                     speed = event.speed,
                     bearing = event.bearing
                 )
+
+                // Phase 8A: Handle GPS stale indicator
+                // Dim marker + update truck card when GPS signal is lost
+                val marker = driverMarkers[event.tripId]
+                if (marker != null) {
+                    runOnUiThread {
+                        marker.alpha = if (event.isStale) 0.4f else 1.0f
+                    }
+                }
+                val assignmentId = tripToAssignment[event.tripId]
+                if (assignmentId != null) {
+                    trucksAdapter.updateGpsStatus(assignmentId, event.isStale)
+                }
             }
         }
 
@@ -919,11 +956,40 @@ class BookingTrackingActivity : AppCompatActivity(), OnMapReadyCallback {
         }
 
         // Listen for booking_completed → auto-show rating bottom sheet
+        // Phase 8C: After rating submit/dismiss → finish() to auto-dismiss tracking
         lifecycleScope.launch {
             trackingRepository.bookingCompleted().collectLatest { event ->
                 timber.log.Timber.i("$TAG: Booking completed: ${event.bookingId}")
                 if (!ratingSheetShown && !isFinishing && !isDestroyed) {
+                    // Show completion banner first
+                    showStatusBanner("completed", "All Trucks")
+                    bookingIsComplete = true
                     showRatingSheet()
+                }
+            }
+        }
+
+        // Phase 8B: Listen for driver_approaching → show "almost here" banner
+        lifecycleScope.launch {
+            trackingRepository.driverApproaching().collectLatest { event ->
+                val bannerText = "\uD83D\uDE9B ${event.driverName} (${event.vehicleNumber}) is ${event.durationText} away!"
+                runOnUiThread {
+                    binding.tvStatusBanner.text = bannerText
+                    binding.statusBanner.visibility = View.VISIBLE
+                    val entryOffsetPx = (-100 * resources.displayMetrics.density)
+                    ObjectAnimator.ofFloat(binding.statusBanner, "translationY", entryOffsetPx, 0f).apply {
+                        duration = 300
+                        start()
+                    }
+                    bannerHandler.removeCallbacksAndMessages(null)
+                    bannerHandler.postDelayed({
+                        val dismissOffsetPx = (-100 * resources.displayMetrics.density)
+                        ObjectAnimator.ofFloat(binding.statusBanner, "translationY", 0f, dismissOffsetPx).apply {
+                            duration = 250
+                            start()
+                        }
+                        bannerHandler.postDelayed({ binding.statusBanner.visibility = View.GONE }, 250)
+                    }, 5000L) // Show for 5 seconds (longer than normal banners)
                 }
             }
         }
@@ -1040,13 +1106,30 @@ class BookingTrackingActivity : AppCompatActivity(), OnMapReadyCallback {
                     val pending = response.body()?.data ?: emptyList()
                     if (pending.isNotEmpty()) {
                         // Use FragmentResult for config-change safety (survives rotation)
+                        // Phase 8C: After rating submitted/dismissed → auto-finish tracking
                         supportFragmentManager.setFragmentResultListener(
                             com.weelo.logistics.ui.bottomsheet.RatingBottomSheetFragment.RESULT_KEY,
                             this@BookingTrackingActivity
-                        ) { _, _ -> timber.log.Timber.i("$TAG: All ratings submitted from tracking") }
-                        com.weelo.logistics.ui.bottomsheet.RatingBottomSheetFragment
+                        ) { _, _ ->
+                            timber.log.Timber.i("$TAG: All ratings submitted from tracking")
+                            if (bookingIsComplete) {
+                                finish()
+                            }
+                        }
+                        val ratingFragment = com.weelo.logistics.ui.bottomsheet.RatingBottomSheetFragment
                             .newInstance(pending)
-                            .show(supportFragmentManager, "rating_sheet")
+                        // Phase 8C: If booking is complete, auto-finish when sheet is dismissed
+                        // (covers both submit and dismiss/cancel)
+                        supportFragmentManager.registerFragmentLifecycleCallbacks(
+                            object : androidx.fragment.app.FragmentManager.FragmentLifecycleCallbacks() {
+                                override fun onFragmentDestroyed(fm: androidx.fragment.app.FragmentManager, f: androidx.fragment.app.Fragment) {
+                                    if (f === ratingFragment && bookingIsComplete) {
+                                        finish()
+                                    }
+                                }
+                            }, false
+                        )
+                        ratingFragment.show(supportFragmentManager, "rating_sheet")
                     } else {
                         // Allow a retry in case backend eventual consistency delays pending ratings.
                         ratingSheetShown = false
@@ -1133,41 +1216,202 @@ class BookingTrackingActivity : AppCompatActivity(), OnMapReadyCallback {
         val pickupAddr = intent.getStringExtra(EXTRA_PICKUP_ADDRESS) ?: ""
         val dropAddr = intent.getStringExtra(EXTRA_DROP_ADDRESS) ?: ""
         val vehicleType = intent.getStringExtra(EXTRA_VEHICLE_TYPE) ?: ""
-        
-        val cancelSheet = com.weelo.logistics.ui.bottomsheet.CancellationBottomSheet.newInstance(
-            pickupAddress = pickupAddr,
-            dropAddress = dropAddr,
-            vehicleSummary = vehicleType
-        )
-        
-        cancelSheet.onCancellationConfirmed = { reason ->
-            lifecycleScope.launch {
-                try {
-                    val result = bookingApiRepository.cancelOrder(orderId, reason)
-                    when (result) {
-                        is com.weelo.logistics.core.common.Result.Success -> {
-                            cancelSheet.onCancelComplete(true)
-                            timber.log.Timber.d("Booking cancelled: $orderId, reason: $reason")
-                            android.widget.Toast.makeText(
-                                this@BookingTrackingActivity,
-                                "Booking cancelled successfully.",
-                                android.widget.Toast.LENGTH_SHORT
-                            ).show()
-                            finish()
+
+        // Step 1: Fetch cancel-preview from backend to check policy
+        lifecycleScope.launch {
+            try {
+                val accessToken = tokenManager.getAccessToken()
+                if (accessToken.isNullOrBlank()) {
+                    // Fallback: show sheet without preview (backward compatible)
+                    showCancelSheetDirect(orderId, pickupAddr, dropAddr, vehicleType,
+                        reasonRequired = true, penaltyAmount = null)
+                    return@launch
+                }
+
+                val previewResponse = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+                    apiService.getCancelPreview("Bearer $accessToken", orderId)
+                }
+
+                if (!previewResponse.isSuccessful || previewResponse.body()?.success != true) {
+                    // Preview endpoint unavailable — fallback to direct cancel (backward compatible)
+                    timber.log.Timber.w("$TAG: Cancel preview failed (${previewResponse.code()}), falling back to direct cancel")
+                    showCancelSheetDirect(orderId, pickupAddr, dropAddr, vehicleType,
+                        reasonRequired = true, penaltyAmount = null)
+                    return@launch
+                }
+
+                val preview = previewResponse.body()?.data
+                val decision = preview?.cancelDecision ?: "allowed"
+                val reasonRequired = preview?.reasonRequired ?: true
+                val penaltyAmount = preview?.pendingPenaltyAmount
+
+                when (decision) {
+                    "blocked_dispute_only" -> {
+                        // Cannot cancel directly — show dispute dialog
+                        runOnUiThread {
+                            androidx.appcompat.app.AlertDialog.Builder(this@BookingTrackingActivity)
+                                .setTitle("Cancel Not Available")
+                                .setMessage(
+                                    "This order has progressed too far to cancel directly. " +
+                                    "You can raise a dispute and our team will review it.\n\n" +
+                                    "Stage: ${preview?.policyStage ?: "Advanced"}"
+                                )
+                                .setPositiveButton("Raise Dispute") { _, _ ->
+                                    raiseDisputeForCancel(orderId)
+                                }
+                                .setNegativeButton("Go Back", null)
+                                .show()
                         }
-                        is com.weelo.logistics.core.common.Result.Error -> {
-                            cancelSheet.onCancelComplete(false, result.exception.message)
-                        }
-                        else -> {}
                     }
-                } catch (e: Exception) {
-                    if (e is kotlinx.coroutines.CancellationException) throw e
-                    cancelSheet.onCancelComplete(false, e.message)
+                    "allowed_with_penalty" -> {
+                        // Show penalty confirmation, then cancel sheet
+                        val formattedPenalty = if (penaltyAmount != null && penaltyAmount > 0.0)
+                            "₹${String.format(java.util.Locale.getDefault(), "%,.0f", penaltyAmount)}"
+                        else null
+
+                        runOnUiThread {
+                            val message = buildString {
+                                append("A cancellation fee")
+                                if (formattedPenalty != null) append(" of $formattedPenalty")
+                                append(" will apply.")
+                                if (preview?.settlementState == "deferred") {
+                                    append("\n\nThis will be adjusted on your next booking.")
+                                }
+                            }
+                            androidx.appcompat.app.AlertDialog.Builder(this@BookingTrackingActivity)
+                                .setTitle("Cancellation Fee")
+                                .setMessage(message)
+                                .setPositiveButton("Continue to Cancel") { _, _ ->
+                                    showCancelSheetDirect(orderId, pickupAddr, dropAddr, vehicleType,
+                                        reasonRequired = reasonRequired, penaltyAmount = penaltyAmount)
+                                }
+                                .setNegativeButton("Go Back", null)
+                                .show()
+                        }
+                    }
+                    else -> {
+                        // "allowed" — no penalty, proceed directly
+                        showCancelSheetDirect(orderId, pickupAddr, dropAddr, vehicleType,
+                            reasonRequired = reasonRequired, penaltyAmount = null)
+                    }
+                }
+            } catch (e: Exception) {
+                if (e is kotlinx.coroutines.CancellationException) throw e
+                timber.log.Timber.w(e, "$TAG: Cancel preview exception, falling back to direct cancel")
+                showCancelSheetDirect(orderId, pickupAddr, dropAddr, vehicleType,
+                    reasonRequired = true, penaltyAmount = null)
+            }
+        }
+    }
+
+    /**
+     * Show cancel bottom sheet (called after preview check or as fallback)
+     */
+    private fun showCancelSheetDirect(
+        orderId: String,
+        pickupAddr: String,
+        dropAddr: String,
+        vehicleType: String,
+        reasonRequired: Boolean,
+        penaltyAmount: Double?
+    ) {
+        runOnUiThread {
+            val cancelSheet = com.weelo.logistics.ui.bottomsheet.CancellationBottomSheet.newInstance(
+                pickupAddress = pickupAddr,
+                dropAddress = dropAddr,
+                vehicleSummary = vehicleType
+            )
+
+            cancelSheet.onCancellationConfirmed = { reason ->
+                val cancelIdempotencyKey = java.util.UUID.randomUUID().toString()
+                lifecycleScope.launch {
+                    try {
+                        val result = bookingApiRepository.cancelOrder(orderId, reason, cancelIdempotencyKey)
+                        when (result) {
+                            is com.weelo.logistics.core.common.Result.Success -> {
+                                cancelSheet.onCancelComplete(true)
+                                timber.log.Timber.d("Booking cancelled: $orderId, reason: $reason")
+                                android.widget.Toast.makeText(
+                                    this@BookingTrackingActivity,
+                                    "Booking cancelled successfully.",
+                                    android.widget.Toast.LENGTH_SHORT
+                                ).show()
+                                finish()
+                            }
+                            is com.weelo.logistics.core.common.Result.Error -> {
+                                // Queue offline cancel for retry on network restore
+                                syncManager.queueCancelBookingOperation(orderId, reason, cancelIdempotencyKey)
+                                cancelSheet.onCancelComplete(true)
+                                android.widget.Toast.makeText(
+                                    this@BookingTrackingActivity,
+                                    "Cancel queued — will complete when online.",
+                                    android.widget.Toast.LENGTH_SHORT
+                                ).show()
+                                finish()
+                            }
+                            else -> {}
+                        }
+                    } catch (e: Exception) {
+                        if (e is kotlinx.coroutines.CancellationException) throw e
+                        // Network failure — queue for offline retry
+                        syncManager.queueCancelBookingOperation(orderId, reason, cancelIdempotencyKey)
+                        cancelSheet.onCancelComplete(true)
+                        android.widget.Toast.makeText(
+                            this@BookingTrackingActivity,
+                            "Cancel queued — will complete when online.",
+                            android.widget.Toast.LENGTH_SHORT
+                        ).show()
+                        finish()
+                    }
+                }
+            }
+            cancelSheet.show(supportFragmentManager, "cancel_booking")
+        }
+    }
+
+    /**
+     * Raise a dispute when direct cancel is blocked (dispute-only stage)
+     */
+    private fun raiseDisputeForCancel(orderId: String) {
+        lifecycleScope.launch {
+            try {
+                val accessToken = tokenManager.getAccessToken() ?: return@launch
+                val response = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+                    apiService.createCancelDispute(
+                        "Bearer $accessToken", orderId,
+                        com.weelo.logistics.data.remote.api.CancelDisputeRequest(
+                            reasonCode = "customer_request",
+                            notes = "Customer requested cancellation from tracking screen"
+                        )
+                    )
+                }
+                runOnUiThread {
+                    if (response.isSuccessful && response.body()?.success == true) {
+                        val disputeId = response.body()?.data?.disputeId ?: ""
+                        android.widget.Toast.makeText(
+                            this@BookingTrackingActivity,
+                            "Dispute raised (#${disputeId.take(8)}). Our team will review shortly.",
+                            android.widget.Toast.LENGTH_LONG
+                        ).show()
+                    } else {
+                        android.widget.Toast.makeText(
+                            this@BookingTrackingActivity,
+                            "Could not raise dispute. Please try again.",
+                            android.widget.Toast.LENGTH_SHORT
+                        ).show()
+                    }
+                }
+            } catch (e: Exception) {
+                if (e is kotlinx.coroutines.CancellationException) throw e
+                runOnUiThread {
+                    android.widget.Toast.makeText(
+                        this@BookingTrackingActivity,
+                        "Error: ${e.message}",
+                        android.widget.Toast.LENGTH_SHORT
+                    ).show()
                 }
             }
         }
-        
-        cancelSheet.show(supportFragmentManager, "cancel_booking")
     }
 
     private fun callDriver() {

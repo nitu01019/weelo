@@ -44,6 +44,9 @@ class AssignedTrucksAdapter(
     // ETA values keyed by assignmentId — updated externally
     private val etaMap = mutableMapOf<String, String>()
 
+    // GPS stale state keyed by assignmentId
+    private val gpsStaleMap = mutableMapOf<String, Boolean>()
+
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): TruckViewHolder {
         val view = LayoutInflater.from(parent.context)
             .inflate(R.layout.item_assigned_truck, parent, false)
@@ -81,11 +84,26 @@ class AssignedTrucksAdapter(
         submitList(updatedList)
     }
 
+    /**
+     * Phase 8A: Update GPS stale indicator for a specific truck.
+     * When GPS is stale, ETA text shows "GPS unavailable" in warning color.
+     */
+    fun updateGpsStatus(assignmentId: String, isStale: Boolean) {
+        gpsStaleMap[assignmentId] = isStale
+        val index = currentList.indexOfFirst { it.assignmentId == assignmentId }
+        if (index >= 0) {
+            notifyItemChanged(index, PAYLOAD_GPS_STATUS)
+        }
+    }
+
     override fun onBindViewHolder(holder: TruckViewHolder, position: Int, payloads: MutableList<Any>) {
         if (payloads.contains(PAYLOAD_ETA_UPDATE)) {
-            // Partial bind — only update ETA text
             val truck = getItem(position)
             holder.updateEta(etaMap[truck.assignmentId])
+        } else if (payloads.contains(PAYLOAD_GPS_STATUS)) {
+            val truck = getItem(position)
+            val isStale = gpsStaleMap[truck.assignmentId] ?: false
+            holder.updateGpsIndicator(isStale, etaMap[truck.assignmentId])
         } else {
             super.onBindViewHolder(holder, position, payloads)
         }
@@ -170,6 +188,20 @@ class AssignedTrucksAdapter(
             }
         }
 
+        /**
+         * Phase 8A: Show GPS unavailable indicator when driver's GPS is stale.
+         */
+        fun updateGpsIndicator(isStale: Boolean, eta: String?) {
+            if (isStale) {
+                tvEta.text = "⚠ GPS unavailable"
+                tvEta.setTextColor(itemView.context.getColor(R.color.warning_orange))
+                tvEta.visibility = View.VISIBLE
+            } else {
+                tvEta.setTextColor(itemView.context.getColor(R.color.text_secondary))
+                updateEta(eta)
+            }
+        }
+
         private fun bindStatus(status: String) {
             when (status.lowercase(java.util.Locale.ROOT)) {
                 "pending" -> {
@@ -230,5 +262,6 @@ class AssignedTrucksAdapter(
 
     companion object {
         private const val PAYLOAD_ETA_UPDATE = "eta_update"
+        private const val PAYLOAD_GPS_STATUS = "gps_status"
     }
 }

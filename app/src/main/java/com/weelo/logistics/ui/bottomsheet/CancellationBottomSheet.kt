@@ -76,6 +76,7 @@ class CancellationBottomSheet : BottomSheetDialogFragment() {
     private var dropAddress: String? = null
     private var vehicleSummary: String? = null
     private var totalPrice: Int = 0
+    private var reasonRequired: Boolean = true
 
     // Predefined reasons (matches backend analytics)
     private val REASONS = mapOf(
@@ -92,6 +93,7 @@ class CancellationBottomSheet : BottomSheetDialogFragment() {
         private const val ARG_DROP = "drop_address"
         private const val ARG_VEHICLE = "vehicle_summary"
         private const val ARG_PRICE = "total_price"
+        private const val ARG_REASON_REQUIRED = "reason_required"
 
         /**
          * Create new instance with optional booking summary data
@@ -105,7 +107,8 @@ class CancellationBottomSheet : BottomSheetDialogFragment() {
             pickupAddress: String? = null,
             dropAddress: String? = null,
             vehicleSummary: String? = null,
-            totalPrice: Int = 0
+            totalPrice: Int = 0,
+            reasonRequired: Boolean = true
         ): CancellationBottomSheet {
             return CancellationBottomSheet().apply {
                 arguments = Bundle().apply {
@@ -113,6 +116,7 @@ class CancellationBottomSheet : BottomSheetDialogFragment() {
                     putString(ARG_DROP, dropAddress)
                     putString(ARG_VEHICLE, vehicleSummary)
                     putInt(ARG_PRICE, totalPrice)
+                    putBoolean(ARG_REASON_REQUIRED, reasonRequired)
                 }
             }
         }
@@ -125,6 +129,7 @@ class CancellationBottomSheet : BottomSheetDialogFragment() {
             dropAddress = it.getString(ARG_DROP)
             vehicleSummary = it.getString(ARG_VEHICLE)
             totalPrice = it.getInt(ARG_PRICE, 0)
+            reasonRequired = it.getBoolean(ARG_REASON_REQUIRED, true)
         }
     }
 
@@ -177,6 +182,11 @@ class CancellationBottomSheet : BottomSheetDialogFragment() {
     }
 
     private fun setupListeners() {
+        // If reason is NOT required, auto-enable confirm button
+        if (!reasonRequired) {
+            confirmCancelButton.isEnabled = true
+        }
+
         // Radio group — enable confirm button when reason selected
         reasonRadioGroup.setOnCheckedChangeListener { _, checkedId ->
             confirmCancelButton.isEnabled = true
@@ -198,11 +208,10 @@ class CancellationBottomSheet : BottomSheetDialogFragment() {
         // Confirm Cancel — collect reason and invoke callback
         confirmCancelButton.setOnClickListener {
             val reason = getSelectedReason()
-            if (reason.isNotBlank()) {
-                Timber.d("Cancellation confirmed with reason: $reason")
-                showLoading(true)
-                onCancellationConfirmed?.invoke(reason)
-            }
+            val effectiveReason = if (reason.isNotBlank()) reason else "No reason provided"
+            Timber.d("Cancellation confirmed with reason: $effectiveReason")
+            showLoading(true)
+            onCancellationConfirmed?.invoke(effectiveReason)
         }
     }
 

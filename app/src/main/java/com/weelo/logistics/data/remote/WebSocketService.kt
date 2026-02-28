@@ -100,6 +100,7 @@ class WebSocketService @Inject constructor(
         const val LOCATION_UPDATED = "location_updated"
         const val ASSIGNMENT_STATUS_CHANGED = "assignment_status_changed"
         const val BOOKING_COMPLETED = "booking_completed"
+        const val DRIVER_APPROACHING = "driver_approaching"
         const val PONG = "pong"
         const val ERROR = "error"
         // Order lifecycle events (PRD 4.2)
@@ -484,7 +485,9 @@ class WebSocketService @Inject constructor(
                 longitude = data.optDouble("longitude"),
                 speed = data.optDouble("speed").toFloat(),
                 bearing = data.optDouble("bearing").toFloat(),
-                timestamp = data.optString("timestamp")
+                timestamp = data.optString("timestamp"),
+                isStale = data.optBoolean("isStale", false),
+                locationAgeMs = data.optLong("locationAgeMs", 0L)
             )
         }
     )
@@ -519,6 +522,30 @@ class WebSocketService @Inject constructor(
         },
         onEvent = { event ->
             Timber.i("$TAG: booking_completed received for ${event.bookingId}")
+        }
+    )
+
+    /**
+     * Listen for driver_approaching events.
+     * Emitted when a driver is within ~2km of the pickup location.
+     * Customer app shows an in-app banner: "Your driver is almost here!"
+     */
+    fun onDriverApproaching(): Flow<DriverApproachingEvent> = reconnectSafeEventFlow(
+        eventName = Events.DRIVER_APPROACHING,
+        parseErrorTag = "driver_approaching",
+        parseEvent = { data ->
+            DriverApproachingEvent(
+                tripId = data.optString("tripId"),
+                driverId = data.optString("driverId"),
+                vehicleNumber = data.optString("vehicleNumber"),
+                driverName = data.optString("driverName"),
+                distanceKm = data.optDouble("distanceKm", 0.0),
+                durationMinutes = data.optInt("durationMinutes", 0),
+                durationText = data.optString("durationText", "")
+            )
+        },
+        onEvent = { event ->
+            Timber.i("$TAG: driver_approaching: ${event.driverName} (${event.vehicleNumber}) ${event.durationText} away")
         }
     )
 
@@ -682,7 +709,9 @@ data class LocationUpdateEvent(
     val longitude: Double,
     val speed: Float,
     val bearing: Float,
-    val timestamp: String
+    val timestamp: String,
+    val isStale: Boolean = false,
+    val locationAgeMs: Long = 0L
 )
 
 data class AssignmentStatusEvent(
@@ -694,6 +723,16 @@ data class AssignmentStatusEvent(
 
 data class BookingCompletedEvent(
     val bookingId: String
+)
+
+data class DriverApproachingEvent(
+    val tripId: String,
+    val driverId: String,
+    val vehicleNumber: String,
+    val driverName: String,
+    val distanceKm: Double,
+    val durationMinutes: Int,
+    val durationText: String
 )
 
 // PRD 4.2 — Order lifecycle events

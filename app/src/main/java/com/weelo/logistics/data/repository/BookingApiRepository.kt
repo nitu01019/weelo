@@ -848,12 +848,23 @@ class BookingApiRepository @Inject constructor(
      * @param orderId The order to cancel
      * @param reason Optional cancellation reason (from CancellationBottomSheet)
      */
-    suspend fun cancelOrder(orderId: String, reason: String? = null): Result<CancelOrderData> {
-        return try {
-            val request = CancelOrderRequest(reason = reason)
-            val authToken = getAuthToken()
-            val primaryResponse = apiService.cancelOrderViaBookings(authToken, orderId, request)
-            val response = if (
+    suspend fun cancelOrder(
+        orderId: String,
+        reason: String? = null,
+        idempotencyKey: String? = null
+    ): Result<CancelOrderData> {
+        val effectiveIdempotencyKey = idempotencyKey?.takeIf { it.isNotBlank() }
+            ?: java.util.UUID.randomUUID().toString()
+        val request = CancelOrderRequest(reason = reason)
+
+        suspend fun performCancelCall(authToken: String) = run {
+            val primaryResponse = apiService.cancelOrderViaBookings(
+                authToken,
+                orderId,
+                request,
+                idempotencyKey = effectiveIdempotencyKey
+            )
+            if (
                 primaryResponse.isSuccessful ||
                 !shouldFallbackToLegacyOrdersRoute(
                     responseCode = primaryResponse.code(),
@@ -868,8 +879,13 @@ class BookingApiRepository @Inject constructor(
                     orderId,
                     primaryResponse.code()
                 )
-                apiService.cancelOrder(authToken, orderId, request)
+                apiService.cancelOrder(authToken, orderId, request, idempotencyKey = effectiveIdempotencyKey)
             }
+        }
+
+        return try {
+            val authToken = getAuthToken()
+            val response = performCancelCall(authToken)
             
             if (response.isSuccessful && response.body()?.success == true) {
                 val data = response.body()?.data
@@ -878,7 +894,13 @@ class BookingApiRepository @Inject constructor(
                     Result.Success(data)
                 } else {
                     // Backend returned success but no data — still treat as success
-                    Result.Success(CancelOrderData(orderId = orderId, status = "cancelled"))
+                    Result.Success(
+                        CancelOrderData(
+                            orderId = orderId,
+                            status = "cancelled",
+                            eventId = effectiveIdempotencyKey
+                        )
+                    )
                 }
             } else {
                 val errorMsg = parseErrorMessage(response, fallback = "Failed to cancel order. Please try again.")
@@ -891,6 +913,41 @@ class BookingApiRepository @Inject constructor(
         } catch (e: Exception) {
             if (e is kotlinx.coroutines.CancellationException) throw e
             Timber.e(e, "Cancel order error")
+            val fallbackStatus = getOrderStatus(orderId)
+            if (fallbackStatus is Result.Success) {
+                if (fallbackStatus.data.status.equals("cancelled", ignoreCase = true)) {
+                    return Result.Success(
+                        CancelOrderData(
+                            orderId = orderId,
+                            status = "cancelled",
+                            message = "Cancellation already applied on server",
+                            eventId = effectiveIdempotencyKey
+                        )
+                    )
+                }
+                if (fallbackStatus.data.isActive) {
+                    runCatching {
+                        val replayAuthToken = getAuthToken()
+                        val replayResponse = performCancelCall(replayAuthToken)
+                        if (replayResponse.isSuccessful && replayResponse.body()?.success == true) {
+                            val replayData = replayResponse.body()?.data
+                            if (replayData != null) {
+                                return Result.Success(replayData)
+                            }
+                            return Result.Success(
+                                CancelOrderData(
+                                    orderId = orderId,
+                                    status = "cancelled",
+                                    message = "Cancellation confirmed after retry",
+                                    eventId = effectiveIdempotencyKey
+                                )
+                            )
+                        }
+                    }.onFailure { replayError ->
+                        Timber.w(replayError, "Cancel order replay failed for order=%s", orderId)
+                    }
+                }
+            }
             Result.Error(WeeloException.NetworkException("Network error. Please try again."))
         }
     }
