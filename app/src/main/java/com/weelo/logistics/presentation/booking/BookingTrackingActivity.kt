@@ -1315,11 +1315,13 @@ class BookingTrackingActivity : AppCompatActivity(), OnMapReadyCallback {
         reasonRequired: Boolean,
         penaltyAmount: Double?
     ) {
+        timber.log.Timber.d("showCancelSheetDirect: order=$orderId, reasonRequired=$reasonRequired, penaltyAmount=$penaltyAmount")
         runOnUiThread {
             val cancelSheet = com.weelo.logistics.ui.bottomsheet.CancellationBottomSheet.newInstance(
                 pickupAddress = pickupAddr,
                 dropAddress = dropAddr,
-                vehicleSummary = vehicleType
+                vehicleSummary = vehicleType,
+                reasonRequired = reasonRequired
             )
 
             cancelSheet.onCancellationConfirmed = { reason ->

@@ -1701,7 +1701,6 @@ class SearchingVehiclesDialog : com.google.android.material.bottomsheet.BottomSh
             pendingCancelIdempotencyKey = UUID.randomUUID().toString()
         }
         val cancelIdempotencyKey = pendingCancelIdempotencyKey
-        val previousStatus = currentStatus
         currentStatus = SearchStatus.CANCELLED
         countDownTimer?.cancel()
         bookingJob?.cancel()
