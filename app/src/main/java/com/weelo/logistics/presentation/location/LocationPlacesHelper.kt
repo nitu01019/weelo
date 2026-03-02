@@ -1,6 +1,7 @@
 package com.weelo.logistics.presentation.location
 
 import android.content.Context
+import android.os.SystemClock
 import android.widget.AutoCompleteTextView
 import com.weelo.logistics.adapters.WeeloPlacesAdapter
 import com.weelo.logistics.core.util.Constants
@@ -10,6 +11,7 @@ import okhttp3.OkHttpClient
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import timber.log.Timber
+import java.net.SocketTimeoutException
 import java.util.concurrent.TimeUnit
 
 /**
@@ -139,6 +141,8 @@ class LocationPlacesHelper(private val context: Context) {
 
         val apiService = weeloApiService ?: return emptyList()
 
+        val startedAt = SystemClock.elapsedRealtime()
+
         return try {
             val response = apiService.searchPlaces(
                 com.weelo.logistics.data.remote.api.PlaceSearchRequest(
@@ -150,14 +154,39 @@ class LocationPlacesHelper(private val context: Context) {
             )
 
             if (response.isSuccessful && response.body()?.success == true) {
+                Timber.d(
+                    "LocationPlacesHelper searchPlaces succeeded in %dms query=%s results=%d",
+                    SystemClock.elapsedRealtime() - startedAt,
+                    query,
+                    response.body()?.data?.size ?: 0
+                )
                 response.body()?.data ?: emptyList()
             } else {
+                Timber.w(
+                    "LocationPlacesHelper searchPlaces failed in %dms query=%s code=%s",
+                    SystemClock.elapsedRealtime() - startedAt,
+                    query,
+                    response.code()
+                )
                 emptyList()
             }
         } catch (e: CancellationException) {
             throw e
+        } catch (e: SocketTimeoutException) {
+            Timber.e(
+                e,
+                "LocationPlacesHelper searchPlaces timed out in %dms query=%s",
+                SystemClock.elapsedRealtime() - startedAt,
+                query
+            )
+            emptyList()
         } catch (e: Exception) {
-            Timber.e(e, "Error searching places")
+            Timber.e(
+                e,
+                "LocationPlacesHelper searchPlaces failed in %dms query=%s",
+                SystemClock.elapsedRealtime() - startedAt,
+                query
+            )
             emptyList()
         }
     }
@@ -174,6 +203,8 @@ class LocationPlacesHelper(private val context: Context) {
 
         val apiService = weeloApiService ?: return null
 
+        val startedAt = SystemClock.elapsedRealtime()
+
         return try {
             val response = apiService.reverseGeocode(
                 com.weelo.logistics.data.remote.api.ReverseGeocodeRequest(
@@ -183,6 +214,12 @@ class LocationPlacesHelper(private val context: Context) {
             )
 
             if (response.isSuccessful && response.body()?.success == true) {
+                Timber.d(
+                    "LocationPlacesHelper reverseGeocode succeeded in %dms lat=%.6f lng=%.6f",
+                    SystemClock.elapsedRealtime() - startedAt,
+                    lat,
+                    lng
+                )
                 val data = response.body()?.data
                 if (data != null) {
                     com.weelo.logistics.data.remote.api.PlaceResult(
@@ -195,12 +232,34 @@ class LocationPlacesHelper(private val context: Context) {
                     )
                 } else null
             } else {
+                Timber.w(
+                    "LocationPlacesHelper reverseGeocode failed in %dms lat=%.6f lng=%.6f code=%s",
+                    SystemClock.elapsedRealtime() - startedAt,
+                    lat,
+                    lng,
+                    response.code()
+                )
                 null
             }
         } catch (e: CancellationException) {
             throw e
+        } catch (e: SocketTimeoutException) {
+            Timber.e(
+                e,
+                "LocationPlacesHelper reverseGeocode timed out in %dms lat=%.6f lng=%.6f",
+                SystemClock.elapsedRealtime() - startedAt,
+                lat,
+                lng
+            )
+            null
         } catch (e: Exception) {
-            Timber.e(e, "Error reverse geocoding")
+            Timber.e(
+                e,
+                "LocationPlacesHelper reverseGeocode failed in %dms lat=%.6f lng=%.6f",
+                SystemClock.elapsedRealtime() - startedAt,
+                lat,
+                lng
+            )
             null
         }
     }
