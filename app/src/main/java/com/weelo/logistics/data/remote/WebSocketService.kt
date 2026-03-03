@@ -109,6 +109,8 @@ class WebSocketService @Inject constructor(
         const val BROADCAST_STATE_CHANGED = "broadcast_state_changed"
         const val TRUCKS_REMAINING_UPDATE = "trucks_remaining_update"
         const val BOOKING_FULLY_FILLED = "booking_fully_filled"
+        // Driver connectivity issue (Case 5.2 — driver offline during trip)
+        const val DRIVER_CONNECTIVITY_ISSUE = "driver_connectivity_issue"
     }
 
     /**
@@ -668,6 +670,29 @@ class WebSocketService @Inject constructor(
     )
 
     /**
+     * Listen for driver_connectivity_issue events.
+     * Backend emits when assigned driver goes offline during active trip.
+     * Customer app shows warning banner: "Your driver may have poor network."
+     */
+    fun onDriverConnectivityIssue(): Flow<DriverConnectivityIssueEvent> = reconnectSafeEventFlow(
+        eventName = Events.DRIVER_CONNECTIVITY_ISSUE,
+        parseErrorTag = "driver_connectivity_issue",
+        parseEvent = { data ->
+            DriverConnectivityIssueEvent(
+                tripId = data.optString("tripId", ""),
+                driverName = data.optString("driverName", ""),
+                vehicleNumber = data.optString("vehicleNumber", ""),
+                lastSeenSeconds = data.optLong("lastSeenSeconds", 0L),
+                message = data.optString("message", "Your driver may have poor connectivity."),
+                timestamp = data.optString("timestamp", "")
+            )
+        },
+        onEvent = { event ->
+            Timber.w("$TAG: driver_connectivity_issue: ${event.driverName} (${event.vehicleNumber}) — last seen ${event.lastSeenSeconds}s ago")
+        }
+    )
+
+    /**
      * Get current connection state
      */
     fun isConnected(): Boolean = _connectionState.value == ConnectionState.CONNECTED
@@ -767,4 +792,13 @@ data class TrucksRemainingUpdateEvent(
 
 data class BookingFullyFilledEvent(
     val orderId: String
+)
+
+data class DriverConnectivityIssueEvent(
+    val tripId: String,
+    val driverName: String,
+    val vehicleNumber: String,
+    val lastSeenSeconds: Long,
+    val message: String,
+    val timestamp: String
 )

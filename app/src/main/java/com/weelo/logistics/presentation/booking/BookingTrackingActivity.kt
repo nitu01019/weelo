@@ -30,6 +30,7 @@ import com.weelo.logistics.core.util.TransitionHelper
 import com.weelo.logistics.data.remote.WebSocketService
 import com.weelo.logistics.data.remote.api.AssignedTruckData
 import com.weelo.logistics.data.repository.TrackingRepository
+import com.weelo.logistics.service.TrackingForegroundService
 import com.weelo.logistics.databinding.ActivityBookingTrackingBinding
 import com.weelo.logistics.utils.MarkerAnimationHelper
 import dagger.hilt.android.AndroidEntryPoint
@@ -85,6 +86,7 @@ class BookingTrackingActivity : AppCompatActivity(), OnMapReadyCallback {
     @Inject lateinit var apiService: com.weelo.logistics.data.remote.api.WeeloApiService
     @Inject lateinit var tokenManager: com.weelo.logistics.data.remote.TokenManager
     @Inject lateinit var syncManager: com.weelo.logistics.data.sync.SyncManager
+    @Inject lateinit var networkMonitor: com.weelo.logistics.core.util.NetworkMonitor
 
     // Rating: prevent showing rating sheet multiple times in same session
     private var ratingSheetShown = false
@@ -529,6 +531,18 @@ class BookingTrackingActivity : AppCompatActivity(), OnMapReadyCallback {
     private var latestSocketState: WebSocketService.ConnectionState = WebSocketService.ConnectionState.DISCONNECTED
     private var isInForeground = false
     private var etaFetchInFlight = false
+
+    // Gap 3: HTTP poll fallback when WebSocket is down
+    private val httpPollHandler = Handler(Looper.getMainLooper())
+    private var httpPollActive = false
+    private val HTTP_POLL_INTERVAL_MS = 30_000L
+    private val httpPollRunnable = object : Runnable {
+        override fun run() {
+            if (!httpPollActive || isFinishing || isDestroyed) return
+            pollLocationViaHttp()
+            httpPollHandler.postDelayed(this, HTTP_POLL_INTERVAL_MS)
+        }
+    }
     private val etaPollRunnable = object : Runnable {
         override fun run() {
             if (!etaPollingActive || !isInForeground || isFinishing || isDestroyed) return
@@ -896,6 +910,9 @@ class BookingTrackingActivity : AppCompatActivity(), OnMapReadyCallback {
         // Connect and join booking room
         trackingRepository.startTracking(id)
 
+        // Gap 1: Start ForegroundService to keep WebSocket alive in background
+        TrackingForegroundService.start(this, id)
+
         // Collect real-time location updates
         lifecycleScope.launch {
             trackingRepository.locationUpdates().collectLatest { event ->
@@ -1003,6 +1020,8 @@ class BookingTrackingActivity : AppCompatActivity(), OnMapReadyCallback {
                         binding.chipLive.text = getString(R.string.tracking_connection_live)
                         binding.chipLive.setChipBackgroundColorResource(R.color.success_green)
                         rescheduleEtaRefresh(immediate = true)
+                        // Gap 3: Stop HTTP poll — WebSocket is back
+                        stopHttpPollFallback()
                     }
                     WebSocketService.ConnectionState.RECONNECTING -> {
                         binding.chipLive.text = getString(R.string.tracking_connection_reconnecting)
@@ -1013,10 +1032,47 @@ class BookingTrackingActivity : AppCompatActivity(), OnMapReadyCallback {
                         binding.chipLive.text = getString(R.string.tracking_connection_offline)
                         binding.chipLive.setChipBackgroundColorResource(R.color.error_red)
                         rescheduleEtaRefresh(immediate = false)
+                        // Gap 3: Start HTTP poll fallback — WS is dead
+                        startHttpPollFallback()
                     }
                     else -> {
                         rescheduleEtaRefresh(immediate = false)
                     }
+                }
+            }
+        }
+
+        // Gap 2: Listen for driver_connectivity_issue → show warning banner
+        lifecycleScope.launch {
+            trackingRepository.driverConnectivityIssue().collectLatest { event ->
+                val bannerText = "\u26A0\uFE0F ${event.driverName} may have poor network. Trip is still active."
+                runOnUiThread {
+                    binding.tvStatusBanner.text = bannerText
+                    binding.statusBanner.visibility = View.VISIBLE
+                    val entryOffsetPx = (-100 * resources.displayMetrics.density)
+                    ObjectAnimator.ofFloat(binding.statusBanner, "translationY", entryOffsetPx, 0f).apply {
+                        duration = 300
+                        start()
+                    }
+                    bannerHandler.removeCallbacksAndMessages(null)
+                    bannerHandler.postDelayed({
+                        val dismissOffsetPx = (-100 * resources.displayMetrics.density)
+                        ObjectAnimator.ofFloat(binding.statusBanner, "translationY", 0f, dismissOffsetPx).apply {
+                            duration = 250
+                            start()
+                        }
+                        bannerHandler.postDelayed({ binding.statusBanner.visibility = View.GONE }, 250)
+                    }, 5000L) // Show for 5 seconds
+                }
+            }
+        }
+
+        // Gap 4: Network-restore retry — when network comes back and WS is FAILED, auto-reconnect
+        lifecycleScope.launch {
+            networkMonitor.isOnline.collectLatest { isOnline ->
+                if (isOnline && trackingRepository.connectionState.value == WebSocketService.ConnectionState.FAILED) {
+                    Timber.i("$TAG: Network restored + WS was FAILED → force reconnect")
+                    trackingRepository.forceReconnect()
                 }
             }
         }
@@ -1493,17 +1549,71 @@ class BookingTrackingActivity : AppCompatActivity(), OnMapReadyCallback {
     override fun onDestroy() {
         super.onDestroy()
 
+        // Gap 1: Stop ForegroundService
+        TrackingForegroundService.stop(this)
+
         // Leave WebSocket booking room
         bookingId?.let { trackingRepository.stopTracking(it) }
 
         // Cancel all marker animations to prevent memory leaks
         MarkerAnimationHelper.cancelAllAnimations()
 
-        // Remove banner + ETA callbacks
+        // Remove banner + ETA + HTTP poll callbacks
         bannerHandler.removeCallbacksAndMessages(null)
         etaPollingActive = false
         etaHandler.removeCallbacksAndMessages(null)
+        stopHttpPollFallback()
 
         Timber.d("$TAG: Activity destroyed, tracking stopped")
+    }
+
+    // =========================================================================
+    // GAP 3: HTTP POLL FALLBACK — When WebSocket Is Dead
+    // =========================================================================
+
+    /**
+     * Start polling location via HTTP every 30s.
+     * Only called when WebSocket is in FAILED state.
+     * Uses existing trackingRepository.getBookingTracking() — zero new backend work.
+     */
+    private fun startHttpPollFallback() {
+        if (httpPollActive) return
+        httpPollActive = true
+        Timber.i("$TAG: Starting HTTP poll fallback (WS down)")
+        httpPollHandler.post(httpPollRunnable)
+    }
+
+    private fun stopHttpPollFallback() {
+        if (!httpPollActive) return
+        httpPollActive = false
+        httpPollHandler.removeCallbacks(httpPollRunnable)
+        Timber.i("$TAG: Stopped HTTP poll fallback (WS restored)")
+    }
+
+    /**
+     * Single HTTP poll: fetch all truck positions and update markers.
+     * Reuses the same addOrUpdateDriverMarker() used by initial data + WebSocket.
+     */
+    private fun pollLocationViaHttp() {
+        val id = bookingId ?: return
+        lifecycleScope.launch {
+            try {
+                val trackingData = trackingRepository.getBookingTracking(id)
+                trackingData.forEach { truck ->
+                    updateTruckLocation(
+                        tripId = truck.tripId,
+                        lat = truck.latitude,
+                        lng = truck.longitude,
+                        speed = truck.speed.toFloat()
+                    )
+                }
+                if (trackingData.isNotEmpty()) {
+                    Timber.d("$TAG: HTTP poll updated ${trackingData.size} trucks")
+                }
+            } catch (e: Exception) {
+                if (e is kotlinx.coroutines.CancellationException) throw e
+                Timber.w("$TAG: HTTP poll failed: ${e.message}")
+            }
+        }
     }
 }

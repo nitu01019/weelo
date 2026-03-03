@@ -185,6 +185,13 @@ class TrackingRepository @Inject constructor(
     fun driverApproaching(): Flow<com.weelo.logistics.data.remote.DriverApproachingEvent> = webSocketService.onDriverApproaching()
 
     /**
+     * Listen for driver_connectivity_issue events.
+     * Backend emits when assigned driver goes offline during active trip.
+     * Customer app shows warning banner.
+     */
+    fun driverConnectivityIssue(): Flow<com.weelo.logistics.data.remote.DriverConnectivityIssueEvent> = webSocketService.onDriverConnectivityIssue()
+
+    /**
      * WebSocket connection state for showing "Reconnecting..." banner.
      */
     val connectionState = webSocketService.connectionState
