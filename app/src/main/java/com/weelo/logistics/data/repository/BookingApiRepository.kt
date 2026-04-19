@@ -4,6 +4,7 @@ import com.weelo.logistics.core.common.Result
 import com.weelo.logistics.core.common.WeeloException
 import com.weelo.logistics.data.remote.TokenManager
 import com.weelo.logistics.data.remote.api.*
+import com.weelo.logistics.data.telemetry.BookingTelemetry
 import com.weelo.logistics.domain.model.BookingModel
 import com.weelo.logistics.domain.model.BookingStatus
 import com.weelo.logistics.domain.model.LocationModel
@@ -588,9 +589,17 @@ class BookingApiRepository @Inject constructor(
                     "createOrder fallback to legacy /orders route (code=%d)",
                     primaryResponse.code()
                 )
+                // P1-L1: Emit telemetry so the legacy-fallback hit rate is observable.
+                // Once this reaches zero for 4+ weeks the fallback + legacy route can be
+                // retired in a coordinated backend+client release.
+                BookingTelemetry.logLegacyFallbackInvoked(
+                    endpoint = "bookings/orders",
+                    primaryCode = primaryResponse.code(),
+                    primaryErrorCode = primaryResponse.body()?.error?.code
+                )
                 apiService.createOrder(authToken, request, effectiveIdempotencyKey)
             }
-            
+
             val responseBody = response.body()
             val data = responseBody?.data
             if (response.isSuccessful && responseBody?.success == true && data != null) {
